@@ -3,9 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, ArrowLeft, Plus, Trash2, Layers } from 'lucide-react';
 import { LessonPlanFormData, StrandData } from '@/types/lesson';
+import { getStrandsForSubject, getSubStrandsForStrand } from '@/data/curriculumData';
 
 interface CurriculumStepProps {
   formData: LessonPlanFormData;
@@ -15,6 +23,8 @@ interface CurriculumStepProps {
 }
 
 const CurriculumStep: React.FC<CurriculumStepProps> = ({ formData, onChange, onNext, onBack }) => {
+  const strandOptions = getStrandsForSubject(formData.learningArea);
+
   const addStrand = () => {
     const newStrand: StrandData = {
       id: Date.now().toString(),
@@ -31,9 +41,16 @@ const CurriculumStep: React.FC<CurriculumStepProps> = ({ formData, onChange, onN
   };
 
   const updateStrand = (id: string, field: 'strand' | 'subStrand', value: string) => {
-    onChange('strands', formData.strands.map(s =>
-      s.id === id ? { ...s, [field]: value } : s
-    ));
+    onChange('strands', formData.strands.map(s => {
+      if (s.id === id) {
+        // Reset subStrand when strand changes
+        if (field === 'strand') {
+          return { ...s, strand: value, subStrand: '' };
+        }
+        return { ...s, [field]: value };
+      }
+      return s;
+    }));
   };
 
   const hasAtLeastOneStrand = formData.strands.some(s => s.strand.trim() !== '');
@@ -46,7 +63,7 @@ const CurriculumStep: React.FC<CurriculumStepProps> = ({ formData, onChange, onN
         </div>
         <CardTitle className="text-2xl">Curriculum Alignment</CardTitle>
         <CardDescription>
-          Define the strands, standards, and indicators for your lesson
+          Select the strands and standards for your lesson
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
@@ -60,40 +77,84 @@ const CurriculumStep: React.FC<CurriculumStepProps> = ({ formData, onChange, onN
             </Button>
           </div>
           
-          {formData.strands.map((strand, index) => (
-            <div key={strand.id} className="p-4 bg-muted/50 rounded-lg space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Strand {index + 1}
-                </span>
-                {formData.strands.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeStrand(strand.id)}
-                    className="text-destructive hover:text-destructive h-8 w-8 p-0"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
+          {formData.strands.map((strand, index) => {
+            const subStrandOptions = strand.strand 
+              ? getSubStrandsForStrand(formData.learningArea, strand.strand)
+              : [];
+
+            return (
+              <div key={strand.id} className="p-4 bg-muted/50 rounded-lg space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Strand {index + 1}
+                  </span>
+                  {formData.strands.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeStrand(strand.id)}
+                      className="text-destructive hover:text-destructive h-8 w-8 p-0"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {strandOptions.length > 0 ? (
+                    <>
+                      <Select 
+                        value={strand.strand} 
+                        onValueChange={(v) => updateStrand(strand.id, 'strand', v)}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select strand" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {strandOptions.map(opt => (
+                            <SelectItem key={opt.strand} value={opt.strand}>
+                              {opt.strand}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select 
+                        value={strand.subStrand} 
+                        onValueChange={(v) => updateStrand(strand.id, 'subStrand', v)}
+                        disabled={!strand.strand}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select sub-strand" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subStrandOptions.map(sub => (
+                            <SelectItem key={sub} value={sub}>
+                              {sub}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  ) : (
+                    <>
+                      <Input
+                        placeholder="e.g., Reading"
+                        value={strand.strand}
+                        onChange={(e) => updateStrand(strand.id, 'strand', e.target.value)}
+                        className="h-11"
+                      />
+                      <Input
+                        placeholder="e.g., Word Families"
+                        value={strand.subStrand}
+                        onChange={(e) => updateStrand(strand.id, 'subStrand', e.target.value)}
+                        className="h-11"
+                      />
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Input
-                  placeholder="e.g., Reading"
-                  value={strand.strand}
-                  onChange={(e) => updateStrand(strand.id, 'strand', e.target.value)}
-                  className="h-11"
-                />
-                <Input
-                  placeholder="e.g., Word Families"
-                  value={strand.subStrand}
-                  onChange={(e) => updateStrand(strand.id, 'subStrand', e.target.value)}
-                  className="h-11"
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Content Standard */}

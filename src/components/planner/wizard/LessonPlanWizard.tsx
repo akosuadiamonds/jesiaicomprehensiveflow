@@ -24,7 +24,7 @@ const LessonPlanWizard: React.FC<LessonPlanWizardProps> = ({ onGenerate, isGener
     learningArea: '',
     lessonWeek: 1,
     lessonDuration: 60,
-    lessonDay: '',
+    lessonDays: [],
     strands: [{ id: '1', strand: '', subStrand: '' }],
     contentStandard: '',
     indicator: '',

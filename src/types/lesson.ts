@@ -11,7 +11,8 @@ export interface LessonPlanFormData {
   learningArea: string;
   lessonWeek: number;
   lessonDuration: number;
-  lessonDay: string;
+  lessonDay?: string; // deprecated, use lessonDays
+  lessonDays: string[];
   strands: StrandData[];
   contentStandard: string;
   indicator: string;

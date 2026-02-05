@@ -9,10 +9,66 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, History, Sparkles } from 'lucide-react';
 
-// Mock function to generate lesson plan - will be replaced with AI later
+// Mock function to generate lesson plan for multiple days
 const generateMockLessonPlan = (formData: LessonPlanFormData): GeneratedLessonPlan => {
   const mainStrand = formData.strands[0];
+  const days = formData.lessonDays || [formData.lessonDay || 'Monday'];
   
+  // Generate phases for each selected day
+  const phases = days.map((day, index) => ({
+    day,
+    starter: index === 0 
+      ? 'Begin with a word game where students identify words that rhyme. Display flashcards with simple words and ask students to find matching rhymes.'
+      : `Review previous day's content. Quick warm-up activity to refresh memory on ${mainStrand?.strand || 'the topic'}.`,
+    newLearning: index === 0
+      ? 'Introduce common digraphs (ch, sh, th, wh). Show examples of words containing these digraphs. Have students practice identifying digraphs in a list of words. Group activity: Sort words by their digraph sounds.'
+      : `Continue with advanced concepts in ${mainStrand?.subStrand || 'the sub-topic'}. Practice exercises with partners. Interactive discussion and examples.`,
+    plenary: 'Review key concepts learned. Students share one new word they learned with a partner. Quick quiz: Identify the digraph in given words.',
+  }));
+
+  // Generate lesson notes for students
+  const lessonNote = `LESSON NOTE FOR STUDENTS
+Subject: ${formData.learningArea}
+Class: ${formData.class}
+Week: ${formData.lessonWeek}
+
+📚 WHAT YOU WILL LEARN:
+By the end of ${days.length > 1 ? 'these lessons' : 'this lesson'}, you will be able to:
+1. Identify common rhyming endings in words
+2. Recognize and use common digraphs (ch, sh, th, wh)
+3. Apply knowledge of rhyming patterns to decode new words
+
+📖 KEY VOCABULARY:
+• Digraph - A combination of two letters representing one sound (e.g., "ch" in chair)
+• Rhyming endings - Words that end with the same sound (e.g., cat, bat, hat)
+• Phonics - The relationship between letters and sounds
+
+${days.map((day, i) => `
+📅 ${day.toUpperCase()} (Day ${i + 1}):
+${i === 0 ? `
+We will start by playing a fun rhyming game! You will learn to spot words that sound alike at the end. Then, we'll discover special letter pairs called digraphs and how they make unique sounds.
+
+✏️ Activities:
+- Find rhyming pairs in flashcard games
+- Sort words by their beginning sounds
+- Work in groups to make word lists
+` : `
+Building on what we learned, we'll practice more with ${mainStrand?.subStrand || 'our topic'}. You'll work with partners and do fun exercises.
+
+✏️ Activities:
+- Partner practice exercises
+- Creative word building
+- Group discussions
+`}`).join('')}
+
+📝 HOMEWORK:
+- Find 5 words with rhyming endings at home
+- Create a list of 3 words for each digraph you learned
+- Practice reading words with your family
+
+💡 REMEMBER:
+Learning to read is like solving a puzzle - each piece helps you see the bigger picture!`;
+
   return {
     id: Date.now().toString(),
     subject: formData.learningArea,
@@ -31,51 +87,8 @@ const generateMockLessonPlan = (formData: LessonPlanFormData): GeneratedLessonPl
       { term: 'rhyming endings', definition: 'The phrase or word at the end of a line that has the same sound as another' },
     ],
     references: `${formData.learningArea} Curriculum`,
-    phases: [
-      {
-        day: formData.lessonDay || 'Monday',
-        starter: 'Begin with a word game where students identify words that rhyme. Display flashcards with simple words and ask students to find matching rhymes.',
-        newLearning: 'Introduce common digraphs (ch, sh, th, wh). Show examples of words containing these digraphs. Have students practice identifying digraphs in a list of words. Group activity: Sort words by their digraph sounds.',
-        plenary: 'Review key concepts learned. Students share one new word they learned with a partner. Quick quiz: Identify the digraph in given words.',
-      },
-    ],
-    lessonNote: `LESSON NOTE
-Subject: ${formData.learningArea}
-Class: ${formData.class}
-Term: ${formData.term}
-Week: ${formData.lessonWeek}
-Duration: ${formData.lessonDuration} minutes
-
-OBJECTIVES:
-By the end of this lesson, students will be able to:
-1. Identify common rhyming endings in words
-2. Recognize and use common digraphs (ch, sh, th, wh)
-3. Apply knowledge of rhyming patterns to decode new words
-
-INTRODUCTION (10 minutes):
-- Begin with a fun rhyming game
-- Display flashcards with simple words
-- Ask students to identify words that rhyme
-
-DEVELOPMENT (35 minutes):
-- Introduce common digraphs with visual aids
-- Demonstrate pronunciation of each digraph
-- Provide word lists for practice
-- Conduct group sorting activity
-
-CONCLUSION (15 minutes):
-- Review key concepts
-- Partner sharing activity
-- Quick assessment quiz
-
-ASSESSMENT:
-- Observation during activities
-- Participation in group work
-- Quiz performance
-
-HOMEWORK:
-- Find 5 words with rhyming endings
-- Create a list of 3 words for each digraph learned`,
+    phases,
+    lessonNote,
     createdAt: new Date(),
   };
 };
@@ -103,7 +116,7 @@ const PlannerPage: React.FC = () => {
     
     toast({
       title: "Lesson Plan Generated!",
-      description: "Your AI-powered lesson plan is ready.",
+      description: `Your ${formData.lessonDays?.length || 1}-day lesson plan is ready.`,
     });
   };
 
