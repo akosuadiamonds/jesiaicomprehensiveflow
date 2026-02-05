@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import LessonPlanForm from './LessonPlanForm';
+import LessonPlanWizard from './wizard/LessonPlanWizard';
 import LessonPlanDisplay from './LessonPlanDisplay';
+import PlanHistoryList from './history/PlanHistoryList';
 import { LessonPlanFormData, GeneratedLessonPlan } from '@/types/lesson';
 import { useApp } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Plus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, History, Sparkles } from 'lucide-react';
 
 // Mock function to generate lesson plan - will be replaced with AI later
 const generateMockLessonPlan = (formData: LessonPlanFormData): GeneratedLessonPlan => {
@@ -79,11 +80,14 @@ HOMEWORK:
   };
 };
 
+type PlannerView = 'create' | 'history' | 'display';
+
 const PlannerPage: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedLessonPlan | null>(null);
-  const [showForm, setShowForm] = useState(true);
-  const { addLessonPlan, savedLessonPlans } = useApp();
+  const [currentView, setCurrentView] = useState<PlannerView>('create');
+  const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
+  const { addLessonPlan, savedLessonPlans, deleteLessonPlan } = useApp();
   const { toast } = useToast();
 
   const handleGenerate = async (formData: LessonPlanFormData) => {
@@ -94,7 +98,7 @@ const PlannerPage: React.FC = () => {
     
     const plan = generateMockLessonPlan(formData);
     setGeneratedPlan(plan);
-    setShowForm(false);
+    setCurrentView('display');
     setIsGenerating(false);
     
     toast({
@@ -109,7 +113,6 @@ const PlannerPage: React.FC = () => {
     setIsGenerating(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Generate with slight variations
     setGeneratedPlan({
       ...generatedPlan,
       id: Date.now().toString(),
@@ -127,8 +130,11 @@ const PlannerPage: React.FC = () => {
     addLessonPlan(plan);
     toast({
       title: "Lesson Plan Saved!",
-      description: "Your lesson plan has been saved successfully.",
+      description: "Your lesson plan has been saved to History.",
     });
+    // Navigate to history after save
+    setCurrentView('create');
+    setActiveTab('history');
   };
 
   const handleEdit = (plan: GeneratedLessonPlan) => {
@@ -141,60 +147,38 @@ const PlannerPage: React.FC = () => {
 
   const handleNewPlan = () => {
     setGeneratedPlan(null);
-    setShowForm(true);
+    setCurrentView('create');
+    setActiveTab('create');
   };
 
-  return (
-    <div className="container mx-auto px-4 lg:px-8 py-8 max-w-5xl">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-            Lesson Planner
-          </h1>
-          {!showForm && (
+  const handleViewPlan = (plan: GeneratedLessonPlan) => {
+    setGeneratedPlan(plan);
+    setCurrentView('display');
+  };
+
+  const handleDeletePlan = (id: string) => {
+    deleteLessonPlan(id);
+    toast({
+      title: "Plan Deleted",
+      description: "The lesson plan has been removed.",
+    });
+  };
+
+  // Show the display view when a plan is generated or being viewed
+  if (currentView === 'display' && generatedPlan) {
+    return (
+      <div className="container mx-auto px-4 lg:px-8 py-8 max-w-5xl">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+              Lesson Plan
+            </h1>
             <Button onClick={handleNewPlan} variant="outline">
               <Plus className="w-4 h-4 mr-2" />
               New Plan
             </Button>
-          )}
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Generate GES-aligned lesson plans powered by AI
-        </p>
-      </div>
-
-      {/* Saved Plans Quick Access */}
-      {savedLessonPlans.length > 0 && showForm && (
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Recent Lesson Plans
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {savedLessonPlans.slice(-3).map((plan) => (
-                <Button
-                  key={plan.id}
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setGeneratedPlan(plan);
-                    setShowForm(false);
-                  }}
-                >
-                  {plan.subject} - {plan.class}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {showForm ? (
-        <LessonPlanForm onGenerate={handleGenerate} isGenerating={isGenerating} />
-      ) : generatedPlan ? (
         <LessonPlanDisplay
           plan={generatedPlan}
           onRegenerate={handleRegenerate}
@@ -202,7 +186,50 @@ const PlannerPage: React.FC = () => {
           onEdit={handleEdit}
           isRegenerating={isGenerating}
         />
-      ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 lg:px-8 py-8 max-w-5xl">
+      <div className="mb-8">
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
+          Lesson Planner
+        </h1>
+        <p className="text-muted-foreground">
+          Generate GES-aligned lesson plans powered by AI
+        </p>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'create' | 'history')}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="create" className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4" />
+            New Plan
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            History
+            {savedLessonPlans.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                {savedLessonPlans.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="create" className="mt-0">
+          <LessonPlanWizard onGenerate={handleGenerate} isGenerating={isGenerating} />
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-0">
+          <PlanHistoryList
+            plans={savedLessonPlans}
+            onView={handleViewPlan}
+            onDelete={handleDeletePlan}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
