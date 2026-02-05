@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Sparkles, Loader2, Wand2 } from 'lucide-react';
 import { LessonPlanFormData } from '@/types/lesson';
 
@@ -21,6 +22,8 @@ const CustomizeStep: React.FC<CustomizeStepProps> = ({
   onBack, 
   isGenerating 
 }) => {
+  const selectedDays = formData.lessonDays || [];
+
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="text-center pb-2">
@@ -34,23 +37,39 @@ const CustomizeStep: React.FC<CustomizeStepProps> = ({
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
         {/* Summary of selections */}
-        <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
           <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Summary</h4>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div><span className="text-muted-foreground">Class:</span> {formData.class}</div>
             <div><span className="text-muted-foreground">Students:</span> {formData.classSize}</div>
             <div><span className="text-muted-foreground">Subject:</span> {formData.learningArea}</div>
-            <div><span className="text-muted-foreground">Duration:</span> {formData.lessonDuration} min</div>
-            <div><span className="text-muted-foreground">Day:</span> {formData.lessonDay}</div>
-            <div><span className="text-muted-foreground">Week:</span> {formData.lessonWeek}</div>
+            <div><span className="text-muted-foreground">Duration:</span> {formData.lessonDuration} min/day</div>
+            <div className="col-span-2"><span className="text-muted-foreground">Week:</span> {formData.lessonWeek}</div>
           </div>
+          
+          {/* Days */}
+          <div className="pt-2 border-t border-border">
+            <span className="text-muted-foreground text-sm">Days:</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {selectedDays.map(day => (
+                <Badge key={day} variant="secondary" className="text-xs">
+                  {day}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
           {formData.strands.length > 0 && formData.strands[0].strand && (
-            <div className="pt-2 border-t border-border mt-2">
-              <span className="text-muted-foreground text-sm">Strand:</span>{' '}
-              <span className="text-sm">{formData.strands[0].strand}</span>
-              {formData.strands[0].subStrand && (
-                <span className="text-sm text-muted-foreground"> → {formData.strands[0].subStrand}</span>
-              )}
+            <div className="pt-2 border-t border-border">
+              <span className="text-muted-foreground text-sm">Strands:</span>
+              {formData.strands.filter(s => s.strand).map((strand, idx) => (
+                <div key={idx} className="text-sm mt-1">
+                  {strand.strand}
+                  {strand.subStrand && (
+                    <span className="text-muted-foreground"> → {strand.subStrand}</span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -94,12 +113,12 @@ const CustomizeStep: React.FC<CustomizeStepProps> = ({
             {isGenerating ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Generating Your Plan...
+                Generating {selectedDays.length > 1 ? `${selectedDays.length} Days...` : 'Plan...'}
               </>
             ) : (
               <>
                 <Sparkles className="w-5 h-5 mr-2" />
-                Generate Lesson Plan
+                Generate {selectedDays.length > 1 ? `${selectedDays.length}-Day Plan` : 'Lesson Plan'}
               </>
             )}
           </Button>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '@/contexts/AppContext';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 import {
   Sidebar,
   SidebarContent,
@@ -9,7 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarTrigger,
+  SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { 
@@ -18,9 +19,11 @@ import {
   FileQuestion, 
   Users, 
   BarChart3,
-  GraduationCap
+  GraduationCap,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const menuItems = [
   { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard },
@@ -32,8 +35,13 @@ const menuItems = [
 
 const AppSidebar: React.FC = () => {
   const { currentPage, setCurrentPage } = useApp();
+  const { signOut, signupData } = useOnboarding();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
+
+  const handleSignOut = () => {
+    signOut();
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
@@ -73,6 +81,27 @@ const AppSidebar: React.FC = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="p-2">
+        <Separator className="mb-2" />
+        {!collapsed && signupData?.firstName && (
+          <div className="px-3 py-2 text-sm text-muted-foreground">
+            {signupData.firstName} {signupData.lastName}
+          </div>
+        )}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleSignOut}
+              className="w-full justify-start gap-3 h-11 px-3 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
+              tooltip="Sign Out"
+            >
+              <LogOut className="w-5 h-5 shrink-0" />
+              {!collapsed && <span className="font-medium">Sign Out</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 };

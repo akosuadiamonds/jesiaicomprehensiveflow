@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -35,7 +36,16 @@ interface LessonDetailsStepProps {
 }
 
 const LessonDetailsStep: React.FC<LessonDetailsStepProps> = ({ formData, onChange, onNext, onBack }) => {
-  const canProceed = formData.learningArea && formData.lessonDay && formData.lessonDuration > 0;
+  const toggleDay = (day: string) => {
+    const currentDays = formData.lessonDays || [];
+    if (currentDays.includes(day)) {
+      onChange('lessonDays', currentDays.filter(d => d !== day));
+    } else {
+      onChange('lessonDays', [...currentDays, day]);
+    }
+  };
+
+  const canProceed = formData.learningArea && (formData.lessonDays?.length || 0) > 0 && formData.lessonDuration > 0;
 
   return (
     <Card className="border-0 shadow-lg">
@@ -63,40 +73,62 @@ const LessonDetailsStep: React.FC<LessonDetailsStepProps> = ({ formData, onChang
           </Select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-base flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Week
-            </Label>
-            <Input
-              type="number"
-              value={formData.lessonWeek}
-              onChange={(e) => onChange('lessonWeek', parseInt(e.target.value) || 1)}
-              min={1}
-              max={15}
-              className="h-12 text-base"
-            />
+        <div className="space-y-2">
+          <Label className="text-base flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Week
+          </Label>
+          <Input
+            type="number"
+            value={formData.lessonWeek}
+            onChange={(e) => onChange('lessonWeek', parseInt(e.target.value) || 1)}
+            min={1}
+            max={15}
+            className="h-12 text-base"
+          />
+        </div>
+
+        <div className="space-y-3">
+          <Label className="text-base flex items-center gap-2">
+            <Calendar className="w-4 h-4" />
+            Lesson Days
+          </Label>
+          <p className="text-sm text-muted-foreground">Select one or more days for this lesson plan</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {days.map(day => {
+              const isSelected = (formData.lessonDays || []).includes(day);
+              return (
+                <div
+                  key={day}
+                  onClick={() => toggleDay(day)}
+                  className={`
+                    flex items-center justify-center p-3 rounded-lg border-2 cursor-pointer transition-all
+                    ${isSelected 
+                      ? 'border-primary bg-primary/10 text-primary font-medium' 
+                      : 'border-border hover:border-primary/50'
+                    }
+                  `}
+                >
+                  <Checkbox 
+                    checked={isSelected} 
+                    className="sr-only"
+                  />
+                  <span className="text-sm">{day}</span>
+                </div>
+              );
+            })}
           </div>
-          <div className="space-y-2">
-            <Label className="text-base">Day</Label>
-            <Select value={formData.lessonDay} onValueChange={(v) => onChange('lessonDay', v)}>
-              <SelectTrigger className="h-12 text-base">
-                <SelectValue placeholder="Select day" />
-              </SelectTrigger>
-              <SelectContent>
-                {days.map(day => (
-                  <SelectItem key={day} value={day}>{day}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {(formData.lessonDays?.length || 0) > 0 && (
+            <p className="text-sm text-primary font-medium">
+              {formData.lessonDays?.length} day{formData.lessonDays?.length !== 1 ? 's' : ''} selected
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
           <Label className="text-base flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            Lesson Duration (minutes)
+            Lesson Duration (minutes per day)
           </Label>
           <div className="flex gap-2">
             {[30, 45, 60, 90].map((duration) => (
