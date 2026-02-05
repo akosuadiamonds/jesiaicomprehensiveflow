@@ -1,5 +1,5 @@
 import React from 'react';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Bell, Search, User } from 'lucide-react';
@@ -12,11 +12,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const AppHeader: React.FC = () => {
-  const { signupData, selectedPlan, signOut } = useOnboarding();
+  const { profile, signOut } = useAuth();
   const { setCurrentPage } = useApp();
 
   const getPlanBadge = () => {
-    switch (selectedPlan) {
+    switch (profile?.selected_plan) {
       case 'free':
         return { label: 'Free Trial', className: 'bg-muted text-muted-foreground' };
       case 'pro':
@@ -29,6 +29,7 @@ const AppHeader: React.FC = () => {
   };
 
   const badge = getPlanBadge();
+  const initials = `${profile?.first_name?.[0] || ''}${profile?.last_name?.[0] || ''}`;
 
   return (
     <header className="border-b border-border bg-card sticky top-0 z-50 h-16">
@@ -57,11 +58,11 @@ const AppHeader: React.FC = () => {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 hover:bg-muted p-2 rounded-lg transition-colors">
                 <div className="w-9 h-9 rounded-full gradient-hero flex items-center justify-center text-sm font-semibold text-primary-foreground">
-                  {signupData.firstName?.[0]}{signupData.lastName?.[0]}
+                  {initials || 'U'}
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium text-foreground">
-                    {signupData.firstName} {signupData.lastName}
+                    {profile?.first_name} {profile?.last_name}
                   </p>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${badge.className}`}>
                     {badge.label}

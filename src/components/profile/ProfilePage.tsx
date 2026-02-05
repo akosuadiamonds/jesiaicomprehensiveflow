@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { User, Phone, School, BookOpen, Save, ArrowLeft } from 'lucide-react';
+import { User, Phone, School, BookOpen, Save, ArrowLeft, Loader2 } from 'lucide-react';
 
 const allSubjects = [
   'English Language',
@@ -23,15 +23,26 @@ const allSubjects = [
 ];
 
 const ProfilePage: React.FC = () => {
-  const { signupData, setSignupData, teacherProfile, setTeacherProfile } = useOnboarding();
+  const { profile, updateProfile } = useAuth();
   const { setCurrentPage } = useApp();
   const { toast } = useToast();
 
-  const [firstName, setFirstName] = useState(signupData.firstName || '');
-  const [lastName, setLastName] = useState(signupData.lastName || '');
-  const [phoneNumber, setPhoneNumber] = useState(teacherProfile.phoneNumber || '');
-  const [schoolName, setSchoolName] = useState(teacherProfile.schoolName || '');
-  const [subjects, setSubjects] = useState<string[]>(teacherProfile.subjects || []);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [subjects, setSubjects] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setFirstName(profile.first_name || '');
+      setLastName(profile.last_name || '');
+      setPhoneNumber(profile.phone_number || '');
+      setSchoolName(profile.school_name || '');
+      setSubjects(profile.subjects || []);
+    }
+  }, [profile]);
 
   const toggleSubject = (subject: string) => {
     if (subjects.includes(subject)) {
@@ -41,13 +52,29 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
-    setSignupData({ ...signupData, firstName, lastName });
-    setTeacherProfile({ ...teacherProfile, phoneNumber, schoolName, subjects });
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile has been saved successfully.',
+  const handleSave = async () => {
+    setIsSaving(true);
+    const { error } = await updateProfile({
+      first_name: firstName,
+      last_name: lastName,
+      phone_number: phoneNumber,
+      school_name: schoolName,
+      subjects,
     });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been saved successfully.',
+      });
+    }
+    setIsSaving(false);
   };
 
   return (
@@ -99,16 +126,6 @@ const ProfilePage: React.FC = () => {
                   placeholder="Enter last name"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                value={signupData.email || ''}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
             </div>
           </CardContent>
         </Card>
@@ -192,9 +209,13 @@ const ProfilePage: React.FC = () => {
           onClick={handleSave} 
           className="w-full h-12 text-base"
           variant="hero"
-          disabled={subjects.length === 0}
+          disabled={subjects.length === 0 || isSaving}
         >
-          <Save className="w-4 h-4 mr-2" />
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
           Save Changes
         </Button>
       </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarContent,
@@ -35,7 +35,7 @@ const menuItems = [
 
 const AppSidebar: React.FC = () => {
   const { currentPage, setCurrentPage } = useApp();
-  const { signOut, signupData } = useOnboarding();
+  const { signOut, profile } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
 
@@ -84,9 +84,9 @@ const AppSidebar: React.FC = () => {
 
       <SidebarFooter className="p-2">
         <Separator className="mb-2" />
-        {!collapsed && signupData?.firstName && (
+        {!collapsed && profile?.first_name && (
           <div className="px-3 py-2 text-sm text-muted-foreground">
-            {signupData.firstName} {signupData.lastName}
+            {profile.first_name} {profile.last_name}
           </div>
         )}
         <SidebarMenu>

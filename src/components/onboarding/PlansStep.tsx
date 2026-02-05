@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Plan, PlanType } from '@/types/onboarding';
-import { Check, Sparkles, Crown, Zap, ArrowLeft } from 'lucide-react';
+import { Check, Sparkles, Crown, Zap, ArrowLeft, Loader2 } from 'lucide-react';
 
 const PLANS: Plan[] = [
   {
@@ -60,14 +61,28 @@ const PLANS: Plan[] = [
 
 const PlansStep: React.FC = () => {
   const { selectedPlan, setSelectedPlan, setCurrentStep } = useOnboarding();
+  const { updateProfile, refreshProfile } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<PlanType | null>(null);
 
-  const handleSelectPlan = (planId: PlanType) => {
+  const handleSelectPlan = async (planId: PlanType) => {
+    setIsLoading(true);
+    setLoadingPlan(planId);
+    
+    // Save to database
+    await updateProfile({ selected_plan: planId });
+    await refreshProfile();
+    
     setSelectedPlan(planId);
+    
     if (planId === 'free') {
       setCurrentStep('dashboard');
     } else {
       setCurrentStep('payment');
     }
+    
+    setIsLoading(false);
+    setLoadingPlan(null);
   };
 
   const getIcon = (planId: PlanType) => {
@@ -168,8 +183,13 @@ const PlansStep: React.FC = () => {
               variant={plan.highlight ? 'hero' : plan.id === 'premium' ? 'premium' : 'outline'}
               className="w-full"
               size="lg"
+              disabled={isLoading}
             >
-              {plan.price === 0 ? 'Start Free Trial' : 'Get Started'}
+              {loadingPlan === plan.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                plan.price === 0 ? 'Start Free Trial' : 'Get Started'
+              )}
             </Button>
           </div>
         ))}

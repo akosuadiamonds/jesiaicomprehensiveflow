@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import UpgradePlanModal from '@/components/upgrade/UpgradePlanModal';
 import { 
@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 
 const DashboardContent: React.FC = () => {
-  const { signupData, selectedPlan, teacherProfile } = useOnboarding();
+  const { profile, updateProfile } = useAuth();
   const { setCurrentPage, savedLessonPlans } = useApp();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const selectedPlan = profile?.selected_plan || 'free';
 
   const getPlanBadge = () => {
     switch (selectedPlan) {
@@ -50,7 +52,7 @@ const DashboardContent: React.FC = () => {
       {/* Welcome Section */}
       <div className="mb-8 animate-fade-in">
         <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          Welcome back, {signupData.firstName || 'Teacher'}! 👋
+          Welcome back, {profile?.first_name || 'Teacher'}! 👋
         </h1>
         <p className="text-muted-foreground">
           Ready to create something amazing today?
@@ -105,8 +107,8 @@ const DashboardContent: React.FC = () => {
           <div className="bg-card rounded-2xl border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Your Subjects</h3>
             <div className="flex flex-wrap gap-2">
-              {teacherProfile.subjects?.length ? (
-                teacherProfile.subjects.map((subject, index) => (
+              {profile?.subjects && profile.subjects.length > 0 ? (
+                profile.subjects.map((subject, index) => (
                   <span
                     key={index}
                     className="px-4 py-2 rounded-lg bg-primary/10 text-primary font-medium text-sm"
