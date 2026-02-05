@@ -14,6 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
+      classroom_announcements: {
+        Row: {
+          classroom_id: string
+          content: string
+          created_at: string
+          id: string
+          is_pinned: boolean | null
+          teacher_id: string
+          title: string
+        }
+        Insert: {
+          classroom_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          teacher_id: string
+          title: string
+        }
+        Update: {
+          classroom_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          teacher_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_announcements_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classroom_resources: {
+        Row: {
+          classroom_id: string
+          content: Json | null
+          created_at: string
+          id: string
+          is_published: boolean | null
+          resource_type: string
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          classroom_id: string
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          resource_type: string
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          classroom_id?: string
+          content?: Json | null
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          resource_type?: string
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_resources_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classroom_students: {
+        Row: {
+          classroom_id: string
+          id: string
+          is_active: boolean | null
+          joined_at: string
+          student_id: string
+          subscription_expires_at: string | null
+          subscription_status: string | null
+        }
+        Insert: {
+          classroom_id: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          student_id: string
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
+        }
+        Update: {
+          classroom_id?: string
+          id?: string
+          is_active?: boolean | null
+          joined_at?: string
+          student_id?: string
+          subscription_expires_at?: string | null
+          subscription_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classroom_students_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classrooms: {
+        Row: {
+          classroom_type: Database["public"]["Enums"]["classroom_type"]
+          created_at: string
+          currency: string | null
+          description: string | null
+          id: string
+          invite_code: string
+          is_active: boolean | null
+          max_students: number | null
+          monthly_fee: number | null
+          name: string
+          subject: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          classroom_type?: Database["public"]["Enums"]["classroom_type"]
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          invite_code: string
+          is_active?: boolean | null
+          max_students?: number | null
+          monthly_fee?: number | null
+          name: string
+          subject: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          classroom_type?: Database["public"]["Enums"]["classroom_type"]
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          id?: string
+          invite_code?: string
+          is_active?: boolean | null
+          max_students?: number | null
+          monthly_fee?: number | null
+          name?: string
+          subject?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -64,10 +232,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invite_code: { Args: never; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      classroom_type: "school" | "private"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -194,6 +362,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      classroom_type: ["school", "private"],
+    },
   },
 } as const
