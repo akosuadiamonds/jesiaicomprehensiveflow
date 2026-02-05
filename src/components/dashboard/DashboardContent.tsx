@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useApp } from '@/contexts/AppContext';
+import UpgradePlanModal from '@/components/upgrade/UpgradePlanModal';
 import { 
   FileText, 
   HelpCircle, 
@@ -14,6 +15,7 @@ import {
 const DashboardContent: React.FC = () => {
   const { signupData, selectedPlan, teacherProfile } = useOnboarding();
   const { setCurrentPage, savedLessonPlans } = useApp();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const getPlanBadge = () => {
     switch (selectedPlan) {
@@ -153,7 +155,7 @@ const DashboardContent: React.FC = () => {
               </p>
             )}
             {selectedPlan !== 'premium' && (
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="outline" size="sm" className="w-full" onClick={() => setShowUpgradeModal(true)}>
                 Upgrade Plan
               </Button>
             )}
@@ -176,6 +178,8 @@ const DashboardContent: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <UpgradePlanModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} />
     </div>
   );
 };

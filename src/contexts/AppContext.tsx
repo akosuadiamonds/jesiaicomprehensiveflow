@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { GeneratedLessonPlan } from '@/types/lesson';
 
-type AppPage = 'dashboard' | 'planner' | 'test' | 'classroom' | 'insights';
+type AppPage = 'dashboard' | 'planner' | 'test' | 'classroom' | 'insights' | 'profile';
 
 interface AppContextType {
   currentPage: AppPage;

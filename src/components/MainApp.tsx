@@ -6,6 +6,7 @@ import PlannerPage from '@/components/planner/PlannerPage';
 import TestPage from '@/components/pages/TestPage';
 import ClassroomPage from '@/components/pages/ClassroomPage';
 import InsightsPage from '@/components/pages/InsightsPage';
+import ProfilePage from '@/components/profile/ProfilePage';
 
 const MainAppContent: React.FC = () => {
   const { currentPage } = useApp();
@@ -22,6 +23,8 @@ const MainAppContent: React.FC = () => {
         return <ClassroomPage />;
       case 'insights':
         return <InsightsPage />;
+      case 'profile':
+        return <ProfilePage />;
       default:
         return <DashboardContent />;
     }
