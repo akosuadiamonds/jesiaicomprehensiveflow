@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Bell, Search, User } from 'lucide-react';
+import { Search, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import NotificationPopover from './NotificationPopover';
 
 const AppHeader: React.FC = () => {
   const { profile, signOut } = useAuth();
@@ -49,10 +50,7 @@ const AppHeader: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-            <Bell className="w-5 h-5 text-muted-foreground" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-          </button>
+          <NotificationPopover />
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
