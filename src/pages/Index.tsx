@@ -9,7 +9,7 @@ import ProfileStep from '@/components/onboarding/ProfileStep';
 import ProfileSuccessStep from '@/components/onboarding/ProfileSuccessStep';
 import PlansStep from '@/components/onboarding/PlansStep';
 import PaymentStep from '@/components/onboarding/PaymentStep';
-import DashboardStep from '@/components/onboarding/DashboardStep';
+import MainApp from '@/components/MainApp';
 
 const stepConfig: Record<string, { step: number; showProgress: boolean }> = {
   signup: { step: 1, showProgress: true },
@@ -28,9 +28,9 @@ const OnboardingContent: React.FC = () => {
   
   const config = stepConfig[currentStep] || { step: 1, showProgress: true };
 
-  // Dashboard has its own layout
+  // Dashboard has its own layout with sidebar
   if (currentStep === 'dashboard') {
-    return <DashboardStep />;
+    return <MainApp />;
   }
 
   // Plans step needs wider layout
