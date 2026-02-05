@@ -1,9 +1,9 @@
-import React from 'react';
-import { useOnboarding } from '@/contexts/OnboardingContext';
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { PlanType, Plan } from '@/types/onboarding';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Crown, Star, Zap } from 'lucide-react';
+import { Check, Crown, Star, Zap, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -64,16 +64,30 @@ interface UpgradePlanModalProps {
 }
 
 const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({ open, onOpenChange }) => {
-  const { selectedPlan, setSelectedPlan } = useOnboarding();
+  const { profile, updateProfile } = useAuth();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSelectPlan = (planId: PlanType) => {
-    setSelectedPlan(planId);
-    toast({
-      title: 'Plan Updated',
-      description: `You are now on the ${plans.find(p => p.id === planId)?.name} plan.`,
-    });
-    onOpenChange(false);
+  const selectedPlan = profile?.selected_plan || 'free';
+
+  const handleSelectPlan = async (planId: PlanType) => {
+    setIsLoading(true);
+    const { error } = await updateProfile({ selected_plan: planId });
+
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update plan. Please try again.',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Plan Updated',
+        description: `You are now on the ${plans.find(p => p.id === planId)?.name} plan.`,
+      });
+      onOpenChange(false);
+    }
+    setIsLoading(false);
   };
 
   const getPlanIcon = (planId: PlanType) => {
@@ -145,9 +159,15 @@ const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({ open, onOpenChange 
                   onClick={() => handleSelectPlan(plan.id)}
                   variant={isCurrentPlan ? 'outline' : plan.highlight ? 'hero' : 'default'}
                   className="w-full"
-                  disabled={isCurrentPlan}
+                  disabled={isCurrentPlan || isLoading}
                 >
-                  {isCurrentPlan ? 'Current Plan' : 'Select Plan'}
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isCurrentPlan ? (
+                    'Current Plan'
+                  ) : (
+                    'Select Plan'
+                  )}
                 </Button>
               </div>
             );

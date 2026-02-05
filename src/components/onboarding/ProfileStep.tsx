@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { ArrowLeft, ArrowRight, Phone, Building2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, ArrowRight, Phone, Building2, Loader2 } from 'lucide-react';
 
 const SUBJECTS = [
   'Mathematics',
@@ -23,7 +24,9 @@ const SUBJECTS = [
 
 const ProfileStep: React.FC = () => {
   const { teacherProfile, setTeacherProfile, setCurrentStep } = useOnboarding();
+  const { updateProfile } = useAuth();
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     setTeacherProfile({ ...teacherProfile, [field]: value });
@@ -64,9 +67,21 @@ const ProfileStep: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validate()) {
-      setCurrentStep('profile-success');
+      setIsSubmitting(true);
+      
+      // Save to database
+      const { error } = await updateProfile({
+        phone_number: teacherProfile.phoneNumber,
+        school_name: teacherProfile.schoolName,
+        subjects: teacherProfile.subjects,
+      });
+
+      if (!error) {
+        setCurrentStep('profile-success');
+      }
+      setIsSubmitting(false);
     }
   };
 
@@ -159,9 +174,13 @@ const ProfileStep: React.FC = () => {
         className="w-full" 
         size="lg"
         variant="hero"
+        disabled={isSubmitting}
       >
+        {isSubmitting ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : null}
         Complete Profile
-        <ArrowRight className="w-4 h-4" />
+        {!isSubmitting && <ArrowRight className="w-4 h-4 ml-2" />}
       </Button>
     </div>
   );
