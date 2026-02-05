@@ -100,7 +100,7 @@ const PlannerPage: React.FC = () => {
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedLessonPlan | null>(null);
   const [currentView, setCurrentView] = useState<PlannerView>('create');
   const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
-  const { addLessonPlan, savedLessonPlans, deleteLessonPlan } = useApp();
+  const { addLessonPlan, savedLessonPlans, deleteLessonPlan, updateLessonPlan } = useApp();
   const { toast } = useToast();
 
   const handleGenerate = async (formData: LessonPlanFormData) => {
@@ -140,22 +140,29 @@ const PlannerPage: React.FC = () => {
   };
 
   const handleSave = (plan: GeneratedLessonPlan) => {
-    addLessonPlan(plan);
-    toast({
-      title: "Lesson Plan Saved!",
-      description: "Your lesson plan has been saved to History.",
-    });
+    // Check if this plan already exists (is being edited from history)
+    const existingPlan = savedLessonPlans.find(p => p.id === plan.id);
+    if (existingPlan) {
+      updateLessonPlan(plan.id, plan);
+      toast({
+        title: "Lesson Plan Updated!",
+        description: "Your changes have been saved.",
+      });
+    } else {
+      addLessonPlan(plan);
+      toast({
+        title: "Lesson Plan Saved!",
+        description: "Your lesson plan has been saved to History.",
+      });
+    }
     // Navigate to history after save
     setCurrentView('create');
     setActiveTab('history');
   };
 
   const handleEdit = (plan: GeneratedLessonPlan) => {
+    // Update the current displayed plan
     setGeneratedPlan(plan);
-    toast({
-      title: "Changes Applied",
-      description: "Your edits have been saved.",
-    });
   };
 
   const handleNewPlan = () => {

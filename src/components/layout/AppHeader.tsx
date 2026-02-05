@@ -1,10 +1,19 @@
 import React from 'react';
 import { useOnboarding } from '@/contexts/OnboardingContext';
+import { useApp } from '@/contexts/AppContext';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Search, User } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 const AppHeader: React.FC = () => {
-  const { signupData, selectedPlan } = useOnboarding();
+  const { signupData, selectedPlan, signOut } = useOnboarding();
+  const { setCurrentPage } = useApp();
 
   const getPlanBadge = () => {
     switch (selectedPlan) {
@@ -43,19 +52,34 @@ const AppHeader: React.FC = () => {
             <Bell className="w-5 h-5 text-muted-foreground" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
           </button>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full gradient-hero flex items-center justify-center text-sm font-semibold text-primary-foreground">
-              {signupData.firstName?.[0]}{signupData.lastName?.[0]}
-            </div>
-            <div className="hidden md:block">
-              <p className="text-sm font-medium text-foreground">
-                {signupData.firstName} {signupData.lastName}
-              </p>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${badge.className}`}>
-                {badge.label}
-              </span>
-            </div>
-          </div>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 hover:bg-muted p-2 rounded-lg transition-colors">
+                <div className="w-9 h-9 rounded-full gradient-hero flex items-center justify-center text-sm font-semibold text-primary-foreground">
+                  {signupData.firstName?.[0]}{signupData.lastName?.[0]}
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-foreground">
+                    {signupData.firstName} {signupData.lastName}
+                  </p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${badge.className}`}>
+                    {badge.label}
+                  </span>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setCurrentPage('profile')}>
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

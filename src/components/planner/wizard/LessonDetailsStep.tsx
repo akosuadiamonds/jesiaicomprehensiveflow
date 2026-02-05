@@ -13,9 +13,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, ArrowLeft, BookOpen, Clock, Calendar } from 'lucide-react';
 import { LessonPlanFormData } from '@/types/lesson';
+import { useOnboarding } from '@/contexts/OnboardingContext';
 
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const learningAreas = [
+const allLearningAreas = [
   'English Language', 
   'Mathematics', 
   'Science', 
@@ -36,6 +37,12 @@ interface LessonDetailsStepProps {
 }
 
 const LessonDetailsStep: React.FC<LessonDetailsStepProps> = ({ formData, onChange, onNext, onBack }) => {
+  const { teacherProfile } = useOnboarding();
+  
+  // Use subjects from profile if available, otherwise show all
+  const learningAreas = teacherProfile.subjects && teacherProfile.subjects.length > 0
+    ? teacherProfile.subjects
+    : allLearningAreas;
   const toggleDay = (day: string) => {
     const currentDays = formData.lessonDays || [];
     if (currentDays.includes(day)) {
