@@ -2,8 +2,11 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Download, Loader2, RefreshCw, ArrowLeft, BookOpen, ClipboardList } from 'lucide-react';
+import { Download, Loader2, RefreshCw, ArrowLeft, BookOpen, ClipboardList, Save, CheckCircle } from 'lucide-react';
 import { GeneratedExam } from '@/types/exam';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import html2pdf from 'html2pdf.js';
 
 interface ExamDisplayProps {
@@ -16,7 +19,40 @@ interface ExamDisplayProps {
 const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, isRegenerating }) => {
   const [activeTab, setActiveTab] = useState<'exam' | 'marking'>('exam');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from('saved_exams' as any).insert({
+        teacher_id: user.id,
+        school_name: exam.schoolName,
+        exam_name: exam.examName,
+        subject: exam.subject,
+        class: exam.class,
+        level: exam.level,
+        duration: exam.duration,
+        total_marks: exam.totalMarks,
+        section_a: JSON.parse(JSON.stringify(exam.sectionA)),
+        section_b: JSON.parse(JSON.stringify(exam.sectionB)),
+        status: 'draft',
+      } as any);
+
+      if (error) throw error;
+      setIsSaved(true);
+      toast({ title: 'Exam saved successfully!' });
+    } catch (error: any) {
+      console.error('Error saving exam:', error);
+      toast({ title: 'Failed to save exam', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleDownload = async () => {
     if (!contentRef.current) return;
@@ -49,6 +85,10 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
         <Button variant="outline" onClick={handleDownload} disabled={isDownloading}>
           {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
           Download PDF
+        </Button>
+        <Button onClick={handleSave} disabled={isSaving || isSaved} variant={isSaved ? 'secondary' : 'default'}>
+          {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : isSaved ? <CheckCircle className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+          {isSaved ? 'Saved' : 'Save Exam'}
         </Button>
       </div>
 

@@ -341,6 +341,57 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_exams: {
+        Row: {
+          class: string
+          created_at: string
+          duration: string
+          exam_name: string
+          id: string
+          level: string
+          school_name: string
+          section_a: Json
+          section_b: Json
+          status: string
+          subject: string
+          teacher_id: string
+          total_marks: number
+          updated_at: string
+        }
+        Insert: {
+          class: string
+          created_at?: string
+          duration: string
+          exam_name: string
+          id?: string
+          level: string
+          school_name: string
+          section_a?: Json
+          section_b?: Json
+          status?: string
+          subject: string
+          teacher_id: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Update: {
+          class?: string
+          created_at?: string
+          duration?: string
+          exam_name?: string
+          id?: string
+          level?: string
+          school_name?: string
+          section_a?: Json
+          section_b?: Json
+          status?: string
+          subject?: string
+          teacher_id?: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_coins: {
         Row: {
           coins: number
