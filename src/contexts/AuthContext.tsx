@@ -134,6 +134,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signOut = async () => {
+    // Clear onboarding state from localStorage when signing out
+    try {
+      localStorage.removeItem('jesi_onboarding_state');
+    } catch (e) {
+      console.error('Failed to clear onboarding state:', e);
+    }
+    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
