@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
@@ -27,6 +27,59 @@ const stepConfig: Record<string, { step: number; showProgress: boolean }> = {
   'student-plans': { step: 3, showProgress: true },
 };
 
+// Component that syncs onboarding state with profile from database
+const OnboardingStepSync: React.FC = () => {
+  const { profile } = useAuth();
+  const { setCurrentStep, setUserRole, setTeacherProfile, currentStep } = useOnboarding();
+
+  useEffect(() => {
+    if (!profile) return;
+
+    // Always sync role from profile (overwrite localStorage)
+    if (profile.user_role) {
+      setUserRole(profile.user_role as 'teacher' | 'learner');
+    } else {
+      setUserRole(null);
+    }
+
+    // Always sync subjects from profile (overwrite localStorage)
+    // This ensures the database is the source of truth
+    setTeacherProfile({ 
+      subjects: profile.subjects || [],
+      phoneNumber: profile.phone_number || '',
+      schoolName: profile.school_name || ''
+    });
+
+    // Determine the correct step based on profile completion
+    const hasRole = !!profile.user_role;
+    const hasSubjects = profile.subjects && profile.subjects.length > 0;
+    const hasProfileDetails = profile.phone_number && profile.school_name;
+    const hasSelectedPlan = profile.selected_plan !== null;
+
+    // Only update step if we're not already on a later step
+    // This prevents overriding manual navigation
+    if (!hasRole) {
+      setCurrentStep('role');
+    } else if (!hasSubjects) {
+      setCurrentStep('subjects');
+    } else if (profile.user_role === 'learner') {
+      // Learner flow: after subjects, go to join class then plans
+      if (!hasSelectedPlan) {
+        setCurrentStep('student-plans');
+      }
+    } else {
+      // Teacher flow: subjects -> profile -> plans
+      if (!hasProfileDetails) {
+        setCurrentStep('profile');
+      } else if (!hasSelectedPlan) {
+        setCurrentStep('plans');
+      }
+    }
+  }, [profile?.user_id]); // Only run when user changes, not on every profile update
+
+  return null;
+};
+
 const OnboardingContent: React.FC = () => {
   const { currentStep } = useOnboarding();
   
@@ -41,6 +94,7 @@ const OnboardingContent: React.FC = () => {
   if (currentStep === 'student-plans') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <OnboardingStepSync />
         <StudentPlansStep />
       </div>
     );
@@ -50,6 +104,7 @@ const OnboardingContent: React.FC = () => {
   if (currentStep === 'plans') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <OnboardingStepSync />
         <PlansStep />
       </div>
     );
@@ -78,13 +133,16 @@ const OnboardingContent: React.FC = () => {
   const totalSteps = currentStep.startsWith('student') ? 3 : 4;
 
   return (
-    <OnboardingLayout
-      showProgress={config.showProgress}
-      currentStep={config.step}
-      totalSteps={totalSteps}
-    >
-      {renderStep()}
-    </OnboardingLayout>
+    <>
+      <OnboardingStepSync />
+      <OnboardingLayout
+        showProgress={config.showProgress}
+        currentStep={config.step}
+        totalSteps={totalSteps}
+      >
+        {renderStep()}
+      </OnboardingLayout>
+    </>
   );
 };
 
@@ -105,10 +163,14 @@ const AuthenticatedApp: React.FC = () => {
   }
 
   // Authenticated but profile setup not complete
-  // Check if they have completed onboarding (has subjects selected)
-  const hasCompletedOnboarding = profile?.subjects && profile.subjects.length > 0;
+  // Check if they have completed onboarding:
+  // 1. Has subjects selected
+  // 2. Has explicitly selected a plan (selected_plan is not null)
+  const hasSubjects = profile?.subjects && profile.subjects.length > 0;
+  const hasSelectedPlan = profile?.selected_plan !== null && profile?.selected_plan !== undefined;
 
-  if (!hasCompletedOnboarding) {
+  // Show onboarding if user hasn't completed all required steps
+  if (!hasSubjects || !hasSelectedPlan) {
     return (
       <OnboardingProvider>
         <OnboardingContent />
