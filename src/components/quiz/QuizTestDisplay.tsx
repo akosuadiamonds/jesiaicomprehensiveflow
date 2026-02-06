@@ -1,12 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { Download, Loader2, RefreshCw, ArrowLeft, BookOpen, ClipboardList, CheckCircle, Edit3, Save, X, Lock, Users, Copy } from 'lucide-react';
 import { GeneratedQuizTest, QuizMCQQuestion } from '@/types/quiz';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import html2pdf from 'html2pdf.js';
 
@@ -23,13 +26,24 @@ const formatLabels: Record<string, string> = {
 };
 
 const QuizTestDisplay: React.FC<Props> = ({ quiz, onRegenerate, onBack, isRegenerating, onUpdateQuiz }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'questions' | 'answers'>('questions');
   const [isEditing, setIsEditing] = useState(false);
   const [editedQuestions, setEditedQuestions] = useState<QuizMCQQuestion[]>(quiz.questions);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [classrooms, setClassrooms] = useState<{ id: string; name: string; subject: string }[]>([]);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const label = quiz.type === 'quiz' ? 'Quiz' : 'Test';
+
+  useEffect(() => {
+    const fetchClassrooms = async () => {
+      if (!user) return;
+      const { data } = await supabase.from('classrooms').select('id, name, subject').eq('teacher_id', user.id);
+      if (data) setClassrooms(data);
+    };
+    fetchClassrooms();
+  }, [user]);
 
   const handleSaveEdits = () => {
     onUpdateQuiz({ ...quiz, questions: editedQuestions });
@@ -39,7 +53,18 @@ const QuizTestDisplay: React.FC<Props> = ({ quiz, onRegenerate, onBack, isRegene
 
   const handleApprove = () => {
     onUpdateQuiz({ ...quiz, status: 'approved' });
-    toast.success(`${label} approved and ready to share!`);
+    toast.success(`${label} approved! You can now assign it to a class.`);
+  };
+
+  const handleAssignToClass = (classroomId: string) => {
+    if (classroomId === 'none') {
+      onUpdateQuiz({ ...quiz, assignedClassroomId: '', status: 'approved' });
+      toast.info('Classroom assignment removed.');
+    } else {
+      onUpdateQuiz({ ...quiz, assignedClassroomId: classroomId, status: 'assigned' });
+      const classroom = classrooms.find(c => c.id === classroomId);
+      toast.success(`${label} assigned to ${classroom?.name || 'classroom'}!`);
+    }
   };
 
   const handleCopyCode = () => {
@@ -96,11 +121,6 @@ const QuizTestDisplay: React.FC<Props> = ({ quiz, onRegenerate, onBack, isRegene
             <Button variant="ghost" onClick={() => { setEditedQuestions(quiz.questions); setIsEditing(false); }}><X className="w-4 h-4 mr-2" /> Cancel</Button>
           </>
         )}
-        {quiz.status !== 'approved' && (
-          <Button onClick={handleApprove} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <CheckCircle className="w-4 h-4 mr-2" /> Approve
-          </Button>
-        )}
         <Button variant="outline" onClick={handleDownload} disabled={isDownloading}>
           {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
           Download PDF
@@ -109,7 +129,9 @@ const QuizTestDisplay: React.FC<Props> = ({ quiz, onRegenerate, onBack, isRegene
 
       {/* Status & Info Bar */}
       <div className="flex flex-wrap gap-2 items-center">
-        <Badge variant={quiz.status === 'approved' ? 'default' : 'secondary'}>{quiz.status}</Badge>
+        <Badge variant={quiz.status === 'approved' ? 'default' : quiz.status === 'assigned' ? 'default' : 'secondary'}>
+          {quiz.status === 'assigned' ? '✅ Assigned' : quiz.status === 'approved' ? '✓ Approved' : '📝 Draft'}
+        </Badge>
         <Badge variant="outline">{quiz.questionFormats.map(f => formatLabels[f]).join(', ')}</Badge>
         <Badge variant="outline">DOK {quiz.dokLevel}</Badge>
         <Badge variant="outline">{quiz.duration} min</Badge>
@@ -119,6 +141,47 @@ const QuizTestDisplay: React.FC<Props> = ({ quiz, onRegenerate, onBack, isRegene
           </Badge>
         )}
       </div>
+
+      {/* Approval & Assignment Section */}
+      <Card className="border-2 border-dashed">
+        <CardContent className="py-4 space-y-4">
+          {quiz.status === 'draft' && (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Review & Approve</p>
+                <p className="text-xs text-muted-foreground">Review the questions below, edit if needed, then approve to assign to a class</p>
+              </div>
+              <Button onClick={handleApprove} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <CheckCircle className="w-4 h-4 mr-2" /> Approve {label}
+              </Button>
+            </div>
+          )}
+
+          {(quiz.status === 'approved' || quiz.status === 'assigned') && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <Label className="text-sm font-medium flex items-center gap-2 mb-1.5">
+                  <Users className="w-4 h-4" /> Assign to Classroom
+                </Label>
+                <Select value={quiz.assignedClassroomId || 'none'} onValueChange={handleAssignToClass}>
+                  <SelectTrigger className="h-10"><SelectValue placeholder="Select a classroom" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No classroom</SelectItem>
+                    {classrooms.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} ({c.subject})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {quiz.status === 'assigned' && (
+                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 mt-2 sm:mt-6">
+                  Assigned to {classrooms.find(c => c.id === quiz.assignedClassroomId)?.name || 'classroom'}
+                </Badge>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tab Switcher */}
       <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
