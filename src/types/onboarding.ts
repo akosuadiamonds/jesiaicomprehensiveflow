@@ -36,6 +36,7 @@ export type OnboardingStep =
   | 'password'
   | 'verify'
   | 'role'
+  | 'subjects'
   | 'profile'
   | 'profile-success'
   | 'plans'

@@ -4,6 +4,7 @@ import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext'
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
 import AuthPage from '@/components/auth/AuthPage';
 import RoleStep from '@/components/onboarding/RoleStep';
+import SubjectsStep from '@/components/onboarding/SubjectsStep';
 import ProfileStep from '@/components/onboarding/ProfileStep';
 import ProfileSuccessStep from '@/components/onboarding/ProfileSuccessStep';
 import PlansStep from '@/components/onboarding/PlansStep';
@@ -13,11 +14,12 @@ import { Loader2 } from 'lucide-react';
 
 const stepConfig: Record<string, { step: number; showProgress: boolean }> = {
   role: { step: 1, showProgress: true },
-  profile: { step: 2, showProgress: true },
-  'profile-success': { step: 2, showProgress: true },
-  plans: { step: 3, showProgress: true },
-  payment: { step: 3, showProgress: true },
-  dashboard: { step: 3, showProgress: false },
+  subjects: { step: 2, showProgress: true },
+  profile: { step: 3, showProgress: true },
+  'profile-success': { step: 3, showProgress: true },
+  plans: { step: 4, showProgress: true },
+  payment: { step: 4, showProgress: true },
+  dashboard: { step: 4, showProgress: false },
 };
 
 const OnboardingContent: React.FC = () => {
@@ -43,6 +45,8 @@ const OnboardingContent: React.FC = () => {
     switch (currentStep) {
       case 'role':
         return <RoleStep />;
+      case 'subjects':
+        return <SubjectsStep />;
       case 'profile':
         return <ProfileStep />;
       case 'profile-success':
@@ -58,7 +62,7 @@ const OnboardingContent: React.FC = () => {
     <OnboardingLayout
       showProgress={config.showProgress}
       currentStep={config.step}
-      totalSteps={3}
+      totalSteps={4}
     >
       {renderStep()}
     </OnboardingLayout>

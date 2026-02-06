@@ -9,7 +9,7 @@ const RoleStep: React.FC = () => {
   const handleRoleSelect = (role: UserRole) => {
     setUserRole(role);
     if (role === 'teacher') {
-      setCurrentStep('profile');
+      setCurrentStep('subjects');
     } else {
       // For learners, skip to dashboard (or learner-specific flow)
       setCurrentStep('dashboard');
