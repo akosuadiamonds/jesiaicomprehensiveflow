@@ -43,4 +43,5 @@ export type OnboardingStep =
   | 'payment'
   | 'dashboard'
   | 'student-join-class'
-  | 'student-plans';
+  | 'student-plans'
+  | 'student-payment';

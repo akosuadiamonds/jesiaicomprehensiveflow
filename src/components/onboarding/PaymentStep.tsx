@@ -3,12 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { ArrowLeft, CreditCard, Smartphone, Lock, Shield, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, CreditCard, Smartphone, Lock, Shield, CheckCircle2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const PaymentStep: React.FC = () => {
-  const { selectedPlan, setCurrentStep } = useOnboarding();
+  const { selectedPlan, setCurrentStep, userRole } = useOnboarding();
+  const { updateProfile, refreshProfile } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'momo'>('momo');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [momoNumber, setMomoNumber] = useState('');
   const [momoProvider, setMomoProvider] = useState('');
 
@@ -23,21 +27,65 @@ const PaymentStep: React.FC = () => {
 
   const handlePayment = async () => {
     setIsProcessing(true);
+    
     // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    // Payment successful - now save the plan
+    try {
+      const { error } = await updateProfile({ selected_plan: selectedPlan });
+      if (error) throw error;
+      
+      await refreshProfile();
+      setPaymentSuccess(true);
+      
+      toast.success('🎉 Payment Successful!', {
+        description: `Welcome to the ${currentPlan?.name} plan!`,
+      });
+      
+      // Show success state briefly before redirecting
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setCurrentStep('dashboard');
+    } catch (error) {
+      console.error('Error saving plan:', error);
+      toast.error('Payment processed but failed to update plan. Please contact support.');
+    }
+    
     setIsProcessing(false);
-    setCurrentStep('dashboard');
+  };
+
+  const handleBack = () => {
+    // Go back to appropriate plans step based on role
+    setCurrentStep(userRole === 'learner' ? 'student-plans' : 'plans');
   };
 
   if (!currentPlan) {
-    setCurrentStep('plans');
+    setCurrentStep(userRole === 'learner' ? 'student-plans' : 'plans');
     return null;
+  }
+
+  // Payment success state
+  if (paymentSuccess) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-6 animate-fade-in">
+        <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center">
+          <CheckCircle2 className="w-10 h-10 text-success" />
+        </div>
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-foreground">Payment Successful!</h2>
+          <p className="text-muted-foreground">
+            Setting up your {currentPlan.name} account...
+          </p>
+        </div>
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <button
-        onClick={() => setCurrentStep('plans')}
+        onClick={handleBack}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
