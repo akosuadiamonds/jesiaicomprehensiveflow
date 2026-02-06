@@ -9,7 +9,7 @@ const RoleStep: React.FC = () => {
   const handleRoleSelect = (role: UserRole) => {
     setUserRole(role);
     if (role === 'teacher') {
-      setCurrentStep('subjects');
+      setCurrentStep('profile');
     } else {
       // For learners, go to subject selection then join class flow
       setCurrentStep('subjects');
