@@ -67,6 +67,7 @@ const OnboardingStepSync: React.FC = () => {
         setCurrentStep('student-plans');
       }
     } else {
+      // Teacher flow
       if (!hasProfileDetails) {
         setCurrentStep('profile');
       } else if (!hasSubjects) {

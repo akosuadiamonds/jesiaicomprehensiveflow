@@ -25,6 +25,7 @@ const AuthPage: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gender, setGender] = useState('');
+  const [userRole, setUserRole] = useState<'teacher' | 'learner' | ''>('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -73,9 +74,18 @@ const AuthPage: React.FC = () => {
       return;
     }
 
+    if (!userRole) {
+      toast({
+        title: 'Role required',
+        description: 'Please select whether you are a teacher or student.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
-    const { error } = await signUp(signUpEmail, signUpPassword, firstName, lastName, gender);
+    const { error } = await signUp(signUpEmail, signUpPassword, firstName, lastName, gender, userRole);
 
     if (error) {
       toast({
@@ -190,6 +200,33 @@ const AuthPage: React.FC = () => {
                         <SelectItem value="other">Other</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>I am a...</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setUserRole('teacher')}
+                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                          userRole === 'teacher'
+                            ? 'border-primary bg-primary/10 text-primary font-semibold'
+                            : 'border-border hover:border-primary/50 text-muted-foreground'
+                        }`}
+                      >
+                        🎓 Teacher
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUserRole('learner')}
+                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                          userRole === 'learner'
+                            ? 'border-primary bg-primary/10 text-primary font-semibold'
+                            : 'border-border hover:border-primary/50 text-muted-foreground'
+                        }`}
+                      >
+                        📚 Student
+                      </button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>

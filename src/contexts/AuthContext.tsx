@@ -21,7 +21,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, firstName: string, lastName: string, gender: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, gender: string, userRole: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string, gender: string) => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string, gender: string, userRole: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       await supabase
         .from('profiles')
-        .update({ first_name: firstName, last_name: lastName, gender })
+        .update({ first_name: firstName, last_name: lastName, gender, user_role: userRole })
         .eq('user_id', data.user.id);
     }
 
