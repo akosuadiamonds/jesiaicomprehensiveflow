@@ -2,8 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Download, Loader2, RefreshCw, ArrowLeft, BookOpen, ClipboardList, Save, CheckCircle } from 'lucide-react';
-import { GeneratedExam } from '@/types/exam';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Download, Loader2, RefreshCw, ArrowLeft, BookOpen, ClipboardList, Save, CheckCircle, Edit3, X } from 'lucide-react';
+import { GeneratedExam, MCQQuestion, SectionBQuestion } from '@/types/exam';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,32 +16,78 @@ interface ExamDisplayProps {
   onRegenerate: () => void;
   onBack: () => void;
   isRegenerating: boolean;
+  onUpdateExam?: (exam: GeneratedExam) => void;
 }
 
-const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, isRegenerating }) => {
+const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, isRegenerating, onUpdateExam }) => {
   const [activeTab, setActiveTab] = useState<'exam' | 'marking'>('exam');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedExam, setEditedExam] = useState(exam);
   const contentRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
+  const currentExam = isEditing ? editedExam : exam;
+
+  const handleSaveEdits = () => {
+    onUpdateExam?.(editedExam);
+    setIsEditing(false);
+    toast({ title: 'Changes saved!' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditedExam(exam);
+    setIsEditing(false);
+  };
+
+  const updateMeta = (field: keyof GeneratedExam, value: any) => {
+    setEditedExam(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateSectionA = (index: number, field: keyof MCQQuestion, value: any) => {
+    setEditedExam(prev => ({
+      ...prev,
+      sectionA: prev.sectionA.map((q, i) => i === index ? { ...q, [field]: value } : q),
+    }));
+  };
+
+  const updateSectionAOption = (qIndex: number, oIndex: number, text: string) => {
+    setEditedExam(prev => ({
+      ...prev,
+      sectionA: prev.sectionA.map((q, qi) => {
+        if (qi !== qIndex) return q;
+        const newOpts = q.options.map((o, oi) => oi === oIndex ? { ...o, text } : o);
+        return { ...q, options: newOpts };
+      }),
+    }));
+  };
+
+  const updateSectionB = (index: number, field: keyof SectionBQuestion, value: any) => {
+    setEditedExam(prev => ({
+      ...prev,
+      sectionB: prev.sectionB.map((q, i) => i === index ? { ...q, [field]: value } : q),
+    }));
+  };
+
   const handleSave = async () => {
     if (!user) return;
+    const examToSave = isEditing ? editedExam : exam;
     setIsSaving(true);
     try {
       const { error } = await supabase.from('saved_exams' as any).insert({
         teacher_id: user.id,
-        school_name: exam.schoolName,
-        exam_name: exam.examName,
-        subject: exam.subject,
-        class: exam.class,
-        level: exam.level,
-        duration: exam.duration,
-        total_marks: exam.totalMarks,
-        section_a: JSON.parse(JSON.stringify(exam.sectionA)),
-        section_b: JSON.parse(JSON.stringify(exam.sectionB)),
+        school_name: examToSave.schoolName,
+        exam_name: examToSave.examName,
+        subject: examToSave.subject,
+        class: examToSave.class,
+        level: examToSave.level,
+        duration: examToSave.duration,
+        total_marks: examToSave.totalMarks,
+        section_a: JSON.parse(JSON.stringify(examToSave.sectionA)),
+        section_b: JSON.parse(JSON.stringify(examToSave.sectionB)),
         status: 'draft',
       } as any);
 
@@ -82,6 +130,20 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
         <Button variant="outline" onClick={onRegenerate} disabled={isRegenerating}>
           <RefreshCw className={`w-4 h-4 mr-2 ${isRegenerating ? 'animate-spin' : ''}`} /> Regenerate
         </Button>
+        {!isEditing ? (
+          <Button variant="outline" onClick={() => setIsEditing(true)}>
+            <Edit3 className="w-4 h-4 mr-2" /> Edit
+          </Button>
+        ) : (
+          <>
+            <Button variant="outline" onClick={handleSaveEdits}>
+              <Save className="w-4 h-4 mr-2" /> Save Edits
+            </Button>
+            <Button variant="ghost" onClick={handleCancelEdit}>
+              <X className="w-4 h-4 mr-2" /> Cancel
+            </Button>
+          </>
+        )}
         <Button variant="outline" onClick={handleDownload} disabled={isDownloading}>
           {isDownloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
           Download PDF
@@ -110,10 +172,27 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
             {/* Exam Header */}
             <Card>
               <CardContent className="pt-6 text-center space-y-1">
-                <h2 className="text-lg font-bold uppercase">{exam.schoolName}</h2>
-                <h3 className="text-base font-semibold">{exam.examName}</h3>
-                <p className="text-sm text-muted-foreground">{exam.subject} — {exam.class}</p>
-                <p className="text-sm text-muted-foreground">Duration: {exam.duration} | Total Marks: {exam.totalMarks}</p>
+                {isEditing ? (
+                  <div className="space-y-3 max-w-md mx-auto text-left">
+                    <Input value={editedExam.schoolName} onChange={e => updateMeta('schoolName', e.target.value)} placeholder="School Name" className="text-center font-bold" />
+                    <Input value={editedExam.examName} onChange={e => updateMeta('examName', e.target.value)} placeholder="Exam Name" className="text-center" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input value={editedExam.subject} onChange={e => updateMeta('subject', e.target.value)} placeholder="Subject" />
+                      <Input value={editedExam.class} onChange={e => updateMeta('class', e.target.value)} placeholder="Class" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input value={editedExam.duration} onChange={e => updateMeta('duration', e.target.value)} placeholder="Duration" />
+                      <Input type="number" value={editedExam.totalMarks} onChange={e => updateMeta('totalMarks', parseInt(e.target.value) || 0)} placeholder="Total Marks" />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="text-lg font-bold uppercase">{currentExam.schoolName}</h2>
+                    <h3 className="text-base font-semibold">{currentExam.examName}</h3>
+                    <p className="text-sm text-muted-foreground">{currentExam.subject} — {currentExam.class}</p>
+                    <p className="text-sm text-muted-foreground">Duration: {currentExam.duration} | Total Marks: {currentExam.totalMarks}</p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -124,14 +203,31 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
                 <p className="text-sm text-muted-foreground">Choose the correct answer for each question.</p>
               </CardHeader>
               <CardContent className="space-y-5">
-                {exam.sectionA.map((q) => (
+                {currentExam.sectionA.map((q, qi) => (
                   <div key={q.number} className="space-y-2">
-                    <p className="text-sm font-medium">{q.number}. {q.question}</p>
+                    {isEditing ? (
+                      <Textarea value={q.question} onChange={e => updateSectionA(qi, 'question', e.target.value)} className="text-sm font-medium" />
+                    ) : (
+                      <p className="text-sm font-medium">{q.number}. {q.question}</p>
+                    )}
                     <div className="grid grid-cols-2 gap-1 pl-4">
-                      {q.options.map((opt) => (
-                        <p key={opt.label} className="text-sm text-muted-foreground">{opt.label}. {opt.text}</p>
+                      {q.options.map((opt, oi) => (
+                        isEditing ? (
+                          <div key={opt.label} className="flex items-center gap-1">
+                            <span className="text-sm text-muted-foreground">{opt.label}.</span>
+                            <Input value={opt.text} onChange={e => updateSectionAOption(qi, oi, e.target.value)} className="h-8 text-sm" />
+                          </div>
+                        ) : (
+                          <p key={opt.label} className="text-sm text-muted-foreground">{opt.label}. {opt.text}</p>
+                        )
                       ))}
                     </div>
+                    {isEditing && (
+                      <div className="pl-4">
+                        <label className="text-xs text-muted-foreground">Correct Answer:</label>
+                        <Input value={q.correctAnswer} onChange={e => updateSectionA(qi, 'correctAnswer', e.target.value)} className="h-8 text-sm w-20 mt-1" />
+                      </div>
+                    )}
                   </div>
                 ))}
               </CardContent>
@@ -144,9 +240,20 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
                 <p className="text-sm text-muted-foreground">Answer all questions in the spaces provided.</p>
               </CardHeader>
               <CardContent className="space-y-4">
-                {exam.sectionB.map((q) => (
+                {currentExam.sectionB.map((q, qi) => (
                   <div key={q.number} className="space-y-1">
-                    <p className="text-sm font-medium">{q.number}. {q.question} <span className="text-muted-foreground">({q.marks} marks)</span></p>
+                    {isEditing ? (
+                      <div className="space-y-2">
+                        <Textarea value={q.question} onChange={e => updateSectionB(qi, 'question', e.target.value)} className="text-sm font-medium" />
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-muted-foreground">Marks:</label>
+                          <Input type="number" value={q.marks} onChange={e => updateSectionB(qi, 'marks', parseInt(e.target.value) || 0)} className="h-8 text-sm w-20" />
+                        </div>
+                        <Textarea value={q.expectedAnswer} onChange={e => updateSectionB(qi, 'expectedAnswer', e.target.value)} placeholder="Expected answer..." className="text-sm" />
+                      </div>
+                    ) : (
+                      <p className="text-sm font-medium">{q.number}. {q.question} <span className="text-muted-foreground">({q.marks} marks)</span></p>
+                    )}
                   </div>
                 ))}
               </CardContent>
@@ -157,9 +264,9 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
           <div className="space-y-6">
             <Card>
               <CardContent className="pt-6 text-center space-y-1">
-                <h2 className="text-lg font-bold uppercase">{exam.schoolName}</h2>
-                <h3 className="text-base font-semibold">{exam.examName} — Marking Scheme</h3>
-                <p className="text-sm text-muted-foreground">{exam.subject} — {exam.class}</p>
+                <h2 className="text-lg font-bold uppercase">{currentExam.schoolName}</h2>
+                <h3 className="text-base font-semibold">{currentExam.examName} — Marking Scheme</h3>
+                <p className="text-sm text-muted-foreground">{currentExam.subject} — {currentExam.class}</p>
               </CardContent>
             </Card>
 
@@ -169,7 +276,7 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
-                  {exam.sectionA.map((q) => (
+                  {currentExam.sectionA.map((q) => (
                     <div key={q.number} className="text-center p-2 bg-muted/50 rounded-md">
                       <p className="text-xs text-muted-foreground">{q.number}</p>
                       <p className="font-bold text-primary">{q.correctAnswer}</p>
@@ -184,7 +291,7 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
                 <CardTitle className="text-base">Section B: Expected Answers</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {exam.sectionB.map((q) => (
+                {currentExam.sectionB.map((q) => (
                   <div key={q.number} className="space-y-1 p-3 bg-muted/30 rounded-lg">
                     <p className="text-sm font-medium">{q.number}. {q.question} <span className="text-muted-foreground">({q.marks} marks)</span></p>
                     <Separator className="my-2" />

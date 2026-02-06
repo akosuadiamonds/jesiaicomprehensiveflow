@@ -90,6 +90,7 @@ const ExamWizard: React.FC<ExamWizardProps> = ({ onCancel }) => {
           setCompletedSteps([]);
         }}
         isRegenerating={isGenerating}
+        onUpdateExam={setGeneratedExam}
       />
     );
   }
