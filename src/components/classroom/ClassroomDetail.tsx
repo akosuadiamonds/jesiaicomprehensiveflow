@@ -6,22 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  ArrowLeft,
-  Users,
-  BookOpen,
-  FileText,
-  Bell,
-  Copy,
-  Plus,
-  Send,
-  School,
-  Briefcase,
-  ClipboardList,
+  ArrowLeft, Users, BookOpen, FileText, Bell, Copy, Plus, Send,
+  School, Briefcase, ClipboardList,
 } from 'lucide-react';
 import { Classroom, ClassroomAnnouncement, ClassroomResource } from '@/types/classroom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import ClassroomStudentsTab from './ClassroomStudentsTab';
 
 interface ClassroomDetailProps {
   classroom: Classroom;
@@ -256,28 +248,11 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
         </TabsContent>
 
         <TabsContent value="students" className="mt-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Students ({studentCount})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {studentCount === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No students yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Share your invite code <strong>{classroom.invite_code}</strong> with students to let them join.
-                  </p>
-                  <Button variant="outline" onClick={copyInviteCode}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Copy Invite Code
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-muted-foreground">Student list will appear here.</p>
-              )}
-            </CardContent>
-          </Card>
+          <ClassroomStudentsTab
+            classroomId={classroom.id}
+            inviteCode={classroom.invite_code}
+            maxStudents={classroom.max_students}
+          />
         </TabsContent>
 
         <TabsContent value="resources" className="mt-4">
