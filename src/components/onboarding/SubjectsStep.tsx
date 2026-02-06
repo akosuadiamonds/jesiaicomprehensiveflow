@@ -21,7 +21,7 @@ const SUBJECTS = [
 ];
 
 const SubjectsStep: React.FC = () => {
-  const { teacherProfile, setTeacherProfile, setCurrentStep } = useOnboarding();
+  const { teacherProfile, setTeacherProfile, setCurrentStep, userRole } = useOnboarding();
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
 
@@ -41,11 +41,18 @@ const SubjectsStep: React.FC = () => {
 
   const handleContinue = () => {
     if (selectedSubjects.length === 0) {
-      setError('Please select at least one subject you teach');
+      setError('Please select at least one subject');
       return;
     }
-    setCurrentStep('profile');
+    // Learners go to join class step, teachers go to profile
+    if (userRole === 'learner') {
+      setCurrentStep('student-join-class');
+    } else {
+      setCurrentStep('profile');
+    }
   };
+
+  const isLearner = userRole === 'learner';
 
   return (
     <div className="space-y-6">
@@ -64,10 +71,12 @@ const SubjectsStep: React.FC = () => {
           </div>
         </div>
         <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
-          What subjects do you teach?
+          {isLearner ? 'What subjects are you learning?' : 'What subjects do you teach?'}
         </h2>
         <p className="text-muted-foreground">
-          Select all the subjects you teach. This helps us personalize your lesson plans and resources.
+          {isLearner 
+            ? 'Select all the subjects you want to learn. This helps us personalize your learning experience.'
+            : 'Select all the subjects you teach. This helps us personalize your lesson plans and resources.'}
         </p>
       </div>
 
