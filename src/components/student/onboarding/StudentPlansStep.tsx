@@ -17,21 +17,27 @@ const StudentPlansStep: React.FC = () => {
     setSelectedPlan(planId);
     setIsLoading(true);
 
-    try {
-      const { error } = await updateProfile({ selected_plan: planId });
-      if (error) throw error;
+    if (planId === 'free') {
+      // Free plan - save immediately and go to dashboard
+      try {
+        const { error } = await updateProfile({ selected_plan: planId });
+        if (error) throw error;
 
-      toast.success(`🎉 Welcome to Jesi AI!`, {
-        description: `You're now on the ${studentPlans.find(p => p.id === planId)?.name} plan!`,
-      });
-      
-      setCurrentStep('dashboard');
-    } catch (error) {
-      console.error('Error updating plan:', error);
-      toast.error('Failed to save plan. Please try again.');
-    } finally {
-      setIsLoading(false);
+        toast.success(`🎉 Welcome to Jesi AI!`, {
+          description: `You're now on the ${studentPlans.find(p => p.id === planId)?.name} plan!`,
+        });
+        
+        setCurrentStep('dashboard');
+      } catch (error) {
+        console.error('Error updating plan:', error);
+        toast.error('Failed to save plan. Please try again.');
+      }
+    } else {
+      // Paid plans - go to payment first
+      setCurrentStep('payment');
     }
+    
+    setIsLoading(false);
   };
 
   return (

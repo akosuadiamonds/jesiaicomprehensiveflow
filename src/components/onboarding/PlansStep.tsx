@@ -68,16 +68,15 @@ const PlansStep: React.FC = () => {
   const handleSelectPlan = async (planId: PlanType) => {
     setIsLoading(true);
     setLoadingPlan(planId);
-    
-    // Save to database
-    await updateProfile({ selected_plan: planId });
-    await refreshProfile();
-    
     setSelectedPlan(planId);
     
     if (planId === 'free') {
+      // Free plan - save immediately and go to dashboard
+      await updateProfile({ selected_plan: planId });
+      await refreshProfile();
       setCurrentStep('dashboard');
     } else {
+      // Paid plans - go to payment first, don't save plan yet
       setCurrentStep('payment');
     }
     

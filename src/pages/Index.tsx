@@ -15,7 +15,7 @@ import StudentJoinClassStep from '@/components/student/onboarding/StudentJoinCla
 import StudentPlansStep from '@/components/student/onboarding/StudentPlansStep';
 import { Loader2 } from 'lucide-react';
 
-const stepConfig: Record<string, { step: number; showProgress: boolean }> = {
+const stepConfig: Record<string, { step: number; showProgress: boolean; totalSteps?: number }> = {
   role: { step: 1, showProgress: true },
   subjects: { step: 2, showProgress: true },
   profile: { step: 3, showProgress: true },
@@ -23,8 +23,9 @@ const stepConfig: Record<string, { step: number; showProgress: boolean }> = {
   plans: { step: 4, showProgress: true },
   payment: { step: 4, showProgress: true },
   dashboard: { step: 4, showProgress: false },
-  'student-join-class': { step: 2, showProgress: true },
-  'student-plans': { step: 3, showProgress: true },
+  'student-join-class': { step: 2, showProgress: true, totalSteps: 4 },
+  'student-plans': { step: 3, showProgress: true, totalSteps: 4 },
+  'student-payment': { step: 4, showProgress: true, totalSteps: 4 },
 };
 
 // Component that syncs onboarding state with profile from database
