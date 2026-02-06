@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { ArrowLeft, ArrowRight, BookOpen, Search } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, ArrowRight, BookOpen, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 const SUBJECTS = [
@@ -22,8 +23,10 @@ const SUBJECTS = [
 
 const SubjectsStep: React.FC = () => {
   const { teacherProfile, setTeacherProfile, setCurrentStep, userRole } = useOnboarding();
+  const { updateProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedSubjects = teacherProfile.subjects || [];
 
@@ -39,11 +42,22 @@ const SubjectsStep: React.FC = () => {
     if (error) setError('');
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedSubjects.length === 0) {
       setError('Please select at least one subject');
       return;
     }
+    
+    setIsSubmitting(true);
+    // Save subjects to database
+    const { error: saveError } = await updateProfile({ subjects: selectedSubjects });
+    if (saveError) {
+      setError('Failed to save subjects. Please try again.');
+      setIsSubmitting(false);
+      return;
+    }
+    
+    setIsSubmitting(false);
     // Learners go to join class step, teachers go to profile success
     if (userRole === 'learner') {
       setCurrentStep('student-join-class');
@@ -152,10 +166,13 @@ const SubjectsStep: React.FC = () => {
         className="w-full"
         size="lg"
         variant="hero"
-        disabled={selectedSubjects.length === 0}
+        disabled={selectedSubjects.length === 0 || isSubmitting}
       >
+        {isSubmitting ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : null}
         Continue
-        <ArrowRight className="w-4 h-4 ml-2" />
+        {!isSubmitting && <ArrowRight className="w-4 h-4 ml-2" />}
       </Button>
 
       <p className="text-xs text-center text-muted-foreground">
