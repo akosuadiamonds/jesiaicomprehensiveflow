@@ -16,7 +16,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useApp } from '@/contexts/AppContext';
+import { useLessonPlans } from '@/hooks/useLessonPlans';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { 
   ChartContainer, 
@@ -43,7 +43,7 @@ import { Progress } from '@/components/ui/progress';
 
 const InsightsPage: React.FC = () => {
   const { profile } = useAuth();
-  const { savedLessonPlans } = useApp();
+  const { plans: savedLessonPlans } = useLessonPlans();
   const { classrooms, schoolClassrooms, privateClassrooms } = useClassrooms();
 
   // Calculate metrics

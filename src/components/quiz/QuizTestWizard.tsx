@@ -7,14 +7,17 @@ import QuizTestDisplay from './QuizTestDisplay';
 import QuizWizardProgress, { QuizWizardStep } from './QuizWizardProgress';
 import { QuizTestFormData, QuizTestType, GeneratedQuizTest } from '@/types/quiz';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface QuizTestWizardProps {
   type: QuizTestType;
   onCancel: () => void;
+  onSaved?: () => void;
 }
 
-const QuizTestWizard: React.FC<QuizTestWizardProps> = ({ type, onCancel }) => {
+const QuizTestWizard: React.FC<QuizTestWizardProps> = ({ type, onCancel, onSaved }) => {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<QuizWizardStep>('info');
   const [completedSteps, setCompletedSteps] = useState<QuizWizardStep[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -63,8 +66,34 @@ const QuizTestWizard: React.FC<QuizTestWizardProps> = ({ type, onCancel }) => {
 
       if (error) throw error;
 
+      const accessCode = formData.isLocked ? (formData.accessCode || generateAccessCode()) : '';
+
+      // Save to database immediately
+      const { data: savedData, error: saveError } = await supabase
+        .from('saved_quizzes' as any)
+        .insert({
+          teacher_id: user?.id,
+          type: formData.type,
+          title: formData.title,
+          subject: formData.subject,
+          class: formData.class,
+          level: formData.level,
+          duration: formData.duration,
+          question_formats: formData.questionFormats,
+          dok_level: formData.dokLevel,
+          questions: data.questions,
+          total_marks: data.totalMarks,
+          is_locked: formData.isLocked,
+          access_code: accessCode,
+          status: 'draft',
+        } as any)
+        .select('id')
+        .single();
+
+      const quizId = saveError ? crypto.randomUUID() : (savedData as any)?.id;
+
       const quiz: GeneratedQuizTest = {
-        id: crypto.randomUUID(),
+        id: quizId,
         type: formData.type,
         title: formData.title,
         subject: formData.subject,
@@ -76,14 +105,14 @@ const QuizTestWizard: React.FC<QuizTestWizardProps> = ({ type, onCancel }) => {
         questions: data.questions,
         totalMarks: data.totalMarks,
         isLocked: formData.isLocked,
-        accessCode: formData.isLocked ? (formData.accessCode || generateAccessCode()) : '',
-        assignedClassroomId: formData.assignedClassroomId,
+        accessCode,
+        assignedClassroomId: '',
         status: 'draft',
         createdAt: new Date(),
       };
 
       setGeneratedQuiz(quiz);
-      toast.success(`${type === 'quiz' ? 'Quiz' : 'Test'} generated successfully!`);
+      toast.success(`${type === 'quiz' ? 'Quiz' : 'Test'} generated and saved!`);
     } catch (error) {
       console.error('Error generating quiz/test:', error);
       toast.error('Failed to generate. Please try again.');
@@ -92,18 +121,29 @@ const QuizTestWizard: React.FC<QuizTestWizardProps> = ({ type, onCancel }) => {
     }
   };
 
+  const handleUpdateQuiz = async (updated: GeneratedQuizTest) => {
+    setGeneratedQuiz(updated);
+    // Persist changes to DB
+    const updates: any = {
+      questions: updated.questions,
+      status: updated.status,
+      assigned_classroom_id: updated.assignedClassroomId || null,
+      total_marks: updated.totalMarks,
+    };
+    await supabase.from('saved_quizzes' as any).update(updates as any).eq('id', updated.id);
+  };
+
   if (generatedQuiz) {
     return (
       <QuizTestDisplay
         quiz={generatedQuiz}
         onRegenerate={handleGenerate}
         onBack={() => {
-          setGeneratedQuiz(null);
-          setCurrentStep('info');
-          setCompletedSteps([]);
+          onSaved?.();
+          onCancel();
         }}
         isRegenerating={isGenerating}
-        onUpdateQuiz={setGeneratedQuiz}
+        onUpdateQuiz={handleUpdateQuiz}
       />
     );
   }

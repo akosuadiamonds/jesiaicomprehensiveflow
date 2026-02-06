@@ -392,6 +392,138 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_lesson_plans: {
+        Row: {
+          class: string
+          class_size: number
+          content_standard: string
+          core_competencies: string
+          created_at: string
+          duration: number
+          id: string
+          indicator: string
+          keywords: Json
+          lesson_note: string
+          performance_indicator: string
+          phases: Json
+          references_text: string
+          status: string
+          strand: string
+          sub_strand: string
+          subject: string
+          teacher_id: string
+          teaching_resources: string
+          updated_at: string
+        }
+        Insert: {
+          class: string
+          class_size?: number
+          content_standard?: string
+          core_competencies?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          indicator?: string
+          keywords?: Json
+          lesson_note?: string
+          performance_indicator?: string
+          phases?: Json
+          references_text?: string
+          status?: string
+          strand?: string
+          sub_strand?: string
+          subject: string
+          teacher_id: string
+          teaching_resources?: string
+          updated_at?: string
+        }
+        Update: {
+          class?: string
+          class_size?: number
+          content_standard?: string
+          core_competencies?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          indicator?: string
+          keywords?: Json
+          lesson_note?: string
+          performance_indicator?: string
+          phases?: Json
+          references_text?: string
+          status?: string
+          strand?: string
+          sub_strand?: string
+          subject?: string
+          teacher_id?: string
+          teaching_resources?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      saved_quizzes: {
+        Row: {
+          access_code: string
+          assigned_classroom_id: string | null
+          class: string
+          created_at: string
+          dok_level: number
+          duration: number
+          id: string
+          is_locked: boolean
+          level: string
+          question_formats: string[]
+          questions: Json
+          status: string
+          subject: string
+          teacher_id: string
+          title: string
+          total_marks: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          access_code?: string
+          assigned_classroom_id?: string | null
+          class: string
+          created_at?: string
+          dok_level?: number
+          duration?: number
+          id?: string
+          is_locked?: boolean
+          level?: string
+          question_formats?: string[]
+          questions?: Json
+          status?: string
+          subject: string
+          teacher_id: string
+          title: string
+          total_marks?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string
+          assigned_classroom_id?: string | null
+          class?: string
+          created_at?: string
+          dok_level?: number
+          duration?: number
+          id?: string
+          is_locked?: boolean
+          level?: string
+          question_formats?: string[]
+          questions?: Json
+          status?: string
+          subject?: string
+          teacher_id?: string
+          title?: string
+          total_marks?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_coins: {
         Row: {
           coins: number

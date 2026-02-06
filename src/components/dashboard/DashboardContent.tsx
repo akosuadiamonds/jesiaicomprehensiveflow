@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
+import { useLessonPlans } from '@/hooks/useLessonPlans';
 import UpgradePlanModal from '@/components/upgrade/UpgradePlanModal';
 import { 
   FileText, 
@@ -14,7 +15,8 @@ import {
 
 const DashboardContent: React.FC = () => {
   const { profile, updateProfile } = useAuth();
-  const { setCurrentPage, savedLessonPlans } = useApp();
+  const { setCurrentPage } = useApp();
+  const { plans: savedLessonPlans } = useLessonPlans();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const selectedPlan = profile?.selected_plan || 'free';
