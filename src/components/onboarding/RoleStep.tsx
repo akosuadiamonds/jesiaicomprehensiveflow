@@ -1,19 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { GraduationCap, BookOpen, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { GraduationCap, BookOpen, ArrowRight, Loader2 } from 'lucide-react';
 import { UserRole } from '@/types/onboarding';
 
 const RoleStep: React.FC = () => {
   const { userRole, setUserRole, setCurrentStep } = useOnboarding();
+  const { updateProfile } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRoleSelect = (role: UserRole) => {
+  const handleRoleSelect = async (role: UserRole) => {
+    setIsSubmitting(true);
     setUserRole(role);
+    
+    // Save role to database
+    await updateProfile({ user_role: role });
+    
     if (role === 'teacher') {
       setCurrentStep('profile');
     } else {
-      // For learners, go to subject selection then join class flow
       setCurrentStep('subjects');
     }
+    setIsSubmitting(false);
   };
 
   return (

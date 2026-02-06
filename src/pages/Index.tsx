@@ -32,19 +32,20 @@ const stepConfig: Record<string, { step: number; showProgress: boolean; totalSte
 const OnboardingStepSync: React.FC = () => {
   const { profile } = useAuth();
   const { setCurrentStep, setUserRole, setTeacherProfile, currentStep } = useOnboarding();
+  const hasSynced = React.useRef(false);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || hasSynced.current) return;
+    hasSynced.current = true;
 
-    // Always sync role from profile (overwrite localStorage)
+    // Sync role from profile
     if (profile.user_role) {
       setUserRole(profile.user_role as 'teacher' | 'learner');
     } else {
       setUserRole(null);
     }
 
-    // Always sync subjects from profile (overwrite localStorage)
-    // This ensures the database is the source of truth
+    // Sync subjects from profile
     setTeacherProfile({ 
       subjects: profile.subjects || [],
       phoneNumber: profile.phone_number || '',
@@ -57,18 +58,15 @@ const OnboardingStepSync: React.FC = () => {
     const hasSubjects = profile.subjects && profile.subjects.length > 0;
     const hasSelectedPlan = profile.selected_plan !== null;
 
-    // Only update step if we're not already on a later step
     if (!hasRole) {
       setCurrentStep('role');
     } else if (profile.user_role === 'learner') {
-      // Learner flow: role -> subjects -> join class -> plans
       if (!hasSubjects) {
         setCurrentStep('subjects');
       } else if (!hasSelectedPlan) {
         setCurrentStep('student-plans');
       }
     } else {
-      // Teacher flow: role -> profile -> subjects -> profile-success -> plans
       if (!hasProfileDetails) {
         setCurrentStep('profile');
       } else if (!hasSubjects) {
@@ -77,7 +75,7 @@ const OnboardingStepSync: React.FC = () => {
         setCurrentStep('plans');
       }
     }
-  }, [profile?.user_id]); // Only run when user changes, not on every profile update
+  }, [profile?.user_id]);
 
   return null;
 };
