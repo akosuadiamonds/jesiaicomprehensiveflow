@@ -44,11 +44,10 @@ const ProfileStep: React.FC = () => {
       const { error } = await updateProfile({
         phone_number: teacherProfile.phoneNumber,
         school_name: teacherProfile.schoolName,
-        subjects: teacherProfile.subjects,
       });
 
       if (!error) {
-        setCurrentStep('profile-success');
+        setCurrentStep('subjects');
       }
       setIsSubmitting(false);
     }
@@ -57,7 +56,7 @@ const ProfileStep: React.FC = () => {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => setCurrentStep('subjects')}
+        onClick={() => setCurrentStep('role')}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -73,22 +72,8 @@ const ProfileStep: React.FC = () => {
         </p>
       </div>
 
-      {/* Selected subjects summary */}
-      {teacherProfile.subjects && teacherProfile.subjects.length > 0 && (
-        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-          <p className="text-sm text-muted-foreground mb-2">Teaching subjects:</p>
-          <div className="flex flex-wrap gap-2">
-            {teacherProfile.subjects.map((subject) => (
-              <span
-                key={subject}
-                className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium"
-              >
-                {subject}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+
+
 
       <div className="space-y-4">
         <div className="space-y-2">

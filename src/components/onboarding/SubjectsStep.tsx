@@ -44,11 +44,11 @@ const SubjectsStep: React.FC = () => {
       setError('Please select at least one subject');
       return;
     }
-    // Learners go to join class step, teachers go to profile
+    // Learners go to join class step, teachers go to profile success
     if (userRole === 'learner') {
       setCurrentStep('student-join-class');
     } else {
-      setCurrentStep('profile');
+      setCurrentStep('profile-success');
     }
   };
 
@@ -57,7 +57,7 @@ const SubjectsStep: React.FC = () => {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => setCurrentStep('role')}
+        onClick={() => setCurrentStep(userRole === 'teacher' ? 'profile' : 'role')}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />

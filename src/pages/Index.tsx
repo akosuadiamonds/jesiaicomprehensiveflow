@@ -17,8 +17,8 @@ import { Loader2 } from 'lucide-react';
 
 const stepConfig: Record<string, { step: number; showProgress: boolean; totalSteps?: number }> = {
   role: { step: 1, showProgress: true },
-  subjects: { step: 2, showProgress: true },
-  profile: { step: 3, showProgress: true },
+  profile: { step: 2, showProgress: true },
+  subjects: { step: 3, showProgress: true },
   'profile-success': { step: 3, showProgress: true },
   plans: { step: 4, showProgress: true },
   payment: { step: 4, showProgress: true },
@@ -53,25 +53,26 @@ const OnboardingStepSync: React.FC = () => {
 
     // Determine the correct step based on profile completion
     const hasRole = !!profile.user_role;
-    const hasSubjects = profile.subjects && profile.subjects.length > 0;
     const hasProfileDetails = profile.phone_number && profile.school_name;
+    const hasSubjects = profile.subjects && profile.subjects.length > 0;
     const hasSelectedPlan = profile.selected_plan !== null;
 
     // Only update step if we're not already on a later step
-    // This prevents overriding manual navigation
     if (!hasRole) {
       setCurrentStep('role');
-    } else if (!hasSubjects) {
-      setCurrentStep('subjects');
     } else if (profile.user_role === 'learner') {
-      // Learner flow: after subjects, go to join class then plans
-      if (!hasSelectedPlan) {
+      // Learner flow: role -> subjects -> join class -> plans
+      if (!hasSubjects) {
+        setCurrentStep('subjects');
+      } else if (!hasSelectedPlan) {
         setCurrentStep('student-plans');
       }
     } else {
-      // Teacher flow: subjects -> profile -> plans
+      // Teacher flow: role -> profile -> subjects -> profile-success -> plans
       if (!hasProfileDetails) {
         setCurrentStep('profile');
+      } else if (!hasSubjects) {
+        setCurrentStep('subjects');
       } else if (!hasSelectedPlan) {
         setCurrentStep('plans');
       }
