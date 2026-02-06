@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Lock, Sparkles, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, Lock, Sparkles, Loader2 } from 'lucide-react';
 import { QuizTestFormData } from '@/types/quiz';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface Props {
   formData: QuizTestFormData;
@@ -19,18 +16,7 @@ interface Props {
 }
 
 const QuizSettingsStep: React.FC<Props> = ({ formData, onChange, onGenerate, onBack, isGenerating }) => {
-  const { user } = useAuth();
-  const [classrooms, setClassrooms] = useState<{ id: string; name: string; subject: string }[]>([]);
   const label = formData.type === 'quiz' ? 'Quiz' : 'Test';
-
-  useEffect(() => {
-    const fetchClassrooms = async () => {
-      if (!user) return;
-      const { data } = await supabase.from('classrooms').select('id, name, subject').eq('teacher_id', user.id);
-      if (data) setClassrooms(data);
-    };
-    fetchClassrooms();
-  }, [user]);
 
   const handleLockToggle = (checked: boolean) => {
     onChange('isLocked', checked);
@@ -50,7 +36,7 @@ const QuizSettingsStep: React.FC<Props> = ({ formData, onChange, onGenerate, onB
           <Lock className="w-6 h-6 text-primary" />
         </div>
         <CardTitle className="text-2xl">{label} Settings</CardTitle>
-        <CardDescription>Configure access control and assign to a class</CardDescription>
+        <CardDescription>Configure access control for your {label.toLowerCase()}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
         {/* Lock Quiz */}
@@ -73,20 +59,6 @@ const QuizSettingsStep: React.FC<Props> = ({ formData, onChange, onGenerate, onB
             <p className="text-xs text-muted-foreground">Share this code with students before they can access the {label.toLowerCase()}</p>
           </div>
         )}
-
-        {/* Assign to Classroom */}
-        <div className="space-y-2">
-          <Label className="text-base flex items-center gap-2"><Users className="w-4 h-4" /> Assign to Classroom (Optional)</Label>
-          <Select value={formData.assignedClassroomId} onValueChange={(v) => onChange('assignedClassroomId', v)}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Select a classroom" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No classroom</SelectItem>
-              {classrooms.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.name} ({c.subject})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
 
         {/* Summary */}
         <div className="p-4 bg-muted/50 rounded-lg space-y-1">
