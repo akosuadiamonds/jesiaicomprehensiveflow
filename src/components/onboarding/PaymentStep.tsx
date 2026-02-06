@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,6 +6,29 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, CreditCard, Smartphone, Lock, Shield, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { z } from 'zod';
+
+// Validation schemas
+const momoSchema = z.object({
+  provider: z.string().min(1, 'Please select a provider'),
+  number: z.string()
+    .min(10, 'Phone number must be at least 10 digits')
+    .max(15, 'Phone number is too long')
+    .regex(/^[0-9\s]+$/, 'Please enter a valid phone number'),
+});
+
+const cardSchema = z.object({
+  cardNumber: z.string()
+    .min(16, 'Card number must be 16 digits')
+    .max(19, 'Card number is too long')
+    .regex(/^[0-9\s]+$/, 'Please enter a valid card number'),
+  expiry: z.string()
+    .regex(/^(0[1-9]|1[0-2])\/([0-9]{2})$/, 'Please enter a valid expiry (MM/YY)'),
+  cvv: z.string()
+    .min(3, 'CVV must be 3 digits')
+    .max(4, 'CVV must be 3-4 digits')
+    .regex(/^[0-9]+$/, 'Please enter a valid CVV'),
+});
 
 const PaymentStep: React.FC = () => {
   const { selectedPlan, setCurrentStep, userRole } = useOnboarding();
@@ -15,6 +38,10 @@ const PaymentStep: React.FC = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [momoNumber, setMomoNumber] = useState('');
   const [momoProvider, setMomoProvider] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const planDetails = {
     pro: { name: 'Pro', price: 25, tokens: '30,000' },
@@ -25,7 +52,50 @@ const PaymentStep: React.FC = () => {
     ? planDetails[selectedPlan] 
     : null;
 
+  // Validate form and compute if it's valid
+  const isFormValid = useMemo(() => {
+    if (paymentMethod === 'momo') {
+      const result = momoSchema.safeParse({ provider: momoProvider, number: momoNumber });
+      return result.success;
+    } else {
+      const result = cardSchema.safeParse({ cardNumber, expiry, cvv });
+      return result.success;
+    }
+  }, [paymentMethod, momoProvider, momoNumber, cardNumber, expiry, cvv]);
+
+  const validateAndSetErrors = (): boolean => {
+    setErrors({});
+    
+    if (paymentMethod === 'momo') {
+      const result = momoSchema.safeParse({ provider: momoProvider, number: momoNumber });
+      if (!result.success) {
+        const fieldErrors: Record<string, string> = {};
+        result.error.errors.forEach(err => {
+          fieldErrors[err.path[0] as string] = err.message;
+        });
+        setErrors(fieldErrors);
+        return false;
+      }
+    } else {
+      const result = cardSchema.safeParse({ cardNumber, expiry, cvv });
+      if (!result.success) {
+        const fieldErrors: Record<string, string> = {};
+        result.error.errors.forEach(err => {
+          fieldErrors[err.path[0] as string] = err.message;
+        });
+        setErrors(fieldErrors);
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handlePayment = async () => {
+    if (!validateAndSetErrors()) {
+      toast.error('Please fix the errors before proceeding');
+      return;
+    }
+    
     setIsProcessing(true);
     
     // Simulate payment processing
@@ -154,7 +224,10 @@ const PaymentStep: React.FC = () => {
               {['MTN', 'Vodafone', 'AirtelTigo'].map((provider) => (
                 <button
                   key={provider}
-                  onClick={() => setMomoProvider(provider)}
+                  onClick={() => {
+                    setMomoProvider(provider);
+                    setErrors(prev => ({ ...prev, provider: '' }));
+                  }}
                   className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     momoProvider === provider
                       ? 'border-primary bg-primary/5 text-primary'
@@ -165,6 +238,9 @@ const PaymentStep: React.FC = () => {
                 </button>
               ))}
             </div>
+            {errors.provider && (
+              <p className="text-sm text-destructive">{errors.provider}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="momoNumber">Mobile Money Number</Label>
@@ -173,8 +249,15 @@ const PaymentStep: React.FC = () => {
               type="tel"
               placeholder="0244 123 4567"
               value={momoNumber}
-              onChange={(e) => setMomoNumber(e.target.value)}
+              onChange={(e) => {
+                setMomoNumber(e.target.value);
+                setErrors(prev => ({ ...prev, number: '' }));
+              }}
+              className={errors.number ? 'border-destructive' : ''}
             />
+            {errors.number && (
+              <p className="text-sm text-destructive">{errors.number}</p>
+            )}
           </div>
         </div>
       ) : (
@@ -184,7 +267,16 @@ const PaymentStep: React.FC = () => {
             <Input
               id="cardNumber"
               placeholder="1234 5678 9012 3456"
+              value={cardNumber}
+              onChange={(e) => {
+                setCardNumber(e.target.value);
+                setErrors(prev => ({ ...prev, cardNumber: '' }));
+              }}
+              className={errors.cardNumber ? 'border-destructive' : ''}
             />
+            {errors.cardNumber && (
+              <p className="text-sm text-destructive">{errors.cardNumber}</p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -192,7 +284,16 @@ const PaymentStep: React.FC = () => {
               <Input
                 id="expiry"
                 placeholder="MM/YY"
+                value={expiry}
+                onChange={(e) => {
+                  setExpiry(e.target.value);
+                  setErrors(prev => ({ ...prev, expiry: '' }));
+                }}
+                className={errors.expiry ? 'border-destructive' : ''}
               />
+              {errors.expiry && (
+                <p className="text-sm text-destructive">{errors.expiry}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="cvv">CVV</Label>
@@ -200,7 +301,16 @@ const PaymentStep: React.FC = () => {
                 id="cvv"
                 type="password"
                 placeholder="123"
+                value={cvv}
+                onChange={(e) => {
+                  setCvv(e.target.value);
+                  setErrors(prev => ({ ...prev, cvv: '' }));
+                }}
+                className={errors.cvv ? 'border-destructive' : ''}
               />
+              {errors.cvv && (
+                <p className="text-sm text-destructive">{errors.cvv}</p>
+              )}
             </div>
           </div>
         </div>
@@ -216,7 +326,7 @@ const PaymentStep: React.FC = () => {
 
       <Button 
         onClick={handlePayment}
-        disabled={isProcessing}
+        disabled={isProcessing || !isFormValid}
         className="w-full" 
         size="lg"
         variant="hero"
