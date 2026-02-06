@@ -182,6 +182,120 @@ export type Database = {
         }
         Relationships: []
       }
+      coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          source: string
+          student_id: string
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          source: string
+          student_id: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          source?: string
+          student_id?: string
+          transaction_type?: string
+        }
+        Relationships: []
+      }
+      learning_progress: {
+        Row: {
+          created_at: string
+          id: string
+          last_accessed_at: string | null
+          lessons_completed: number
+          progress_percent: number
+          student_id: string
+          subject: string
+          topic: string
+          total_lessons: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_accessed_at?: string | null
+          lessons_completed?: number
+          progress_percent?: number
+          student_id: string
+          subject: string
+          topic: string
+          total_lessons?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_accessed_at?: string | null
+          lessons_completed?: number
+          progress_percent?: number
+          student_id?: string
+          subject?: string
+          topic?: string
+          total_lessons?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      practice_sessions: {
+        Row: {
+          completed_at: string | null
+          correct_answers: number
+          created_at: string
+          difficulty_level: string | null
+          id: string
+          questions_data: Json | null
+          session_type: string
+          student_id: string
+          subject: string
+          time_spent_seconds: number | null
+          topic: string
+          total_questions: number
+        }
+        Insert: {
+          completed_at?: string | null
+          correct_answers?: number
+          created_at?: string
+          difficulty_level?: string | null
+          id?: string
+          questions_data?: Json | null
+          session_type?: string
+          student_id: string
+          subject: string
+          time_spent_seconds?: number | null
+          topic: string
+          total_questions?: number
+        }
+        Update: {
+          completed_at?: string | null
+          correct_answers?: number
+          created_at?: string
+          difficulty_level?: string | null
+          id?: string
+          questions_data?: Json | null
+          session_type?: string
+          student_id?: string
+          subject?: string
+          time_spent_seconds?: number | null
+          topic?: string
+          total_questions?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -224,6 +338,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           user_role?: string | null
+        }
+        Relationships: []
+      }
+      student_coins: {
+        Row: {
+          coins: number
+          created_at: string
+          id: string
+          last_login_date: string | null
+          streak_days: number
+          student_id: string
+          total_earned: number
+          updated_at: string
+        }
+        Insert: {
+          coins?: number
+          created_at?: string
+          id?: string
+          last_login_date?: string | null
+          streak_days?: number
+          student_id: string
+          total_earned?: number
+          updated_at?: string
+        }
+        Update: {
+          coins?: number
+          created_at?: string
+          id?: string
+          last_login_date?: string | null
+          streak_days?: number
+          student_id?: string
+          total_earned?: number
+          updated_at?: string
         }
         Relationships: []
       }

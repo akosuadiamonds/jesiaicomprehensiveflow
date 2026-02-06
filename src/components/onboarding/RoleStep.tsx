@@ -11,8 +11,8 @@ const RoleStep: React.FC = () => {
     if (role === 'teacher') {
       setCurrentStep('subjects');
     } else {
-      // For learners, skip to dashboard (or learner-specific flow)
-      setCurrentStep('dashboard');
+      // For learners, go to subject selection then join class flow
+      setCurrentStep('subjects');
     }
   };
 

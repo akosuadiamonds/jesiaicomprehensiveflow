@@ -10,6 +10,9 @@ import ProfileSuccessStep from '@/components/onboarding/ProfileSuccessStep';
 import PlansStep from '@/components/onboarding/PlansStep';
 import PaymentStep from '@/components/onboarding/PaymentStep';
 import MainApp from '@/components/MainApp';
+import StudentApp from '@/components/student/StudentApp';
+import StudentJoinClassStep from '@/components/student/onboarding/StudentJoinClassStep';
+import StudentPlansStep from '@/components/student/onboarding/StudentPlansStep';
 import { Loader2 } from 'lucide-react';
 
 const stepConfig: Record<string, { step: number; showProgress: boolean }> = {
@@ -20,6 +23,8 @@ const stepConfig: Record<string, { step: number; showProgress: boolean }> = {
   plans: { step: 4, showProgress: true },
   payment: { step: 4, showProgress: true },
   dashboard: { step: 4, showProgress: false },
+  'student-join-class': { step: 2, showProgress: true },
+  'student-plans': { step: 3, showProgress: true },
 };
 
 const OnboardingContent: React.FC = () => {
@@ -30,6 +35,15 @@ const OnboardingContent: React.FC = () => {
   // Dashboard has its own layout with sidebar
   if (currentStep === 'dashboard') {
     return <MainApp />;
+  }
+
+  // Student plans step needs wider layout
+  if (currentStep === 'student-plans') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <StudentPlansStep />
+      </div>
+    );
   }
 
   // Plans step needs wider layout
@@ -53,16 +67,21 @@ const OnboardingContent: React.FC = () => {
         return <ProfileSuccessStep />;
       case 'payment':
         return <PaymentStep />;
+      case 'student-join-class':
+        return <StudentJoinClassStep />;
       default:
         return <RoleStep />;
     }
   };
 
+  // Student onboarding uses 3 steps, teacher uses 4
+  const totalSteps = currentStep.startsWith('student') ? 3 : 4;
+
   return (
     <OnboardingLayout
       showProgress={config.showProgress}
       currentStep={config.step}
-      totalSteps={4}
+      totalSteps={totalSteps}
     >
       {renderStep()}
     </OnboardingLayout>
@@ -97,10 +116,12 @@ const AuthenticatedApp: React.FC = () => {
     );
   }
 
-  // Fully authenticated and onboarded - show main app
+  // Fully authenticated and onboarded - show appropriate app based on role
+  const isLearner = profile?.user_role === 'learner';
+  
   return (
     <OnboardingProvider>
-      <MainApp />
+      {isLearner ? <StudentApp /> : <MainApp />}
     </OnboardingProvider>
   );
 };
