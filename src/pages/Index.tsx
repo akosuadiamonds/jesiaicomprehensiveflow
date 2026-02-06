@@ -111,6 +111,15 @@ const OnboardingContent: React.FC = () => {
     );
   }
 
+  // Payment step for paid plans
+  if (currentStep === 'payment' || currentStep === 'student-payment') {
+    return (
+      <OnboardingLayout showProgress={true} currentStep={4} totalSteps={4}>
+        <OnboardingStepSync />
+        <PaymentStep />
+      </OnboardingLayout>
+    );
+  }
   const renderStep = () => {
     switch (currentStep) {
       case 'role':
@@ -121,8 +130,6 @@ const OnboardingContent: React.FC = () => {
         return <ProfileStep />;
       case 'profile-success':
         return <ProfileSuccessStep />;
-      case 'payment':
-        return <PaymentStep />;
       case 'student-join-class':
         return <StudentJoinClassStep />;
       default:
