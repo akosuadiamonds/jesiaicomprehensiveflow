@@ -5,10 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import ExamWizard from '@/components/exam/ExamWizard';
+import QuizTestWizard from '@/components/quiz/QuizTestWizard';
+import { QuizTestType } from '@/types/quiz';
 
 const TestPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('create');
   const [showExamWizard, setShowExamWizard] = useState(false);
+  const [showQuizWizard, setShowQuizWizard] = useState<QuizTestType | null>(null);
 
   // Mock data for recent tests
   const recentTests = [
@@ -16,6 +19,14 @@ const TestPage: React.FC = () => {
     { id: 2, title: 'English - Grammar Test', type: 'test', questions: 25, class: 'Class 5', date: '2025-02-01', status: 'draft' },
     { id: 3, title: 'Science - Term 1 Exam', type: 'exam', questions: 50, class: 'Class 6', date: '2025-01-28', status: 'completed' },
   ];
+
+  if (showQuizWizard) {
+    return (
+      <div className="container mx-auto px-4 lg:px-8 py-8">
+        <QuizTestWizard type={showQuizWizard} onCancel={() => setShowQuizWizard(null)} />
+      </div>
+    );
+  }
 
   if (showExamWizard) {
     return (
@@ -54,7 +65,8 @@ const TestPage: React.FC = () => {
           {/* Test Type Selection */}
           <div className="grid md:grid-cols-2 gap-4">
             {/* Quick Quiz Card */}
-            <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group">
+            <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
+              onClick={() => setShowQuizWizard('quiz')}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-3 group-hover:bg-accent/20 transition-colors">
@@ -84,7 +96,8 @@ const TestPage: React.FC = () => {
             </Card>
 
             {/* Class Test Card */}
-            <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group">
+            <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
+              onClick={() => setShowQuizWizard('test')}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
