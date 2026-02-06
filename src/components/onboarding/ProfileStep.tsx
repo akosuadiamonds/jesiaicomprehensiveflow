@@ -2,25 +2,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, ArrowRight, Phone, Building2, Loader2 } from 'lucide-react';
-
-const SUBJECTS = [
-  'Mathematics',
-  'English Language',
-  'Science',
-  'Social Studies',
-  'ICT',
-  'Creative Arts',
-  'French',
-  'Religious & Moral Education',
-  'Physical Education',
-  'Ghanaian Language',
-  'History',
-  'Geography',
-];
 
 const ProfileStep: React.FC = () => {
   const { teacherProfile, setTeacherProfile, setCurrentStep } = useOnboarding();
@@ -35,17 +19,6 @@ const ProfileStep: React.FC = () => {
     }
   };
 
-  const handleSubjectToggle = (subject: string) => {
-    const currentSubjects = teacherProfile.subjects || [];
-    const newSubjects = currentSubjects.includes(subject)
-      ? currentSubjects.filter(s => s !== subject)
-      : [...currentSubjects, subject];
-    setTeacherProfile({ ...teacherProfile, subjects: newSubjects });
-    if (errors.subjects) {
-      setErrors({ ...errors, subjects: '' });
-    }
-  };
-
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
@@ -57,10 +30,6 @@ const ProfileStep: React.FC = () => {
     
     if (!teacherProfile.schoolName?.trim()) {
       newErrors.schoolName = 'School name is required';
-    }
-    
-    if (!teacherProfile.subjects?.length) {
-      newErrors.subjects = 'Please select at least one subject';
     }
     
     setErrors(newErrors);
@@ -88,7 +57,7 @@ const ProfileStep: React.FC = () => {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => setCurrentStep('role')}
+        onClick={() => setCurrentStep('subjects')}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -100,9 +69,26 @@ const ProfileStep: React.FC = () => {
           Complete your profile
         </h2>
         <p className="text-muted-foreground">
-          Tell us more about yourself to personalize your experience
+          Tell us a bit more about yourself
         </p>
       </div>
+
+      {/* Selected subjects summary */}
+      {teacherProfile.subjects && teacherProfile.subjects.length > 0 && (
+        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+          <p className="text-sm text-muted-foreground mb-2">Teaching subjects:</p>
+          <div className="flex flex-wrap gap-2">
+            {teacherProfile.subjects.map((subject) => (
+              <span
+                key={subject}
+                className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium"
+              >
+                {subject}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div className="space-y-2">
@@ -137,34 +123,6 @@ const ProfileStep: React.FC = () => {
           </div>
           {errors.schoolName && (
             <p className="text-xs text-destructive">{errors.schoolName}</p>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <Label>Subjects You Teach</Label>
-          <p className="text-xs text-muted-foreground">Select all that apply</p>
-          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
-            {SUBJECTS.map((subject) => (
-              <div
-                key={subject}
-                className="flex items-center space-x-2"
-              >
-                <Checkbox
-                  id={subject}
-                  checked={teacherProfile.subjects?.includes(subject) || false}
-                  onCheckedChange={() => handleSubjectToggle(subject)}
-                />
-                <label
-                  htmlFor={subject}
-                  className="text-sm text-foreground cursor-pointer leading-tight"
-                >
-                  {subject}
-                </label>
-              </div>
-            ))}
-          </div>
-          {errors.subjects && (
-            <p className="text-xs text-destructive">{errors.subjects}</p>
           )}
         </div>
       </div>
