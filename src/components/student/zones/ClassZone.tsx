@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,10 +10,10 @@ import {
   Search,
   Plus,
   Bell,
-  Calendar,
   MessageSquare,
   Loader2,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -36,6 +36,8 @@ interface ClassroomData {
   teacher_id: string;
   classroom_type: string;
   invite_code: string;
+  monthly_fee: number | null;
+  currency: string | null;
 }
 
 interface AnnouncementData {
@@ -60,62 +62,92 @@ const ClassZone: React.FC = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [myClasses, setMyClasses] = useState<ClassroomData[]>([]);
+  const [pendingClasses, setPendingClasses] = useState<string[]>([]);
+  const [browseClasses, setBrowseClasses] = useState<ClassroomData[]>([]);
+  const [browseSearch, setBrowseSearch] = useState('');
   const [announcements, setAnnouncements] = useState<AnnouncementData[]>([]);
   const [resources, setResources] = useState<ResourceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBrowseLoading, setIsBrowseLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassroomData | null>(null);
+  const [mainTab, setMainTab] = useState('my-classes');
 
   useEffect(() => {
     if (user) fetchClassrooms();
   }, [user]);
 
+  useEffect(() => {
+    if (mainTab === 'browse' && browseClasses.length === 0) {
+      fetchBrowseClasses();
+    }
+  }, [mainTab]);
+
   const fetchClassrooms = async () => {
     if (!user) return;
     setIsLoading(true);
     try {
-      // Get joined classrooms
       const { data: enrollments } = await supabase
         .from('classroom_students')
         .select('classroom_id, approval_status')
         .eq('student_id', user.id)
         .eq('is_active', true);
 
-      if (enrollments && enrollments.length > 0) {
-        const approvedIds = enrollments
-          .filter(e => e.approval_status === 'approved')
-          .map(e => e.classroom_id);
+      const pendingIds: string[] = [];
+      const approvedIds: string[] = [];
 
-        if (approvedIds.length > 0) {
-          const { data: classrooms } = await supabase
-            .from('classrooms')
-            .select('*')
-            .in('id', approvedIds);
+      if (enrollments) {
+        enrollments.forEach(e => {
+          if (e.approval_status === 'pending') pendingIds.push(e.classroom_id);
+          if (e.approval_status === 'approved') approvedIds.push(e.classroom_id);
+        });
+      }
 
-          setMyClasses(classrooms || []);
+      setPendingClasses(pendingIds);
 
-          // Fetch announcements
-          const { data: anns } = await supabase
-            .from('classroom_announcements')
-            .select('*')
-            .in('classroom_id', approvedIds)
-            .order('created_at', { ascending: false })
-            .limit(10);
-          setAnnouncements(anns || []);
+      if (approvedIds.length > 0) {
+        const { data: classrooms } = await supabase
+          .from('classrooms')
+          .select('*')
+          .in('id', approvedIds);
+        setMyClasses(classrooms || []);
 
-          // Fetch resources
-          const { data: res } = await supabase
-            .from('classroom_resources')
-            .select('*')
-            .in('classroom_id', approvedIds)
-            .eq('is_published', true)
-            .order('created_at', { ascending: false });
-          setResources(res || []);
-        }
+        const { data: anns } = await supabase
+          .from('classroom_announcements')
+          .select('*')
+          .in('classroom_id', approvedIds)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        setAnnouncements(anns || []);
+
+        const { data: res } = await supabase
+          .from('classroom_resources')
+          .select('*')
+          .in('classroom_id', approvedIds)
+          .eq('is_published', true)
+          .order('created_at', { ascending: false });
+        setResources(res || []);
       }
     } catch (err) {
       console.error('Error fetching classrooms:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchBrowseClasses = async () => {
+    setIsBrowseLoading(true);
+    try {
+      const { data } = await supabase
+        .from('classrooms')
+        .select('*')
+        .eq('classroom_type', 'private')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      setBrowseClasses(data || []);
+    } catch (err) {
+      console.error('Error browsing classes:', err);
+    } finally {
+      setIsBrowseLoading(false);
     }
   };
 
@@ -137,32 +169,42 @@ const ClassZone: React.FC = () => {
       return;
     }
 
+    await joinClassroom(classroom.id, classroom.name);
+    setInviteCode('');
+    setIsJoinDialogOpen(false);
+  };
+
+  const joinClassroom = async (classroomId: string, classroomName: string) => {
+    if (!user) return;
+
     const { data: existing } = await supabase
       .from('classroom_students')
       .select('id')
-      .eq('classroom_id', classroom.id)
+      .eq('classroom_id', classroomId)
       .eq('student_id', user.id)
       .maybeSingle();
 
     if (existing) {
-      toast.info("You're already in this class");
-      setIsJoinDialogOpen(false);
+      toast.info("You've already requested or joined this class");
       return;
     }
 
     const { error: joinError } = await supabase
       .from('classroom_students')
-      .insert({ classroom_id: classroom.id, student_id: user.id });
+      .insert({ classroom_id: classroomId, student_id: user.id });
 
     if (joinError) {
       toast.error('Failed to join class');
       return;
     }
 
-    toast.success(`Joined ${classroom.name}! 🎉`);
-    setInviteCode('');
-    setIsJoinDialogOpen(false);
+    toast.success(`Request sent to join ${classroomName}! ⏳`);
+    setPendingClasses(prev => [...prev, classroomId]);
     fetchClassrooms();
+  };
+
+  const isAlreadyJoinedOrPending = (classroomId: string) => {
+    return myClasses.some(c => c.id === classroomId) || pendingClasses.includes(classroomId);
   };
 
   const getClassAnnouncements = (classId: string) =>
@@ -170,6 +212,12 @@ const ClassZone: React.FC = () => {
 
   const getClassResources = (classId: string) =>
     resources.filter(r => r.classroom_id === classId);
+
+  const filteredBrowseClasses = browseClasses.filter(cls =>
+    cls.name.toLowerCase().includes(browseSearch.toLowerCase()) ||
+    cls.subject.toLowerCase().includes(browseSearch.toLowerCase()) ||
+    (cls.description || '').toLowerCase().includes(browseSearch.toLowerCase())
+  );
 
   if (isLoading) {
     return (
@@ -284,7 +332,7 @@ const ClassZone: React.FC = () => {
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Join Class
+              Join with Code
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -309,92 +357,201 @@ const ClassZone: React.FC = () => {
         </Dialog>
       </div>
 
-      {myClasses.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="p-10 text-center">
-            <div className="text-5xl mb-4">📚</div>
-            <h3 className="text-lg font-semibold mb-2">No classes yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Ask your teacher for an invite code to join a class
-            </p>
-            <Button onClick={() => setIsJoinDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Join Your First Class
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {myClasses.map((cls) => {
-            const classAnns = getClassAnnouncements(cls.id);
-            return (
-              <Card
-                key={cls.id}
-                className="hover:shadow-lg transition-all cursor-pointer group"
-                onClick={() => setSelectedClass(cls)}
-              >
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-lg">{cls.name}</h4>
-                        {classAnns.length > 0 && (
-                          <Badge variant="destructive" className="text-xs">{classAnns.length} new</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{cls.subject}</p>
-                    </div>
-                    <Badge variant={cls.classroom_type === 'school' ? 'secondary' : 'outline'}>
-                      {cls.classroom_type === 'school' ? '🏫 School' : '📚 Private'}
-                    </Badge>
-                  </div>
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="my-classes">My Classes</TabsTrigger>
+          <TabsTrigger value="browse">Browse Private Classes</TabsTrigger>
+        </TabsList>
 
-                  <Button size="sm" className="w-full mt-2 gap-1 group-hover:bg-primary group-hover:text-primary-foreground" variant="outline">
-                    <BookOpen className="w-4 h-4" />
-                    View Class
-                    <ChevronRight className="w-4 h-4 ml-auto" />
+        <TabsContent value="my-classes" className="mt-6 space-y-6">
+          {myClasses.length === 0 && pendingClasses.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-10 text-center">
+                <div className="text-5xl mb-4">📚</div>
+                <h3 className="text-lg font-semibold mb-2">No classes yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Join with a code or browse private classes to get started
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={() => setIsJoinDialogOpen(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Enter Invite Code
                   </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                  <Button variant="outline" onClick={() => setMainTab('browse')}>
+                    <Search className="w-4 h-4 mr-2" />
+                    Browse Classes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {pendingClasses.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">⏳ Pending Approval</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {pendingClasses.map((id) => {
+                      const cls = browseClasses.find(c => c.id === id);
+                      return (
+                        <Card key={id} className="border-dashed border-amber-300 dark:border-amber-700 opacity-75">
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <Lock className="w-5 h-5 text-amber-500" />
+                            <div>
+                              <p className="font-medium text-sm">{cls?.name || 'Class'}</p>
+                              <p className="text-xs text-muted-foreground">Waiting for teacher approval</p>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-      {announcements.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            Recent Announcements
-          </h3>
-          <div className="space-y-3">
-            {announcements.slice(0, 3).map((ann) => {
-              const cls = myClasses.find(c => c.id === ann.classroom_id);
-              return (
-                <Card key={ann.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <MessageSquare className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-medium">{ann.title}</h4>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(ann.created_at).toLocaleDateString()}
-                          </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {myClasses.map((cls) => {
+                  const classAnns = getClassAnnouncements(cls.id);
+                  return (
+                    <Card
+                      key={cls.id}
+                      className="hover:shadow-lg transition-all cursor-pointer group"
+                      onClick={() => setSelectedClass(cls)}
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-lg">{cls.name}</h4>
+                              {classAnns.length > 0 && (
+                                <Badge variant="destructive" className="text-xs">{classAnns.length} new</Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{cls.subject}</p>
+                          </div>
+                          <Badge variant={cls.classroom_type === 'school' ? 'secondary' : 'outline'}>
+                            {cls.classroom_type === 'school' ? '🏫 School' : '📚 Private'}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{ann.content}</p>
-                        {cls && <Badge variant="outline" className="mt-2 text-xs">{cls.name}</Badge>}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                        <Button size="sm" className="w-full mt-2 gap-1 group-hover:bg-primary group-hover:text-primary-foreground" variant="outline">
+                          <BookOpen className="w-4 h-4" />
+                          View Class
+                          <ChevronRight className="w-4 h-4 ml-auto" />
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {announcements.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Recent Announcements
+              </h3>
+              <div className="space-y-3">
+                {announcements.slice(0, 3).map((ann) => {
+                  const cls = myClasses.find(c => c.id === ann.classroom_id);
+                  return (
+                    <Card key={ann.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <MessageSquare className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <h4 className="font-medium">{ann.title}</h4>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(ann.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{ann.content}</p>
+                            {cls && <Badge variant="outline" className="mt-2 text-xs">{cls.name}</Badge>}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="browse" className="mt-6 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search private classes by name, subject..."
+              className="pl-10"
+              value={browseSearch}
+              onChange={(e) => setBrowseSearch(e.target.value)}
+            />
           </div>
-        </div>
-      )}
+
+          {isBrowseLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filteredBrowseClasses.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <div className="text-4xl mb-3">🔍</div>
+                <p>No private classes found</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {filteredBrowseClasses.map((cls) => {
+                const joined = isAlreadyJoinedOrPending(cls.id);
+                const isPending = pendingClasses.includes(cls.id);
+                return (
+                  <Card key={cls.id} className={`transition-all ${joined ? 'border-green-400/50 bg-green-50/50 dark:bg-green-900/10' : 'hover:shadow-md'}`}>
+                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
+                          <BookOpen className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-medium truncate">{cls.name}</h4>
+                          <p className="text-sm text-muted-foreground">{cls.subject}</p>
+                          {cls.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{cls.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">📚 Private</Badge>
+                            {cls.monthly_fee && cls.monthly_fee > 0 && (
+                              <Badge variant="secondary" className="text-xs">
+                                {cls.currency || 'GHS'} {cls.monthly_fee}/mo
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {isPending ? (
+                        <Badge className="bg-amber-500 shrink-0">Pending ⏳</Badge>
+                      ) : myClasses.some(c => c.id === cls.id) ? (
+                        <Badge className="bg-green-500 shrink-0">Joined ✓</Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="shrink-0"
+                          onClick={() => joinClassroom(cls.id, cls.name)}
+                        >
+                          Request to Join
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
