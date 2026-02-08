@@ -23,7 +23,7 @@ const RoleStep: React.FC = () => {
     if (role === 'teacher') {
       setCurrentStep('profile');
     } else {
-      setCurrentStep('subjects');
+      setCurrentStep('student-profile');
     }
     setIsSubmitting(false);
   };

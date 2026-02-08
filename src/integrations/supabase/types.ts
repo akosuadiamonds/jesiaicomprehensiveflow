@@ -301,11 +301,13 @@ export type Database = {
       }
       profiles: {
         Row: {
+          class_grade: string | null
           created_at: string
           first_name: string | null
           gender: string | null
           id: string
           last_name: string | null
+          parent_contact: string | null
           phone_number: string | null
           school_name: string | null
           selected_plan: string | null
@@ -315,11 +317,13 @@ export type Database = {
           user_role: string | null
         }
         Insert: {
+          class_grade?: string | null
           created_at?: string
           first_name?: string | null
           gender?: string | null
           id?: string
           last_name?: string | null
+          parent_contact?: string | null
           phone_number?: string | null
           school_name?: string | null
           selected_plan?: string | null
@@ -329,11 +333,13 @@ export type Database = {
           user_role?: string | null
         }
         Update: {
+          class_grade?: string | null
           created_at?: string
           first_name?: string | null
           gender?: string | null
           id?: string
           last_name?: string | null
+          parent_contact?: string | null
           phone_number?: string | null
           school_name?: string | null
           selected_plan?: string | null
@@ -557,6 +563,65 @@ export type Database = {
           student_id?: string
           total_earned?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      student_redeemed_rewards: {
+        Row: {
+          id: string
+          redeemed_at: string
+          reward_id: string
+          student_id: string
+        }
+        Insert: {
+          id?: string
+          redeemed_at?: string
+          reward_id: string
+          student_id: string
+        }
+        Update: {
+          id?: string
+          redeemed_at?: string
+          reward_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_redeemed_rewards_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "student_rewards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_rewards: {
+        Row: {
+          cost: number
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          reward_type: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          reward_type?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          reward_type?: string
         }
         Relationships: []
       }

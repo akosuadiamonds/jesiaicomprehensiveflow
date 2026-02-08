@@ -16,6 +16,7 @@ import MainApp from '@/components/MainApp';
 import StudentApp from '@/components/student/StudentApp';
 import StudentJoinClassStep from '@/components/student/onboarding/StudentJoinClassStep';
 import StudentPlansStep from '@/components/student/onboarding/StudentPlansStep';
+import StudentProfileStep from '@/components/student/onboarding/StudentProfileStep';
 import { Loader2 } from 'lucide-react';
 
 // Pre-auth steps (before user is authenticated)
@@ -37,9 +38,10 @@ const postAuthStepConfig: Record<string, { step: number; showProgress: boolean; 
   plans: { step: 4, showProgress: true },
   payment: { step: 4, showProgress: true },
   dashboard: { step: 4, showProgress: false },
-  'student-join-class': { step: 2, showProgress: true, totalSteps: 4 },
-  'student-plans': { step: 3, showProgress: true, totalSteps: 4 },
-  'student-payment': { step: 4, showProgress: true, totalSteps: 4 },
+  'student-profile': { step: 2, showProgress: true, totalSteps: 5 },
+  'student-join-class': { step: 3, showProgress: true, totalSteps: 5 },
+  'student-plans': { step: 4, showProgress: true, totalSteps: 5 },
+  'student-payment': { step: 5, showProgress: true, totalSteps: 5 },
 };
 
 // Component that syncs onboarding state with profile from database
@@ -77,7 +79,10 @@ const OnboardingStepSync: React.FC = () => {
     if (!hasRole) {
       setCurrentStep('role');
     } else if (profile.user_role === 'learner') {
-      if (!hasSubjects) {
+      const hasParentContact = !!(profile as any).parent_contact;
+      if (!hasParentContact) {
+        setCurrentStep('student-profile');
+      } else if (!hasSubjects) {
         setCurrentStep('subjects');
       } else if (!hasSelectedPlan) {
         setCurrentStep('student-plans');
@@ -181,6 +186,8 @@ const PostAuthContent: React.FC = () => {
         return <ProfileStep />;
       case 'profile-success':
         return <ProfileSuccessStep />;
+      case 'student-profile':
+        return <StudentProfileStep />;
       case 'student-join-class':
         return <StudentJoinClassStep />;
       default:
@@ -188,8 +195,8 @@ const PostAuthContent: React.FC = () => {
     }
   };
 
-  // Student onboarding uses 3 steps, teacher uses 4
-  const totalSteps = currentStep.startsWith('student') ? 3 : 4;
+  // Student onboarding uses 5 steps, teacher uses 4
+  const totalSteps = currentStep.startsWith('student') ? 5 : 4;
 
   return (
     <>

@@ -1,21 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Flame, 
-  Coins, 
-  Trophy, 
+import {
+  Flame,
+  Coins,
+  Trophy,
   Star,
   Gift,
   Calendar,
   TrendingUp,
   Zap,
   Award,
-  Target
+  Target,
+  ShoppingBag,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+interface Reward {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  reward_type: string;
+  icon: string;
+}
 
 const streakDays = [
   { day: 'Mon', active: true, coins: 10 },
@@ -35,21 +57,77 @@ const recentEarnings = [
   { source: 'Class Participation', coins: 5, icon: Award, time: '2 days ago' },
 ];
 
-const rewards = [
-  { name: 'Bronze Badge', coins: 100, icon: '🥉', unlocked: true },
-  { name: 'Silver Badge', coins: 500, icon: '🥈', unlocked: true },
-  { name: 'Gold Badge', coins: 1000, icon: '🥇', unlocked: false, progress: 65 },
-  { name: 'Champion Badge', coins: 2500, icon: '👑', unlocked: false, progress: 26 },
-];
-
 const StreakZone: React.FC = () => {
+  const { user } = useAuth();
   const totalCoins = 650;
   const currentStreak = 5;
 
-  const handleClaimReward = () => {
-    toast.success('🎁 Reward claimed!', {
-      description: 'Keep up the great work!',
-    });
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [redeemedIds, setRedeemedIds] = useState<string[]>([]);
+  const [isShopOpen, setIsShopOpen] = useState(false);
+  const [confirmReward, setConfirmReward] = useState<Reward | null>(null);
+  const [isRedeeming, setIsRedeeming] = useState(false);
+  const [isLoadingRewards, setIsLoadingRewards] = useState(false);
+
+  const fetchRewards = async () => {
+    setIsLoadingRewards(true);
+    const { data } = await supabase
+      .from('student_rewards')
+      .select('*')
+      .order('cost', { ascending: true });
+    setRewards(data || []);
+
+    if (user) {
+      const { data: redeemed } = await supabase
+        .from('student_redeemed_rewards')
+        .select('reward_id')
+        .eq('student_id', user.id);
+      setRedeemedIds((redeemed || []).map(r => r.reward_id));
+    }
+    setIsLoadingRewards(false);
+  };
+
+  useEffect(() => {
+    fetchRewards();
+  }, [user]);
+
+  const handleRedeem = async (reward: Reward) => {
+    if (!user) return;
+    if (totalCoins < reward.cost) {
+      toast.error("Not enough coins! Keep earning! 💪");
+      return;
+    }
+
+    setIsRedeeming(true);
+    try {
+      // Insert redemption record
+      const { error } = await supabase
+        .from('student_redeemed_rewards')
+        .insert({ student_id: user.id, reward_id: reward.id });
+
+      if (error) throw error;
+
+      // Record coin spend transaction
+      await supabase
+        .from('coin_transactions')
+        .insert({
+          student_id: user.id,
+          amount: reward.cost,
+          transaction_type: 'spend',
+          source: 'reward_redemption',
+          description: `Redeemed: ${reward.name}`,
+        });
+
+      setRedeemedIds(prev => [...prev, reward.id]);
+      setConfirmReward(null);
+      toast.success(`🎉 You redeemed "${reward.name}"!`, {
+        description: `${reward.cost} coins spent`,
+      });
+    } catch (err) {
+      toast.error('Failed to redeem. Please try again.');
+    } finally {
+      setIsRedeeming(false);
+    }
   };
 
   return (
@@ -84,18 +162,18 @@ const StreakZone: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-400 to-violet-500 text-white border-0">
+        <Card
+          className="bg-gradient-to-br from-emerald-400 to-green-500 text-white border-0 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => setIsShopOpen(true)}
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm font-medium">Weekly Goal</p>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-4xl font-bold">55</p>
-                  <p className="text-purple-100">/ 100 coins</p>
-                </div>
+                <p className="text-green-100 text-sm font-medium">Rewards Shop</p>
+                <p className="text-xl font-bold mt-1">Redeem Coins 🎁</p>
               </div>
               <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
-                <Target className="w-8 h-8" />
+                <ShoppingBag className="w-8 h-8" />
               </div>
             </div>
           </CardContent>
@@ -109,18 +187,16 @@ const StreakZone: React.FC = () => {
             <Calendar className="w-5 h-5" />
             This Week's Streak
           </CardTitle>
-          <CardDescription>
-            Log in every day to maintain your streak and earn bonus coins!
-          </CardDescription>
+          <CardDescription>Log in every day to maintain your streak and earn bonus coins!</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between gap-2">
-            {streakDays.map((day, index) => (
-              <div 
+            {streakDays.map((day) => (
+              <div
                 key={day.day}
                 className={`flex-1 text-center p-3 rounded-xl transition-all ${
-                  day.active 
-                    ? 'bg-gradient-to-b from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-950/30 border-2 border-amber-300 dark:border-amber-700' 
+                  day.active
+                    ? 'bg-gradient-to-b from-amber-100 to-amber-50 dark:from-amber-900/30 dark:to-amber-950/30 border-2 border-amber-300 dark:border-amber-700'
                     : 'bg-muted border-2 border-transparent'
                 }`}
               >
@@ -158,10 +234,7 @@ const StreakZone: React.FC = () => {
           <CardContent>
             <div className="space-y-3">
               {recentEarnings.map((earning, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                >
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                       <earning.icon className="w-5 h-5 text-amber-600" />
@@ -171,58 +244,44 @@ const StreakZone: React.FC = () => {
                       <p className="text-xs text-muted-foreground">{earning.time}</p>
                     </div>
                   </div>
-                  <Badge className="bg-amber-500 hover:bg-amber-600">
-                    +{earning.coins} 🪙
-                  </Badge>
+                  <Badge className="bg-amber-500 hover:bg-amber-600">+{earning.coins} 🪙</Badge>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Rewards & Badges */}
+        {/* My Rewards */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="w-5 h-5" />
-              Rewards & Badges
+              My Rewards
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {rewards.map((reward, index) => (
-                <div 
-                  key={index}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    reward.unlocked 
-                      ? 'bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-950/20 border-amber-300 dark:border-amber-800' 
-                      : 'bg-muted/50 border-border'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className={`text-3xl ${!reward.unlocked && 'grayscale opacity-50'}`}>
-                        {reward.icon}
-                      </span>
-                      <div>
-                        <p className="font-semibold">{reward.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {reward.coins} coins required
-                        </p>
-                      </div>
+            {redeemedIds.length === 0 ? (
+              <div className="text-center py-6">
+                <div className="text-4xl mb-3">🎁</div>
+                <p className="text-muted-foreground text-sm">No rewards redeemed yet</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => setIsShopOpen(true)}>
+                  Browse Rewards
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {rewards.filter(r => redeemedIds.includes(r.id)).map((reward) => (
+                  <div key={reward.id} className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-950/20 border border-amber-200 dark:border-amber-800">
+                    <span className="text-2xl">{reward.icon}</span>
+                    <div>
+                      <p className="font-semibold text-sm">{reward.name}</p>
+                      <Badge variant="outline" className="text-xs capitalize">{reward.reward_type}</Badge>
                     </div>
-                    {reward.unlocked ? (
-                      <Badge className="bg-green-500">Unlocked ✓</Badge>
-                    ) : (
-                      <Badge variant="outline">{reward.progress}%</Badge>
-                    )}
+                    <CheckCircle2 className="w-5 h-5 text-green-500 ml-auto" />
                   </div>
-                  {!reward.unlocked && (
-                    <Progress value={reward.progress} className="h-2" />
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -252,6 +311,80 @@ const StreakZone: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Rewards Shop Dialog */}
+      <Dialog open={isShopOpen} onOpenChange={setIsShopOpen}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5" />
+              Rewards Shop
+            </DialogTitle>
+            <DialogDescription>
+              Spend your coins on rewards! You have <span className="font-bold text-amber-500">{totalCoins} 🪙</span>
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingRewards ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+          ) : (
+            <div className="space-y-3">
+              {rewards.map((reward) => {
+                const isRedeemed = redeemedIds.includes(reward.id);
+                const canAfford = totalCoins >= reward.cost;
+                return (
+                  <div
+                    key={reward.id}
+                    className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${
+                      isRedeemed
+                        ? 'border-green-300 bg-green-50 dark:bg-green-950/20'
+                        : canAfford
+                          ? 'border-border hover:border-primary/50 cursor-pointer'
+                          : 'border-border opacity-60'
+                    }`}
+                    onClick={() => !isRedeemed && canAfford && setConfirmReward(reward)}
+                  >
+                    <span className="text-3xl">{reward.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-semibold">{reward.name}</p>
+                      <p className="text-xs text-muted-foreground">{reward.description}</p>
+                      <Badge variant="outline" className="text-xs capitalize mt-1">{reward.reward_type}</Badge>
+                    </div>
+                    {isRedeemed ? (
+                      <Badge className="bg-green-500">Owned ✓</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="whitespace-nowrap">{reward.cost} 🪙</Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm Redeem Dialog */}
+      <Dialog open={!!confirmReward} onOpenChange={() => setConfirmReward(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redeem Reward?</DialogTitle>
+            <DialogDescription>
+              Spend <span className="font-bold text-amber-500">{confirmReward?.cost} coins</span> to get "{confirmReward?.name}"?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <span className="text-6xl">{confirmReward?.icon}</span>
+            <p className="mt-2 text-sm text-muted-foreground">{confirmReward?.description}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmReward(null)}>Cancel</Button>
+            <Button onClick={() => confirmReward && handleRedeem(confirmReward)} disabled={isRedeeming}>
+              {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Redeem for {confirmReward?.cost} 🪙
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
