@@ -98,6 +98,7 @@ export type Database = {
       }
       classroom_students: {
         Row: {
+          approval_status: string
           classroom_id: string
           id: string
           is_active: boolean | null
@@ -107,6 +108,7 @@ export type Database = {
           subscription_status: string | null
         }
         Insert: {
+          approval_status?: string
           classroom_id: string
           id?: string
           is_active?: boolean | null
@@ -116,6 +118,7 @@ export type Database = {
           subscription_status?: string | null
         }
         Update: {
+          approval_status?: string
           classroom_id?: string
           id?: string
           is_active?: boolean | null

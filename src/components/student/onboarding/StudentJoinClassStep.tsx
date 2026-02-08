@@ -38,7 +38,7 @@ const StudentJoinClassStep: React.FC = () => {
     if (!user) return;
     const { data: classroom, error } = await supabase
       .from('classrooms')
-      .select('id, name')
+      .select('id, name, classroom_type')
       .eq('invite_code', code.toUpperCase())
       .eq('is_active', true)
       .single();
@@ -62,9 +62,16 @@ const StudentJoinClassStep: React.FC = () => {
       return;
     }
 
+    // Check classroom type
+    const isPrivate = classroom.classroom_type === 'private';
+
     const { error: joinError } = await supabase
       .from('classroom_students')
-      .insert({ classroom_id: classroom.id, student_id: user.id });
+      .insert({
+        classroom_id: classroom.id,
+        student_id: user.id,
+        approval_status: isPrivate ? 'pending' : 'approved',
+      });
 
     if (joinError) {
       toast.error('Failed to join class');

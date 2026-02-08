@@ -84,16 +84,22 @@ const JoinClassContent: React.FC = () => {
     if (!user || !classroom) return;
     setJoining(true);
 
+    const isPrivateClass = classroom.classroom_type === 'private';
+
     const { error } = await supabase
       .from('classroom_students')
       .insert({
         classroom_id: classroom.id,
         student_id: user.id,
+        approval_status: isPrivateClass ? 'pending' : 'approved',
       });
 
     if (error) {
       toast.error('Failed to join class. Please try again.');
       console.error('Join error:', error);
+    } else if (isPrivateClass) {
+      toast.success('Join request sent! ⏳', { description: 'Waiting for teacher approval.' });
+      setAlreadyJoined(true);
     } else {
       toast.success(`You've joined ${classroom.name}! 🎉`);
       setAlreadyJoined(true);
