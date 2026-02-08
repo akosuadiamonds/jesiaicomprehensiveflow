@@ -2,7 +2,10 @@ import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
-import AuthPage from '@/components/auth/AuthPage';
+import SignupStep from '@/components/onboarding/SignupStep';
+import PasswordStep from '@/components/onboarding/PasswordStep';
+import VerifyStep from '@/components/onboarding/VerifyStep';
+import SignInStep from '@/components/onboarding/SignInStep';
 import RoleStep from '@/components/onboarding/RoleStep';
 import SubjectsStep from '@/components/onboarding/SubjectsStep';
 import ProfileStep from '@/components/onboarding/ProfileStep';
@@ -15,7 +18,18 @@ import StudentJoinClassStep from '@/components/student/onboarding/StudentJoinCla
 import StudentPlansStep from '@/components/student/onboarding/StudentPlansStep';
 import { Loader2 } from 'lucide-react';
 
-const stepConfig: Record<string, { step: number; showProgress: boolean; totalSteps?: number }> = {
+// Pre-auth steps (before user is authenticated)
+const preAuthSteps = ['signup', 'password', 'verify', 'signin'];
+
+const preAuthStepConfig: Record<string, { step: number; totalSteps: number }> = {
+  signup: { step: 1, totalSteps: 3 },
+  password: { step: 2, totalSteps: 3 },
+  verify: { step: 3, totalSteps: 3 },
+  signin: { step: 1, totalSteps: 1 },
+};
+
+// Post-auth steps (after user is authenticated)
+const postAuthStepConfig: Record<string, { step: number; showProgress: boolean; totalSteps?: number }> = {
   role: { step: 1, showProgress: true },
   profile: { step: 2, showProgress: true },
   subjects: { step: 3, showProgress: true },
@@ -81,10 +95,44 @@ const OnboardingStepSync: React.FC = () => {
   return null;
 };
 
-const OnboardingContent: React.FC = () => {
+// Pre-auth onboarding (signup/password/verify/signin)
+const PreAuthContent: React.FC = () => {
+  const { currentStep } = useOnboarding();
+
+  const config = preAuthStepConfig[currentStep] || { step: 1, totalSteps: 3 };
+  const showProgress = currentStep !== 'signin';
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 'signup':
+        return <SignupStep />;
+      case 'password':
+        return <PasswordStep />;
+      case 'verify':
+        return <VerifyStep />;
+      case 'signin':
+        return <SignInStep />;
+      default:
+        return <SignupStep />;
+    }
+  };
+
+  return (
+    <OnboardingLayout
+      showProgress={showProgress}
+      currentStep={config.step}
+      totalSteps={config.totalSteps}
+    >
+      {renderStep()}
+    </OnboardingLayout>
+  );
+};
+
+// Post-auth onboarding (role/profile/subjects/plans etc.)
+const PostAuthContent: React.FC = () => {
   const { currentStep } = useOnboarding();
   
-  const config = stepConfig[currentStep] || { step: 1, showProgress: true };
+  const config = postAuthStepConfig[currentStep] || { step: 1, showProgress: true };
 
   // Dashboard has its own layout with sidebar
   if (currentStep === 'dashboard') {
@@ -120,6 +168,7 @@ const OnboardingContent: React.FC = () => {
       </OnboardingLayout>
     );
   }
+
   const renderStep = () => {
     switch (currentStep) {
       case 'role':
@@ -165,23 +214,24 @@ const AuthenticatedApp: React.FC = () => {
     );
   }
 
-  // Not authenticated - show auth page
+  // Not authenticated - show pre-auth onboarding (signup/password/verify)
   if (!user) {
-    return <AuthPage />;
+    return (
+      <OnboardingProvider>
+        <PreAuthContent />
+      </OnboardingProvider>
+    );
   }
 
   // Authenticated but profile setup not complete
-  // Check if they have completed onboarding:
-  // 1. Has subjects selected
-  // 2. Has explicitly selected a plan (selected_plan is not null)
   const hasSubjects = profile?.subjects && profile.subjects.length > 0;
   const hasSelectedPlan = profile?.selected_plan !== null && profile?.selected_plan !== undefined;
 
-  // Show onboarding if user hasn't completed all required steps
+  // Show post-auth onboarding if user hasn't completed all required steps
   if (!hasSubjects || !hasSelectedPlan) {
     return (
       <OnboardingProvider>
-        <OnboardingContent />
+        <PostAuthContent />
       </OnboardingProvider>
     );
   }

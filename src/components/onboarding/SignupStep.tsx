@@ -141,7 +141,7 @@ const SignupStep: React.FC = () => {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <button className="text-primary font-medium hover:underline">
+        <button onClick={() => setCurrentStep('signin')} className="text-primary font-medium hover:underline">
           Sign in
         </button>
       </p>

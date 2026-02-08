@@ -4,13 +4,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Check, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Check, X, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const PasswordStep: React.FC = () => {
   const { signupData, setSignupData, setCurrentStep } = useOnboarding();
+  const { signUp } = useAuth();
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const passwordRequirements = [
     { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
@@ -53,10 +58,36 @@ const PasswordStep: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
-    if (validate()) {
-      setCurrentStep('verify');
+  const handleSubmit = async () => {
+    if (!validate()) return;
+    
+    setIsSubmitting(true);
+
+    const { error } = await signUp(
+      signupData.email!,
+      signupData.password!,
+      signupData.firstName!,
+      signupData.lastName!,
+      signupData.gender!
+    );
+
+    if (error) {
+      toast({
+        title: 'Account creation failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsSubmitting(false);
+      return;
     }
+
+    toast({
+      title: 'Account created!',
+      description: 'Please check your email for a verification code.',
+    });
+
+    setCurrentStep('verify');
+    setIsSubmitting(false);
   };
 
   const password = signupData.password || '';
@@ -190,9 +221,13 @@ const PasswordStep: React.FC = () => {
         className="w-full" 
         size="lg"
         variant="hero"
+        disabled={isSubmitting}
       >
+        {isSubmitting ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : null}
         Create Account
-        <ArrowRight className="w-4 h-4" />
+        {!isSubmitting && <ArrowRight className="w-4 h-4" />}
       </Button>
     </div>
   );

@@ -21,7 +21,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, firstName: string, lastName: string, gender: string, userRole: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, gender: string, userRole?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: any }>;
@@ -93,7 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string, gender: string, userRole: string) => {
+  const signUp = async (email: string, password: string, firstName: string, lastName: string, gender: string, userRole?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -115,9 +115,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Wait a moment for the trigger to create the profile
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      const profileUpdate: Record<string, string> = { first_name: firstName, last_name: lastName, gender };
+      if (userRole) {
+        profileUpdate.user_role = userRole;
+      }
+      
       await supabase
         .from('profiles')
-        .update({ first_name: firstName, last_name: lastName, gender, user_role: userRole })
+        .update(profileUpdate)
         .eq('user_id', data.user.id);
     }
 
