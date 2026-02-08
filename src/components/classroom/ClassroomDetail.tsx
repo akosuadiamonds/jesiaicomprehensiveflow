@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ClassroomStudentsTab from './ClassroomStudentsTab';
+import AddResourceModal from './AddResourceModal';
 
 interface ClassroomDetailProps {
   classroom: Classroom;
@@ -29,6 +30,8 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
   const [resources, setResources] = useState<ClassroomResource[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  const [showResourceModal, setShowResourceModal] = useState(false);
+  const [resourceDefaultType, setResourceDefaultType] = useState<string | undefined>();
 
   const isPrivate = classroom.classroom_type === 'private';
 
@@ -220,15 +223,18 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+              <Button variant="outline" className="h-auto py-4 flex-col gap-2"
+                onClick={() => { setResourceDefaultType('lesson_plan'); setShowResourceModal(true); }}>
                 <BookOpen className="h-5 w-5" />
                 <span>Share Lesson Plan</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+              <Button variant="outline" className="h-auto py-4 flex-col gap-2"
+                onClick={() => { setResourceDefaultType('test'); setShowResourceModal(true); }}>
                 <ClipboardList className="h-5 w-5" />
                 <span>Assign Test</span>
               </Button>
-              <Button variant="outline" className="h-auto py-4 flex-col gap-2">
+              <Button variant="outline" className="h-auto py-4 flex-col gap-2"
+                onClick={() => { setResourceDefaultType('material'); setShowResourceModal(true); }}>
                 <FileText className="h-5 w-5" />
                 <span>Upload Material</span>
               </Button>
@@ -259,7 +265,7 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Resources</CardTitle>
-              <Button>
+              <Button onClick={() => { setResourceDefaultType(undefined); setShowResourceModal(true); }}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Resource
               </Button>
@@ -357,6 +363,14 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AddResourceModal
+        open={showResourceModal}
+        onOpenChange={setShowResourceModal}
+        classroomId={classroom.id}
+        defaultType={resourceDefaultType}
+        onResourceAdded={fetchData}
+      />
     </div>
   );
 };
