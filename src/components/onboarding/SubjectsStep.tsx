@@ -71,7 +71,7 @@ const SubjectsStep: React.FC = () => {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => setCurrentStep(userRole === 'teacher' ? 'profile' : 'role')}
+        onClick={() => setCurrentStep(userRole === 'teacher' ? 'profile' : 'student-profile')}
         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
