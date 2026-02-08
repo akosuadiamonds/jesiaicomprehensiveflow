@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Play, Clock, Star, ChevronRight, Sparkles, ArrowLeft, Loader2, Lightbulb } from 'lucide-react';
+import { BookOpen, Play, Star, ChevronRight, Sparkles, ArrowLeft, Loader2, Lightbulb, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -17,23 +16,94 @@ interface LessonContent {
   estimatedDuration: string;
 }
 
+interface ClassroomResource {
+  id: string;
+  title: string;
+  resource_type: string;
+  content: any;
+  created_at: string;
+  classroom_name: string;
+}
+
 const subjects = [
-  { name: 'Mathematics', emoji: '🔢', progress: 45, lessons: 12, color: 'from-blue-500 to-indigo-600', topics: ['Algebra', 'Geometry', 'Fractions', 'Statistics'] },
-  { name: 'English Language', emoji: '📖', progress: 60, lessons: 15, color: 'from-green-500 to-emerald-600', topics: ['Grammar', 'Comprehension', 'Essay Writing', 'Vocabulary'] },
-  { name: 'Science', emoji: '🔬', progress: 30, lessons: 10, color: 'from-purple-500 to-violet-600', topics: ['Physics', 'Chemistry', 'Biology', 'The Solar System'] },
-  { name: 'Social Studies', emoji: '🌍', progress: 75, lessons: 8, color: 'from-amber-500 to-orange-600', topics: ['Government', 'History', 'Geography', 'Economics'] },
-  { name: 'ICT', emoji: '💻', progress: 20, lessons: 6, color: 'from-cyan-500 to-teal-600', topics: ['Programming', 'Hardware', 'Internet', 'Data Management'] },
+  { name: 'Mathematics', emoji: '🔢', color: 'from-blue-500 to-indigo-600', topics: ['Algebra', 'Geometry', 'Fractions', 'Statistics'] },
+  { name: 'English Language', emoji: '📖', color: 'from-green-500 to-emerald-600', topics: ['Grammar', 'Comprehension', 'Essay Writing', 'Vocabulary'] },
+  { name: 'Science', emoji: '🔬', color: 'from-purple-500 to-violet-600', topics: ['Physics', 'Chemistry', 'Biology', 'The Solar System'] },
+  { name: 'Social Studies', emoji: '🌍', color: 'from-amber-500 to-orange-600', topics: ['Government', 'History', 'Geography', 'Economics'] },
+  { name: 'ICT', emoji: '💻', color: 'from-cyan-500 to-teal-600', topics: ['Programming', 'Hardware', 'Internet', 'Data Management'] },
 ];
 
 const LearnZone: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [selectedSubject, setSelectedSubject] = useState<typeof subjects[0] | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [lessonContent, setLessonContent] = useState<LessonContent | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState<'topics' | 'class-resources'>('topics');
+  const [classResources, setClassResources] = useState<ClassroomResource[]>([]);
+  const [isLoadingResources, setIsLoadingResources] = useState(false);
+
+  const fetchClassResources = async (subjectName: string) => {
+    if (!user) return;
+    setIsLoadingResources(true);
+    try {
+      // Get approved classroom IDs
+      const { data: enrollments } = await supabase
+        .from('classroom_students')
+        .select('classroom_id')
+        .eq('student_id', user.id)
+        .eq('is_active', true)
+        .eq('approval_status', 'approved');
+
+      if (!enrollments || enrollments.length === 0) {
+        setClassResources([]);
+        return;
+      }
+
+      const classIds = enrollments.map(e => e.classroom_id);
+
+      // Get classrooms matching this subject
+      const { data: matchingClassrooms } = await supabase
+        .from('classrooms')
+        .select('id, name, subject')
+        .in('id', classIds)
+        .ilike('subject', `%${subjectName}%`);
+
+      if (!matchingClassrooms || matchingClassrooms.length === 0) {
+        setClassResources([]);
+        return;
+      }
+
+      const matchingIds = matchingClassrooms.map(c => c.id);
+
+      // Get resources from those classrooms
+      const { data: resources } = await supabase
+        .from('classroom_resources')
+        .select('*')
+        .in('classroom_id', matchingIds)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+
+      const mapped = (resources || []).map(r => ({
+        ...r,
+        classroom_name: matchingClassrooms.find(c => c.id === r.classroom_id)?.name || 'Class',
+      }));
+
+      setClassResources(mapped);
+    } catch (err) {
+      console.error('Error fetching class resources:', err);
+    } finally {
+      setIsLoadingResources(false);
+    }
+  };
+
+  const handleSubjectClick = (subject: typeof subjects[0]) => {
+    setSelectedSubject(subject);
+    setViewMode('topics');
+    fetchClassResources(subject.name);
+  };
 
   const handleStartLesson = async (subject: typeof subjects[0], topic: string) => {
-    setSelectedSubject(subject);
     setSelectedTopic(topic);
     setIsGenerating(true);
 
@@ -46,7 +116,6 @@ const LearnZone: React.FC = () => {
       setLessonContent(data);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to generate lesson. Please try again.');
-      setSelectedSubject(null);
       setSelectedTopic(null);
     } finally {
       setIsGenerating(false);
@@ -59,6 +128,7 @@ const LearnZone: React.FC = () => {
     } else if (selectedSubject) {
       setSelectedSubject(null);
       setSelectedTopic(null);
+      setClassResources([]);
     }
   };
 
@@ -139,7 +209,7 @@ const LearnZone: React.FC = () => {
     );
   }
 
-  // Topic selection for a subject
+  // Topic selection + class resources for a subject
   if (selectedSubject) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -154,30 +224,90 @@ const LearnZone: React.FC = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold">{selectedSubject.name}</h2>
-            <p className="text-muted-foreground">Choose a topic to start learning</p>
+            <p className="text-muted-foreground">Learn with AI or from your teacher's materials</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {selectedSubject.topics.map((topic) => (
-            <Card
-              key={topic}
-              className="group hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
-              onClick={() => handleStartLesson(selectedSubject, topic)}
-            >
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-foreground">{topic}</h4>
-                  <p className="text-sm text-muted-foreground">AI-generated lesson</p>
-                </div>
-                <Button variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Play className="w-4 h-4 mr-1" />
-                  Start
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="flex gap-2">
+          <Button
+            variant={viewMode === 'topics' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('topics')}
+          >
+            <Sparkles className="w-4 h-4 mr-1" />
+            AI Lessons
+          </Button>
+          <Button
+            variant={viewMode === 'class-resources' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('class-resources')}
+          >
+            <Users className="w-4 h-4 mr-1" />
+            Teacher Materials
+            {classResources.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">{classResources.length}</Badge>
+            )}
+          </Button>
         </div>
+
+        {viewMode === 'topics' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {selectedSubject.topics.map((topic) => (
+              <Card
+                key={topic}
+                className="group hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1"
+                onClick={() => handleStartLesson(selectedSubject, topic)}
+              >
+                <CardContent className="p-5 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-foreground">{topic}</h4>
+                    <p className="text-sm text-muted-foreground">AI-generated lesson</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground">
+                    <Play className="w-4 h-4 mr-1" />
+                    Start
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {isLoadingResources ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : classResources.length === 0 ? (
+              <Card className="border-dashed">
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <div className="text-4xl mb-3">📭</div>
+                  <p className="font-medium mb-1">No teacher materials for {selectedSubject.name}</p>
+                  <p className="text-sm">Join a {selectedSubject.name} class to see materials shared by your teacher</p>
+                </CardContent>
+              </Card>
+            ) : (
+              classResources.map((res) => (
+                <Card key={res.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">{res.title}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs capitalize">{res.resource_type}</Badge>
+                        <Badge variant="secondary" className="text-xs">{res.classroom_name}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(res.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -194,7 +324,7 @@ const LearnZone: React.FC = () => {
                 Your Learning Journey
               </h2>
               <p className="text-muted-foreground mt-1">
-                Choose a subject to start an AI-powered lesson 🎯
+                Choose a subject to start an AI lesson or view your teacher's materials 🎯
               </p>
             </div>
           </div>
@@ -211,7 +341,7 @@ const LearnZone: React.FC = () => {
             <Card
               key={subject.name}
               className="group hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1"
-              onClick={() => setSelectedSubject(subject)}
+              onClick={() => handleSubjectClick(subject)}
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
