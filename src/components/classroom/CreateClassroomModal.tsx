@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { School, Briefcase, Loader2 } from 'lucide-react';
+import { School, Briefcase, Loader2, Lock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ClassroomType, CreateClassroomData } from '@/types/classroom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -105,7 +106,7 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
                   </span>
                 </Label>
               </div>
-              <div className={`relative ${!isPremium ? 'opacity-50 pointer-events-none' : ''}`}>
+              <div className="relative">
                 <RadioGroupItem
                   value="private"
                   id="private"
@@ -114,12 +115,23 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
                 />
                 <Label
                   htmlFor="private"
-                  className="flex flex-col items-center justify-between rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  className={cn(
+                    "flex flex-col items-center justify-between rounded-lg border-2 p-4 transition-all",
+                    isPremium
+                      ? "border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                      : "border-dashed border-muted-foreground/30 bg-muted/30 cursor-not-allowed"
+                  )}
                 >
-                  <Briefcase className="mb-2 h-6 w-6" />
-                  <span className="font-medium">Private Class</span>
-                  <span className="text-xs text-muted-foreground text-center mt-1">
-                    {isPremium ? 'Paid tutoring sessions' : 'Premium plan only'}
+                  {!isPremium && (
+                    <span className="absolute -top-2.5 right-2 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                      <Lock className="h-3 w-3" />
+                      Premium
+                    </span>
+                  )}
+                  <Briefcase className={cn("mb-2 h-6 w-6", !isPremium && "text-muted-foreground/50")} />
+                  <span className={cn("font-medium", !isPremium && "text-muted-foreground/70")}>Private Class</span>
+                  <span className={cn("text-xs text-center mt-1", isPremium ? "text-muted-foreground" : "text-muted-foreground/50")}>
+                    {isPremium ? 'Paid tutoring sessions' : 'Upgrade to unlock'}
                   </span>
                 </Label>
               </div>
