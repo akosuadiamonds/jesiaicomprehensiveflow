@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Users, Plus, Upload, Copy, Trash2, UserPlus, Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Users, Upload, Copy, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+import BulkStudentUploadModal from './BulkStudentUploadModal';
 
 interface StudentRecord {
   id: string;
@@ -33,10 +30,7 @@ const ClassroomStudentsTab: React.FC<ClassroomStudentsTabProps> = ({ classroomId
   const { toast } = useToast();
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
-  const [bulkText, setBulkText] = useState('');
-  const [addingBulk, setAddingBulk] = useState(false);
 
   useEffect(() => {
     fetchStudents();
@@ -93,25 +87,6 @@ const ClassroomStudentsTab: React.FC<ClassroomStudentsTabProps> = ({ classroomId
       sonnerToast.success('Student removed');
       fetchStudents();
     }
-  };
-
-  const handleBulkUpload = async () => {
-    if (!bulkText.trim()) return;
-    setAddingBulk(true);
-
-    // Parse CSV/newline text: expect "firstName,lastName" per line
-    const lines = bulkText.split('\n').map(l => l.trim()).filter(Boolean);
-    const parsed = lines.map(line => {
-      const parts = line.split(',').map(p => p.trim());
-      return { firstName: parts[0] || '', lastName: parts[1] || '' };
-    });
-
-    // For now, since students need to sign up themselves, we'll show a summary
-    // In a real app, you'd create placeholder student accounts or send invites
-    sonnerToast.success(`${parsed.length} students parsed. Share invite code "${inviteCode}" for them to join.`);
-    setAddingBulk(false);
-    setShowBulkModal(false);
-    setBulkText('');
   };
 
   const activeStudents = students.filter(s => s.is_active);
@@ -201,46 +176,11 @@ const ClassroomStudentsTab: React.FC<ClassroomStudentsTabProps> = ({ classroomId
         </CardContent>
       </Card>
 
-      {/* Bulk Upload Modal */}
-      <Dialog open={showBulkModal} onOpenChange={setShowBulkModal}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Upload Students</DialogTitle>
-            <DialogDescription>
-              Paste student names (one per line). Format: FirstName, LastName
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Student List</Label>
-              <Textarea
-                placeholder={`Ama, Mensah\nKofi, Asante\nAbena, Darko`}
-                value={bulkText}
-                onChange={(e) => setBulkText(e.target.value)}
-                rows={8}
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                {bulkText.split('\n').filter(l => l.trim()).length} students detected
-              </p>
-            </div>
-
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                <strong>Note:</strong> Students will need to sign up and use invite code <span className="font-mono font-bold">{inviteCode}</span> to join the class. This upload creates a class roster for tracking.
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setShowBulkModal(false)}>Cancel</Button>
-              <Button onClick={handleBulkUpload} disabled={addingBulk || !bulkText.trim()}>
-                {addingBulk ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                Upload {bulkText.split('\n').filter(l => l.trim()).length} Students
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <BulkStudentUploadModal
+        open={showBulkModal}
+        onOpenChange={setShowBulkModal}
+        inviteCode={inviteCode}
+      />
     </div>
   );
 };
