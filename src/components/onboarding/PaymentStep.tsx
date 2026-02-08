@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,15 +42,24 @@ const PaymentStep: React.FC = () => {
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [redirecting, setRedirecting] = useState(false);
 
-  const planDetails = {
+  const planDetails: Record<string, { name: string; price: number; tokens: string }> = {
     pro: { name: 'Pro', price: 25, tokens: '30,000' },
     premium: { name: 'Premium', price: 50, tokens: '80,000' },
   };
 
-  const currentPlan = selectedPlan === 'pro' || selectedPlan === 'premium' 
+  const currentPlan = selectedPlan && (selectedPlan === 'pro' || selectedPlan === 'premium')
     ? planDetails[selectedPlan] 
     : null;
+
+  // Redirect back if no valid paid plan selected (useEffect instead of render-time side effect)
+  useEffect(() => {
+    if (!currentPlan && !redirecting) {
+      setRedirecting(true);
+      setCurrentStep(userRole === 'learner' ? 'student-plans' : 'plans');
+    }
+  }, [currentPlan, redirecting, userRole, setCurrentStep]);
 
   // Validate form and compute if it's valid
   const isFormValid = useMemo(() => {
@@ -130,7 +139,6 @@ const PaymentStep: React.FC = () => {
   };
 
   if (!currentPlan) {
-    setCurrentStep(userRole === 'learner' ? 'student-plans' : 'plans');
     return null;
   }
 
