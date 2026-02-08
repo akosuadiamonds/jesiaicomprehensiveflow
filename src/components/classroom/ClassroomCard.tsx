@@ -44,11 +44,12 @@ const ClassroomCard: React.FC<ClassroomCardProps> = ({ classroom, onView, onDele
     fetchStudentCount();
   }, [classroom.id]);
 
-  const copyInviteCode = () => {
-    navigator.clipboard.writeText(classroom.invite_code);
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/join/${classroom.invite_code}`;
+    navigator.clipboard.writeText(link);
     toast({
-      title: 'Copied!',
-      description: 'Invite code copied to clipboard',
+      title: 'Link Copied!',
+      description: 'Shareable invite link copied to clipboard',
     });
   };
 
@@ -126,7 +127,8 @@ const ClassroomCard: React.FC<ClassroomCardProps> = ({ classroom, onView, onDele
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
-                onClick={copyInviteCode}
+                onClick={copyInviteLink}
+                title="Copy invite link"
               >
                 <Copy className="h-3 w-3" />
               </Button>

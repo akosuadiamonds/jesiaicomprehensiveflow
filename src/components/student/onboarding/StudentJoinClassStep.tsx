@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Users, BookOpen, ArrowRight } from 'lucide-react';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const availableClasses = [
@@ -18,18 +19,68 @@ const availableClasses = [
 
 const StudentJoinClassStep: React.FC = () => {
   const { setCurrentStep, teacherProfile } = useOnboarding();
-  const { updateProfile } = useAuth();
+  const { updateProfile, user } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [joinedClasses, setJoinedClasses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for pending invite from link
+  useEffect(() => {
+    const pendingInvite = localStorage.getItem('jesi_pending_invite');
+    if (pendingInvite && user) {
+      handleJoinWithInviteCode(pendingInvite);
+      localStorage.removeItem('jesi_pending_invite');
+    }
+  }, [user]);
+
+  const handleJoinWithInviteCode = async (code: string) => {
+    if (!user) return;
+    const { data: classroom, error } = await supabase
+      .from('classrooms')
+      .select('id, name')
+      .eq('invite_code', code.toUpperCase())
+      .eq('is_active', true)
+      .single();
+
+    if (error || !classroom) {
+      toast.error('Invalid invite code');
+      return;
+    }
+
+    // Check if already joined
+    const { data: existing } = await supabase
+      .from('classroom_students')
+      .select('id')
+      .eq('classroom_id', classroom.id)
+      .eq('student_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      toast.info('You\'re already in this class');
+      setJoinedClasses(prev => [...prev, classroom.id]);
+      return;
+    }
+
+    const { error: joinError } = await supabase
+      .from('classroom_students')
+      .insert({ classroom_id: classroom.id, student_id: user.id });
+
+    if (joinError) {
+      toast.error('Failed to join class');
+      return;
+    }
+
+    setJoinedClasses(prev => [...prev, classroom.id]);
+    toast.success(`Joined ${classroom.name}! 🎉`);
+  };
 
   const handleJoinWithCode = () => {
     if (inviteCode.length !== 6) {
       toast.error('Please enter a valid 6-character invite code');
       return;
     }
-    toast.success('Class joined successfully! 🎉');
+    handleJoinWithInviteCode(inviteCode);
     setInviteCode('');
   };
 
