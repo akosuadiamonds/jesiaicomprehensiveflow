@@ -563,6 +563,14 @@ export type Database = {
     }
     Functions: {
       generate_invite_code: { Args: never; Returns: string }
+      get_classroom_ids_for_student: {
+        Args: { p_student_id: string }
+        Returns: string[]
+      }
+      get_classroom_ids_for_teacher: {
+        Args: { p_teacher_id: string }
+        Returns: string[]
+      }
     }
     Enums: {
       classroom_type: "school" | "private"
