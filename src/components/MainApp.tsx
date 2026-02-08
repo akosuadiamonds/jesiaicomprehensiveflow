@@ -7,9 +7,10 @@ import TestPage from '@/components/pages/TestPage';
 import ClassroomPage from '@/components/pages/ClassroomPage';
 import InsightsPage from '@/components/pages/InsightsPage';
 import ProfilePage from '@/components/profile/ProfilePage';
+import UpgradePromptModal from '@/components/upgrade/UpgradePromptModal';
 
 const MainAppContent: React.FC = () => {
-  const { currentPage } = useApp();
+  const { currentPage, showUpgradePrompt, setShowUpgradePrompt } = useApp();
 
   const renderPage = () => {
     switch (currentPage) {
@@ -33,6 +34,7 @@ const MainAppContent: React.FC = () => {
   return (
     <AppLayout>
       {renderPage()}
+      <UpgradePromptModal open={showUpgradePrompt} onOpenChange={setShowUpgradePrompt} />
     </AppLayout>
   );
 };

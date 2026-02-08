@@ -20,7 +20,8 @@ import {
   Users, 
   BarChart3,
   GraduationCap,
-  LogOut
+  LogOut,
+  Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -34,7 +35,7 @@ const menuItems = [
 ];
 
 const AppSidebar: React.FC = () => {
-  const { currentPage, setCurrentPage } = useApp();
+  const { currentPage, setCurrentPage, isPageLocked } = useApp();
   const { signOut, profile } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -60,23 +61,36 @@ const AppSidebar: React.FC = () => {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.id}>
-                  <SidebarMenuButton
-                    onClick={() => setCurrentPage(item.id)}
-                    className={cn(
-                      "w-full justify-start gap-3 h-11 px-3 rounded-lg transition-all",
-                      currentPage === item.id
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                    tooltip={item.label}
-                  >
-                    <item.icon className="w-5 h-5 shrink-0" />
-                    {!collapsed && <span className="font-medium">{item.label}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const locked = isPageLocked(item.id);
+                return (
+                  <SidebarMenuItem key={item.id}>
+                    <SidebarMenuButton
+                      onClick={() => setCurrentPage(item.id)}
+                      className={cn(
+                        "w-full justify-start gap-3 h-11 px-3 rounded-lg transition-all",
+                        currentPage === item.id
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                          : locked
+                          ? "hover:bg-muted text-muted-foreground/50 hover:text-muted-foreground"
+                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                      )}
+                      tooltip={locked ? `${item.label} (Locked - Upgrade to access)` : item.label}
+                    >
+                      <item.icon className="w-5 h-5 shrink-0" />
+                      {!collapsed && (
+                        <span className="font-medium flex items-center gap-2">
+                          {item.label}
+                          {locked && <Lock className="w-3.5 h-3.5 text-muted-foreground/60" />}
+                        </span>
+                      )}
+                      {collapsed && locked && (
+                        <Lock className="w-3 h-3 absolute top-1 right-1 text-muted-foreground/60" />
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
