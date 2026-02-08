@@ -57,6 +57,49 @@ interface ResourceData {
   classroom_id: string;
 }
 
+// Sample classes shown when user has no real classes yet
+const sampleClasses: ClassroomData[] = [
+  {
+    id: 'sample-1',
+    name: 'Mathematics Excellence',
+    subject: 'Mathematics',
+    description: 'Master algebra, geometry and problem-solving with Mr. Mensah',
+    teacher_id: '',
+    classroom_type: 'school',
+    invite_code: 'MTH123',
+    monthly_fee: null,
+    currency: null,
+  },
+  {
+    id: 'sample-2',
+    name: 'BECE Science Prep',
+    subject: 'Science',
+    description: 'Comprehensive BECE science preparation with practicals and theory',
+    teacher_id: '',
+    classroom_type: 'private',
+    invite_code: 'SCI456',
+    monthly_fee: 50,
+    currency: 'GHS',
+  },
+];
+
+const sampleAnnouncements: AnnouncementData[] = [
+  {
+    id: 'sample-ann-1',
+    title: 'Welcome to the class! 🎉',
+    content: 'Please review the syllabus and come prepared for our first lesson on Monday.',
+    created_at: new Date().toISOString(),
+    classroom_id: 'sample-1',
+  },
+  {
+    id: 'sample-ann-2',
+    title: 'Upcoming Mock Exam',
+    content: 'We will have a practice mock exam next Friday. Study chapters 1-5.',
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    classroom_id: 'sample-2',
+  },
+];
+
 const ClassZone: React.FC = () => {
   const { user } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
@@ -71,6 +114,7 @@ const ClassZone: React.FC = () => {
   const [isBrowseLoading, setIsBrowseLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassroomData | null>(null);
   const [mainTab, setMainTab] = useState('my-classes');
+  const [usingSamples, setUsingSamples] = useState(false);
 
   useEffect(() => {
     if (user) fetchClassrooms();
@@ -110,6 +154,7 @@ const ClassZone: React.FC = () => {
           .select('*')
           .in('id', approvedIds);
         setMyClasses(classrooms || []);
+        setUsingSamples(false);
 
         const { data: anns } = await supabase
           .from('classroom_announcements')
@@ -126,6 +171,11 @@ const ClassZone: React.FC = () => {
           .eq('is_published', true)
           .order('created_at', { ascending: false });
         setResources(res || []);
+      } else {
+        // No real classes — show samples for visualization
+        setMyClasses(sampleClasses);
+        setAnnouncements(sampleAnnouncements);
+        setUsingSamples(true);
       }
     } catch (err) {
       console.error('Error fetching classrooms:', err);
@@ -204,7 +254,7 @@ const ClassZone: React.FC = () => {
   };
 
   const isAlreadyJoinedOrPending = (classroomId: string) => {
-    return myClasses.some(c => c.id === classroomId) || pendingClasses.includes(classroomId);
+    return (!usingSamples && myClasses.some(c => c.id === classroomId)) || pendingClasses.includes(classroomId);
   };
 
   const getClassAnnouncements = (classId: string) =>
@@ -227,8 +277,8 @@ const ClassZone: React.FC = () => {
     );
   }
 
-  // Class detail view
-  if (selectedClass) {
+  // Class detail view (not for samples)
+  if (selectedClass && !selectedClass.id.startsWith('sample-')) {
     const classAnnouncements = getClassAnnouncements(selectedClass.id);
     const classResources = getClassResources(selectedClass.id);
 
@@ -317,6 +367,70 @@ const ClassZone: React.FC = () => {
     );
   }
 
+  // Sample class detail view
+  if (selectedClass && selectedClass.id.startsWith('sample-')) {
+    const classAnns = getClassAnnouncements(selectedClass.id);
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <button
+          onClick={() => setSelectedClass(null)}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 rotate-180" />
+          <span className="text-sm">Back to classes</span>
+        </button>
+
+        <div className="relative">
+          <Badge variant="outline" className="absolute -top-1 right-0 text-xs text-muted-foreground">Sample Preview</Badge>
+          <h2 className="text-2xl font-bold">{selectedClass.name}</h2>
+          <p className="text-muted-foreground">{selectedClass.subject}</p>
+          {selectedClass.description && (
+            <p className="text-sm mt-2">{selectedClass.description}</p>
+          )}
+        </div>
+
+        <Tabs defaultValue="announcements">
+          <TabsList>
+            <TabsTrigger value="resources">Notes & Materials</TabsTrigger>
+            <TabsTrigger value="announcements">
+              Announcements
+              {classAnns.length > 0 && (
+                <Badge variant="destructive" className="ml-2 text-xs">{classAnns.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="resources" className="mt-4">
+            <Card><CardContent className="p-6 text-center text-muted-foreground">No materials shared yet — your teacher will add notes here</CardContent></Card>
+          </TabsContent>
+
+          <TabsContent value="announcements" className="mt-4 space-y-3">
+            {classAnns.map((ann) => (
+              <Card key={ann.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-medium">{ann.title}</h4>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(ann.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{ann.content}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  }
+
   // Main view
   return (
     <div className="space-y-6 animate-fade-in">
@@ -357,6 +471,18 @@ const ClassZone: React.FC = () => {
         </Dialog>
       </div>
 
+      {usingSamples && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4 flex items-start gap-3">
+            <span className="text-xl">👋</span>
+            <div>
+              <p className="text-sm font-medium">These are sample classes to show you how it works</p>
+              <p className="text-xs text-muted-foreground">Join a real class using an invite code or browse private classes below</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs value={mainTab} onValueChange={setMainTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="my-classes">My Classes</TabsTrigger>
@@ -364,86 +490,65 @@ const ClassZone: React.FC = () => {
         </TabsList>
 
         <TabsContent value="my-classes" className="mt-6 space-y-6">
-          {myClasses.length === 0 && pendingClasses.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="p-10 text-center">
-                <div className="text-5xl mb-4">📚</div>
-                <h3 className="text-lg font-semibold mb-2">No classes yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Join with a code or browse private classes to get started
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <Button onClick={() => setIsJoinDialogOpen(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Enter Invite Code
-                  </Button>
-                  <Button variant="outline" onClick={() => setMainTab('browse')}>
-                    <Search className="w-4 h-4 mr-2" />
-                    Browse Classes
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {pendingClasses.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">⏳ Pending Approval</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {pendingClasses.map((id) => {
-                      const cls = browseClasses.find(c => c.id === id);
-                      return (
-                        <Card key={id} className="border-dashed border-amber-300 dark:border-amber-700 opacity-75">
-                          <CardContent className="p-4 flex items-center gap-3">
-                            <Lock className="w-5 h-5 text-amber-500" />
-                            <div>
-                              <p className="font-medium text-sm">{cls?.name || 'Class'}</p>
-                              <p className="text-xs text-muted-foreground">Waiting for teacher approval</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {myClasses.map((cls) => {
-                  const classAnns = getClassAnnouncements(cls.id);
+          {pendingClasses.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">⏳ Pending Approval</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {pendingClasses.map((id) => {
+                  const cls = browseClasses.find(c => c.id === id);
                   return (
-                    <Card
-                      key={cls.id}
-                      className="hover:shadow-lg transition-all cursor-pointer group"
-                      onClick={() => setSelectedClass(cls)}
-                    >
-                      <CardContent className="p-5">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-semibold text-lg">{cls.name}</h4>
-                              {classAnns.length > 0 && (
-                                <Badge variant="destructive" className="text-xs">{classAnns.length} new</Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">{cls.subject}</p>
-                          </div>
-                          <Badge variant={cls.classroom_type === 'school' ? 'secondary' : 'outline'}>
-                            {cls.classroom_type === 'school' ? '🏫 School' : '📚 Private'}
-                          </Badge>
+                    <Card key={id} className="border-dashed border-amber-300 dark:border-amber-700 opacity-75">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <Lock className="w-5 h-5 text-amber-500" />
+                        <div>
+                          <p className="font-medium text-sm">{cls?.name || 'Class'}</p>
+                          <p className="text-xs text-muted-foreground">Waiting for teacher approval</p>
                         </div>
-                        <Button size="sm" className="w-full mt-2 gap-1 group-hover:bg-primary group-hover:text-primary-foreground" variant="outline">
-                          <BookOpen className="w-4 h-4" />
-                          View Class
-                          <ChevronRight className="w-4 h-4 ml-auto" />
-                        </Button>
                       </CardContent>
                     </Card>
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {myClasses.map((cls) => {
+              const classAnns = getClassAnnouncements(cls.id);
+              return (
+                <Card
+                  key={cls.id}
+                  className="hover:shadow-lg transition-all cursor-pointer group"
+                  onClick={() => setSelectedClass(cls)}
+                >
+                  <CardContent className="p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-lg">{cls.name}</h4>
+                          {classAnns.length > 0 && (
+                            <Badge variant="destructive" className="text-xs">{classAnns.length} new</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{cls.subject}</p>
+                        {cls.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{cls.description}</p>
+                        )}
+                      </div>
+                      <Badge variant={cls.classroom_type === 'school' ? 'secondary' : 'outline'}>
+                        {cls.classroom_type === 'school' ? '🏫 School' : '📚 Private'}
+                      </Badge>
+                    </div>
+                    <Button size="sm" className="w-full mt-2 gap-1 group-hover:bg-primary group-hover:text-primary-foreground" variant="outline">
+                      <BookOpen className="w-4 h-4" />
+                      View Class
+                      <ChevronRight className="w-4 h-4 ml-auto" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
 
           {announcements.length > 0 && (
             <div>
@@ -533,7 +638,7 @@ const ClassZone: React.FC = () => {
                       </div>
                       {isPending ? (
                         <Badge className="bg-amber-500 shrink-0">Pending ⏳</Badge>
-                      ) : myClasses.some(c => c.id === cls.id) ? (
+                      ) : (!usingSamples && myClasses.some(c => c.id === cls.id)) ? (
                         <Badge className="bg-green-500 shrink-0">Joined ✓</Badge>
                       ) : (
                         <Button
