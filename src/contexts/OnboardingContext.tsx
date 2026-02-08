@@ -67,7 +67,7 @@ export const OnboardingProvider: React.FC<{ children: ReactNode }> = ({ children
   const storedState = loadStoredState();
   
   const [currentStep, setCurrentStepInternal] = useState<OnboardingStep>(
-    storedState.currentStep || 'role'
+    storedState.currentStep || 'signup'
   );
   const [signupData, setSignupDataInternal] = useState<Partial<SignupFormData>>(
     storedState.signupData || {}

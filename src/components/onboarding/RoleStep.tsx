@@ -14,7 +14,11 @@ const RoleStep: React.FC = () => {
     setUserRole(role);
     
     // Save role to database
-    await updateProfile({ user_role: role });
+    const { error } = await updateProfile({ user_role: role });
+    
+    if (error) {
+      console.error('Failed to save role:', error);
+    }
     
     if (role === 'teacher') {
       setCurrentStep('profile');

@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { ArrowLeft, Mail, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, Mail, RefreshCw, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const VerifyStep: React.FC = () => {
-  const { signupData, otp, setOtp, setCurrentStep } = useOnboarding();
+  const { signupData, setCurrentStep } = useOnboarding();
+  const { toast } = useToast();
   const [otpValues, setOtpValues] = useState<string[]>(['', '', '', '', '', '']);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -23,7 +27,6 @@ const VerifyStep: React.FC = () => {
     const newValues = [...otpValues];
     newValues[index] = value.slice(-1);
     setOtpValues(newValues);
-    setOtp(newValues.join(''));
 
     // Auto-focus next input
     if (value && index < 5) {
@@ -45,28 +48,68 @@ const VerifyStep: React.FC = () => {
       if (index < 6) newValues[index] = char;
     });
     setOtpValues(newValues);
-    setOtp(newValues.join(''));
     
-    // Focus the appropriate input
     const focusIndex = Math.min(pastedData.length, 5);
     inputRefs.current[focusIndex]?.focus();
   };
 
   const handleResend = async () => {
     setIsResending(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: signupData.email!,
+    });
+
+    if (error) {
+      toast({
+        title: 'Failed to resend code',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Code resent',
+        description: 'A new verification code has been sent to your email.',
+      });
+    }
+    
     setIsResending(false);
     setResendTimer(60);
     setOtpValues(['', '', '', '', '', '']);
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const fullOtp = otpValues.join('');
-    if (fullOtp.length === 6) {
-      // In a real app, verify OTP here
-      setCurrentStep('role');
+    if (fullOtp.length !== 6) return;
+
+    setIsVerifying(true);
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: signupData.email!,
+      token: fullOtp,
+      type: 'signup',
+    });
+
+    if (error) {
+      toast({
+        title: 'Verification failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+      setIsVerifying(false);
+      return;
     }
+
+    toast({
+      title: 'Email verified!',
+      description: 'Your account has been verified successfully.',
+    });
+
+    // After successful OTP verification, user is now signed in
+    // The app will detect auth state and show the role step via onboarding
+    setCurrentStep('role');
+    setIsVerifying(false);
   };
 
   const isComplete = otpValues.every(v => v !== '');
@@ -118,11 +161,14 @@ const VerifyStep: React.FC = () => {
 
       <Button 
         onClick={handleVerify}
-        disabled={!isComplete}
+        disabled={!isComplete || isVerifying}
         className="w-full" 
         size="lg"
         variant="hero"
       >
+        {isVerifying ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : null}
         Verify Email
       </Button>
 
