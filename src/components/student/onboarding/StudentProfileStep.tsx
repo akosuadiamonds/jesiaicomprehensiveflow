@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -11,20 +12,55 @@ import {
 } from '@/components/ui/select';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, ArrowRight, Phone, GraduationCap, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Phone, Loader2, BookOpen } from 'lucide-react';
 
 const CLASS_GRADES = [
   'JHS 1', 'JHS 2', 'JHS 3',
   'SHS 1', 'SHS 2', 'SHS 3',
 ];
 
+// GES curriculum subjects by level
+const SUBJECTS_BY_LEVEL: Record<string, string[]> = {
+  JHS: [
+    'Mathematics',
+    'English Language',
+    'Science',
+    'Social Studies',
+    'ICT',
+    'Creative Arts',
+    'French',
+    'Religious & Moral Education',
+    'Ghanaian Language',
+  ],
+  SHS: [
+    'Mathematics',
+    'English Language',
+    'Science',
+    'Social Studies',
+    'ICT',
+    'History',
+    'Geography',
+    'French',
+    'Religious & Moral Education',
+    'Physical Education',
+  ],
+};
+
+const getSubjectsForGrade = (grade: string): string[] => {
+  if (grade.startsWith('JHS')) return SUBJECTS_BY_LEVEL.JHS;
+  if (grade.startsWith('SHS')) return SUBJECTS_BY_LEVEL.SHS;
+  return [];
+};
+
 const StudentProfileStep: React.FC = () => {
-  const { setCurrentStep } = useOnboarding();
+  const { setCurrentStep, setTeacherProfile, teacherProfile } = useOnboarding();
   const { updateProfile } = useAuth();
   const [parentContact, setParentContact] = useState('');
   const [classGrade, setClassGrade] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const autoSubjects = classGrade ? getSubjectsForGrade(classGrade) : [];
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -47,13 +83,18 @@ const StudentProfileStep: React.FC = () => {
     if (!validate()) return;
 
     setIsSubmitting(true);
+    // Save profile with auto-assigned subjects - skip the subjects step entirely
     const { error } = await updateProfile({
       parent_contact: parentContact,
       class_grade: classGrade,
+      subjects: autoSubjects,
     } as any);
 
     if (!error) {
-      setCurrentStep('subjects');
+      // Update onboarding context with subjects
+      setTeacherProfile({ ...teacherProfile, subjects: autoSubjects });
+      // Skip subjects step, go directly to join class
+      setCurrentStep('student-join-class');
     }
     setIsSubmitting(false);
   };
@@ -94,6 +135,26 @@ const StudentProfileStep: React.FC = () => {
             <p className="text-xs text-destructive">{errors.classGrade}</p>
           )}
         </div>
+
+        {/* Auto-assigned subjects preview */}
+        {autoSubjects.length > 0 && (
+          <div className="space-y-2 p-4 rounded-xl bg-primary/5 border border-primary/10">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="w-4 h-4 text-primary" />
+              <Label className="text-sm font-medium text-primary">Your Subjects ({autoSubjects.length})</Label>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Based on the GES curriculum for {classGrade}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {autoSubjects.map((subject) => (
+                <Badge key={subject} variant="secondary" className="text-xs">
+                  {subject}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="parentContact">Parent / Guardian Phone Number</Label>

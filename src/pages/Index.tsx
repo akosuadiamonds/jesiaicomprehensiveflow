@@ -82,8 +82,6 @@ const OnboardingStepSync: React.FC = () => {
       const hasParentContact = !!(profile as any).parent_contact;
       if (!hasParentContact) {
         setCurrentStep('student-profile');
-      } else if (!hasSubjects) {
-        setCurrentStep('subjects');
       } else if (!hasSelectedPlan) {
         setCurrentStep('student-plans');
       }
