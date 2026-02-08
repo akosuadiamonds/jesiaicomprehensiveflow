@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Upload, Copy, Trash2, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Upload, Copy, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
@@ -14,7 +14,6 @@ interface StudentRecord {
   joined_at: string;
   is_active: boolean;
   subscription_status: string | null;
-  approval_status: string;
   profile?: {
     first_name: string | null;
     last_name: string | null;
@@ -32,7 +31,6 @@ const ClassroomStudentsTab: React.FC<ClassroomStudentsTabProps> = ({ classroomId
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBulkModal, setShowBulkModal] = useState(false);
-  const [approving, setApproving] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStudents();
@@ -42,7 +40,7 @@ const ClassroomStudentsTab: React.FC<ClassroomStudentsTabProps> = ({ classroomId
     setLoading(true);
     const { data, error } = await supabase
       .from('classroom_students')
-      .select('id, student_id, joined_at, is_active, subscription_status, approval_status')
+      .select('id, student_id, joined_at, is_active, subscription_status')
       .eq('classroom_id', classroomId)
       .order('joined_at', { ascending: false });
 
@@ -91,95 +89,10 @@ const ClassroomStudentsTab: React.FC<ClassroomStudentsTabProps> = ({ classroomId
     }
   };
 
-  const approveStudent = async (enrollmentId: string) => {
-    setApproving(enrollmentId);
-    const { error } = await supabase
-      .from('classroom_students')
-      .update({ approval_status: 'approved' })
-      .eq('id', enrollmentId);
-
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to approve student', variant: 'destructive' });
-    } else {
-      sonnerToast.success('Student approved!');
-      fetchStudents();
-    }
-    setApproving(null);
-  };
-
-  const rejectStudent = async (enrollmentId: string) => {
-    const { error } = await supabase
-      .from('classroom_students')
-      .delete()
-      .eq('id', enrollmentId);
-
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to reject student', variant: 'destructive' });
-    } else {
-      sonnerToast.success('Request rejected');
-      fetchStudents();
-    }
-  };
-
-  const activeStudents = students.filter(s => s.is_active && s.approval_status === 'approved');
-  const pendingStudents = students.filter(s => s.approval_status === 'pending');
+  const activeStudents = students.filter(s => s.is_active);
 
   return (
     <div className="space-y-4">
-      {/* Pending Approval Requests */}
-      {pendingStudents.length > 0 && (
-        <Card className="border-amber-300 dark:border-amber-700">
-          <CardHeader>
-            <CardTitle className="text-amber-600 dark:text-amber-400 flex items-center gap-2">
-              ⏳ Pending Requests ({pendingStudents.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {pendingStudents.map((student) => (
-              <div key={student.id} className="flex items-center justify-between p-3 border border-dashed rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-sm font-medium text-amber-600">
-                    {(student.profile?.first_name?.[0] || 'S').toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {student.profile?.first_name || 'Student'} {student.profile?.last_name || ''}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Requested {new Date(student.joined_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 gap-1"
-                    onClick={() => approveStudent(student.id)}
-                    disabled={approving === student.id}
-                  >
-                    {approving === student.id ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-3 h-3" />
-                    )}
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-destructive hover:bg-destructive/10 gap-1"
-                    onClick={() => rejectStudent(student.id)}
-                  >
-                    <XCircle className="w-3 h-3" /> Reject
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
