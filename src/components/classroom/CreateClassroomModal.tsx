@@ -15,6 +15,7 @@ interface CreateClassroomModalProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: CreateClassroomData) => Promise<{ error: any }>;
   defaultType?: ClassroomType;
+  isPremium?: boolean;
 }
 
 const SUBJECTS = [
@@ -36,6 +37,7 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
   onOpenChange,
   onSubmit,
   defaultType = 'school',
+  isPremium = false,
 }) => {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -103,11 +105,12 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
                   </span>
                 </Label>
               </div>
-              <div>
+              <div className={`relative ${!isPremium ? 'opacity-50 pointer-events-none' : ''}`}>
                 <RadioGroupItem
                   value="private"
                   id="private"
                   className="peer sr-only"
+                  disabled={!isPremium}
                 />
                 <Label
                   htmlFor="private"
@@ -116,7 +119,7 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
                   <Briefcase className="mb-2 h-6 w-6" />
                   <span className="font-medium">Private Class</span>
                   <span className="text-xs text-muted-foreground text-center mt-1">
-                    Paid tutoring sessions
+                    {isPremium ? 'Paid tutoring sessions' : 'Premium plan only'}
                   </span>
                 </Label>
               </div>

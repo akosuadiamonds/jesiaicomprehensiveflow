@@ -61,9 +61,11 @@ const plans: Plan[] = [
 interface UpgradePlanModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  requiredPlan?: 'pro' | 'premium';
+  featureName?: string;
 }
 
-const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({ open, onOpenChange }) => {
+const UpgradePlanModal: React.FC<UpgradePlanModalProps> = ({ open, onOpenChange, requiredPlan, featureName }) => {
   const { profile, updateProfile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
