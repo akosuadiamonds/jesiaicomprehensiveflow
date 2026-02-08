@@ -1,4 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const LOVABLE_API_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -13,8 +14,56 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate the request
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Verify user is a teacher
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("user_role")
+      .eq("user_id", userId)
+      .single();
+
+    if (profile?.user_role !== "teacher") {
+      return new Response(JSON.stringify({ error: "Only teachers can generate quizzes" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json();
     const { type, title, level, class: className, subject, strands, questionFormats, dokLevel, questionCount, duration } = body;
+
+    // Basic input validation
+    if (!title || !level || !className || !subject || !Array.isArray(strands) || !Array.isArray(questionFormats)) {
+      return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const safeQuestionCount = Math.min(Math.max(Number(questionCount) || 10, 1), 50);
+    const safeDuration = Math.min(Math.max(Number(duration) || 15, 5), 180);
+    const safeDokLevel = Math.min(Math.max(Number(dokLevel) || 1, 1), 4);
 
     const strandsDescription = strands
       .filter((s: any) => s.strand)
@@ -35,23 +84,25 @@ Deno.serve(async (req) => {
       4: 'DOK 4 (Extended Thinking): research, synthesis, complex analysis',
     };
 
-    const formatsText = questionFormats.map((f: string) => formatDescriptions[f] || f).join(', ');
+    const allowedFormats = ['mcq', 'true_false', 'short_answer', 'fill_blank'];
+    const safeFormats = questionFormats.filter((f: string) => allowedFormats.includes(f));
+    const formatsText = safeFormats.map((f: string) => formatDescriptions[f] || f).join(', ');
 
-    const prompt = `Generate a ${type} for Ghana Education Service (GES) curriculum.
+    const prompt = `Generate a ${type || 'quiz'} for Ghana Education Service (GES) curriculum.
 
 Title: ${title}
 Level: ${level}
 Class: ${className}
 Subject: ${subject}
-Duration: ${duration} minutes
+Duration: ${safeDuration} minutes
 
 Curriculum Coverage:
 ${strandsDescription}
 
 Requirements:
-- Exactly ${questionCount} questions total.
-- Question formats to use: ${formatsText}. Mix the formats proportionally across the ${questionCount} questions.
-- Difficulty level: ${dokDescriptions[dokLevel]}
+- Exactly ${safeQuestionCount} questions total.
+- Question formats to use: ${formatsText}. Mix the formats proportionally across the ${safeQuestionCount} questions.
+- Difficulty level: ${dokDescriptions[safeDokLevel]}
 - Questions should be age-appropriate for ${className} students.
 - Cover the specified strands and sub-strands.
 - For MCQ questions, provide 4 options (A, B, C, D).
@@ -136,7 +187,7 @@ Requirements:
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error(`AI API error: ${response.status}`);
+      throw new Error("Failed to generate quiz. Please try again.");
     }
 
     const aiData = await response.json();
@@ -153,7 +204,7 @@ Requirements:
     });
   } catch (error) {
     console.error("Error generating quiz:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "An error occurred while generating the quiz. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
