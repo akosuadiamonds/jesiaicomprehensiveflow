@@ -678,6 +678,75 @@ export type Database = {
         }
         Relationships: []
       }
+      school_subscriptions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          currency: string
+          expires_at: string | null
+          id: string
+          institution_id: string
+          invited_email: string | null
+          payment_status: string
+          plan_id: string
+          starts_at: string | null
+          status: string
+          student_slots: number
+          teacher_slots: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          institution_id: string
+          invited_email?: string | null
+          payment_status?: string
+          plan_id: string
+          starts_at?: string | null
+          status?: string
+          student_slots?: number
+          teacher_slots?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          institution_id?: string
+          invited_email?: string | null
+          payment_status?: string
+          plan_id?: string
+          starts_at?: string | null
+          status?: string
+          student_slots?: number
+          teacher_slots?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_subscriptions_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_coins: {
         Row: {
           coins: number
@@ -770,6 +839,48 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans: {
+        Row: {
+          billing_period: string
+          created_at: string
+          currency: string
+          features: Json
+          id: string
+          is_active: boolean
+          name: string
+          plan_type: string
+          price: number
+          token_allocation: number
+          updated_at: string
+        }
+        Insert: {
+          billing_period?: string
+          created_at?: string
+          currency?: string
+          features?: Json
+          id?: string
+          is_active?: boolean
+          name: string
+          plan_type?: string
+          price?: number
+          token_allocation?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_period?: string
+          created_at?: string
+          currency?: string
+          features?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          plan_type?: string
+          price?: number
+          token_allocation?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -814,7 +925,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "teacher" | "learner" | "school_admin"
+      app_role: "teacher" | "learner" | "school_admin" | "super_admin"
       classroom_type: "school" | "private"
     }
     CompositeTypes: {
@@ -943,7 +1054,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["teacher", "learner", "school_admin"],
+      app_role: ["teacher", "learner", "school_admin", "super_admin"],
       classroom_type: ["school", "private"],
     },
   },
