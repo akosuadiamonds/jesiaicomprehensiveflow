@@ -5,6 +5,7 @@ import SASchools from './pages/SASchools';
 import SAUsers from './pages/SAUsers';
 import SAPlans from './pages/SAPlans';
 import SASubscriptions from './pages/SASubscriptions';
+import SAFinancials from './pages/SAFinancials';
 import SAInsights from './pages/SAInsights';
 
 interface SuperAdminContextType {
@@ -30,6 +31,7 @@ const SuperAdminApp: React.FC = () => {
       case 'users': return <SAUsers />;
       case 'plans': return <SAPlans />;
       case 'subscriptions': return <SASubscriptions />;
+      case 'financials': return <SAFinancials />;
       case 'insights': return <SAInsights />;
       default: return <SADashboard />;
     }
