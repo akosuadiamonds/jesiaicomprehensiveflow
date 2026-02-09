@@ -353,7 +353,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
-          institution_id: string
+          institution_id: string | null
           is_active: boolean
           is_default: boolean
           method_type: string
@@ -366,7 +366,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          institution_id: string
+          institution_id?: string | null
           is_active?: boolean
           is_default?: boolean
           method_type?: string
@@ -379,7 +379,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
-          institution_id?: string
+          institution_id?: string | null
           is_active?: boolean
           is_default?: boolean
           method_type?: string

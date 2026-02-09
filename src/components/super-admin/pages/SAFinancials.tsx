@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, DollarSign, TrendingUp, TrendingDown, CreditCard } from 'lucide-react';
+import { Plus, Loader2, DollarSign, TrendingUp, TrendingDown, CreditCard, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Transaction {
@@ -27,27 +28,26 @@ interface Transaction {
   institution_name?: string;
 }
 
-interface PaymentMethod {
+interface PlatformPaymentMethod {
   id: string;
-  institution_id: string;
   method_type: string;
   provider: string | null;
   account_number: string | null;
   account_name: string | null;
   is_default: boolean;
   is_active: boolean;
-  institution_name?: string;
 }
 
 const SAFinancials: React.FC = () => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PlatformPaymentMethod[]>([]);
   const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [addTxOpen, setAddTxOpen] = useState(false);
-  const [addPmOpen, setAddPmOpen] = useState(false);
+  const [pmDialogOpen, setPmDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingPm, setEditingPm] = useState<PlatformPaymentMethod | null>(null);
 
   // Transaction form
   const [txSchoolId, setTxSchoolId] = useState('');
@@ -58,17 +58,18 @@ const SAFinancials: React.FC = () => {
   const [txType, setTxType] = useState('payment');
   const [txNotes, setTxNotes] = useState('');
 
-  // Payment method form
-  const [pmSchoolId, setPmSchoolId] = useState('');
+  // Payment method form (platform-level)
   const [pmType, setPmType] = useState('mobile_money');
   const [pmProvider, setPmProvider] = useState('');
   const [pmAccountNumber, setPmAccountNumber] = useState('');
   const [pmAccountName, setPmAccountName] = useState('');
+  const [pmIsDefault, setPmIsDefault] = useState(false);
+  const [pmIsActive, setPmIsActive] = useState(true);
 
   const fetchData = async () => {
     const [txRes, pmRes, schoolsRes] = await Promise.all([
       supabase.from('payment_transactions').select('*').order('transaction_date', { ascending: false }),
-      supabase.from('payment_methods').select('*').order('created_at', { ascending: false }),
+      supabase.from('payment_methods').select('*').is('institution_id', null).order('created_at', { ascending: false }),
       supabase.from('institutions').select('id, name'),
     ]);
 
@@ -79,11 +80,7 @@ const SAFinancials: React.FC = () => {
       institution_name: schoolMap.get(t.institution_id) || 'Unknown',
     })));
 
-    setPaymentMethods(((pmRes.data as any[]) || []).map((p: any) => ({
-      ...p,
-      institution_name: schoolMap.get(p.institution_id) || 'Unknown',
-    })));
-
+    setPaymentMethods((pmRes.data as any[]) || []);
     setSchools((schoolsRes.data as any[]) || []);
     setLoading(false);
   };
@@ -104,24 +101,64 @@ const SAFinancials: React.FC = () => {
       recorded_by: user?.id,
     } as any);
     if (error) toast.error('Failed to record transaction');
-    else { toast.success('Transaction recorded'); setAddTxOpen(false); fetchData(); }
+    else { toast.success('Transaction recorded'); setAddTxOpen(false); resetTxForm(); fetchData(); }
     setSaving(false);
   };
 
-  const handleAddPaymentMethod = async () => {
-    if (!pmSchoolId || !pmProvider) { toast.error('School and provider required'); return; }
+  const resetTxForm = () => {
+    setTxSchoolId(''); setTxAmount(''); setTxMethod('mobile_money');
+    setTxReference(''); setTxStatus('completed'); setTxType('payment'); setTxNotes('');
+  };
+
+  const openCreatePm = () => {
+    setEditingPm(null);
+    setPmType('mobile_money'); setPmProvider(''); setPmAccountNumber('');
+    setPmAccountName(''); setPmIsDefault(false); setPmIsActive(true);
+    setPmDialogOpen(true);
+  };
+
+  const openEditPm = (pm: PlatformPaymentMethod) => {
+    setEditingPm(pm);
+    setPmType(pm.method_type); setPmProvider(pm.provider || '');
+    setPmAccountNumber(pm.account_number || ''); setPmAccountName(pm.account_name || '');
+    setPmIsDefault(pm.is_default); setPmIsActive(pm.is_active);
+    setPmDialogOpen(true);
+  };
+
+  const handleSavePaymentMethod = async () => {
+    if (!pmProvider.trim()) { toast.error('Provider is required'); return; }
     setSaving(true);
-    const { error } = await supabase.from('payment_methods').insert({
-      institution_id: pmSchoolId,
+
+    const payload: any = {
       method_type: pmType,
-      provider: pmProvider,
+      provider: pmProvider.trim(),
       account_number: pmAccountNumber || null,
       account_name: pmAccountName || null,
-      created_by: user?.id,
-    } as any);
-    if (error) toast.error('Failed to add payment method');
-    else { toast.success('Payment method added'); setAddPmOpen(false); fetchData(); }
+      is_default: pmIsDefault,
+      is_active: pmIsActive,
+      institution_id: null, // platform-level
+    };
+
+    if (editingPm) {
+      const { error } = await supabase.from('payment_methods').update(payload).eq('id', editingPm.id);
+      if (error) toast.error('Failed to update payment method');
+      else toast.success('Payment method updated');
+    } else {
+      payload.created_by = user?.id;
+      const { error } = await supabase.from('payment_methods').insert(payload);
+      if (error) toast.error('Failed to add payment method');
+      else toast.success('Payment method added');
+    }
+
     setSaving(false);
+    setPmDialogOpen(false);
+    fetchData();
+  };
+
+  const handleDeletePm = async (id: string) => {
+    const { error } = await supabase.from('payment_methods').delete().eq('id', id);
+    if (error) toast.error('Failed to delete');
+    else { toast.success('Payment method removed'); fetchData(); }
   };
 
   // Financial summary
@@ -140,11 +177,20 @@ const SAFinancials: React.FC = () => {
     return <Badge className={`${map[status] || ''} border-0`}>{status}</Badge>;
   };
 
+  const methodTypeLabel = (type: string) => {
+    switch (type) {
+      case 'mobile_money': return 'Mobile Money';
+      case 'bank_transfer': return 'Bank Transfer';
+      case 'card': return 'Card';
+      default: return type;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Financial Reports</h1>
-        <p className="text-muted-foreground mt-1">Track payments, revenue, and financial health</p>
+        <p className="text-muted-foreground mt-1">Track payments, revenue, and manage accepted payment methods</p>
       </div>
 
       {/* Summary Cards */}
@@ -182,7 +228,7 @@ const SAFinancials: React.FC = () => {
       <Tabs defaultValue="transactions">
         <TabsList>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
-          <TabsTrigger value="payment-methods">Payment Methods</TabsTrigger>
+          <TabsTrigger value="payment-methods">Accepted Payment Methods</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-4">
@@ -231,51 +277,58 @@ const SAFinancials: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="payment-methods" className="space-y-4">
-          <div className="flex justify-end">
-            <Button variant="hero" className="gap-2" onClick={() => setAddPmOpen(true)}>
-              <Plus className="w-4 h-4" /> Add Payment Method
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">These are the payment methods accepted by the platform. They will be displayed to schools during payment.</p>
+            <Button variant="hero" className="gap-2" onClick={openCreatePm}>
+              <Plus className="w-4 h-4" /> Add Method
             </Button>
           </div>
 
-          <Card>
-            <CardContent className="p-0">
-              {loading ? (
-                <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-              ) : paymentMethods.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">No payment methods added yet.</div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>School</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>Account</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paymentMethods.map((pm) => (
-                      <TableRow key={pm.id}>
-                        <TableCell className="font-medium">{pm.institution_name}</TableCell>
-                        <TableCell className="capitalize">{pm.method_type.replace('_', ' ')}</TableCell>
-                        <TableCell>{pm.provider || '—'}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {pm.account_name ? `${pm.account_name} • ` : ''}{pm.account_number || '—'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={pm.is_active ? 'bg-green-100 text-green-700 border-0' : 'bg-red-100 text-red-700 border-0'}>
-                            {pm.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                          {pm.is_default && <Badge className="ml-1 bg-blue-100 text-blue-700 border-0">Default</Badge>}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              <div className="col-span-full flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : paymentMethods.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-muted-foreground">No payment methods added yet. Add your first accepted method.</div>
+            ) : (
+              paymentMethods.map((pm) => (
+                <Card key={pm.id} className={`relative ${!pm.is_active ? 'opacity-60' : ''}`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base font-semibold">{pm.provider}</CardTitle>
+                      <div className="flex items-center gap-1">
+                        {pm.is_default && <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">Default</Badge>}
+                        {!pm.is_active && <Badge variant="secondary" className="text-xs">Inactive</Badge>}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">{methodTypeLabel(pm.method_type)}</span>
+                    </div>
+                    {pm.account_name && (
+                      <p className="text-sm text-muted-foreground">Name: <span className="text-foreground">{pm.account_name}</span></p>
+                    )}
+                    {pm.account_number && (
+                      <p className="text-sm text-muted-foreground">Number: <span className="text-foreground font-mono">{pm.account_number}</span></p>
+                    )}
+                    <div className="flex gap-2 pt-2">
+                      <Button variant="outline" size="sm" className="gap-1" onClick={() => openEditPm(pm)}>
+                        <Pencil className="w-3 h-3" /> Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-destructive hover:text-destructive"
+                        onClick={() => handleDeletePm(pm.id)}
+                      >
+                        <Trash2 className="w-3 h-3" /> Remove
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -350,48 +403,54 @@ const SAFinancials: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Payment Method Dialog */}
-      <Dialog open={addPmOpen} onOpenChange={setAddPmOpen}>
+      {/* Add/Edit Payment Method Dialog */}
+      <Dialog open={pmDialogOpen} onOpenChange={setPmDialogOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Add Payment Method</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editingPm ? 'Edit Payment Method' : 'Add Accepted Payment Method'}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label>School *</Label>
-              <Select value={pmSchoolId} onValueChange={setPmSchoolId}>
-                <SelectTrigger><SelectValue placeholder="Select school" /></SelectTrigger>
-                <SelectContent>
-                  {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Configure a payment method that the platform accepts from schools.
+            </p>
             <div className="space-y-2">
               <Label>Type</Label>
               <Select value={pmType} onValueChange={setPmType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                  <SelectItem value="mobile_money">Mobile Money (MoMo)</SelectItem>
                   <SelectItem value="card">Card</SelectItem>
                   <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Provider *</Label>
-              <Input value={pmProvider} onChange={(e) => setPmProvider(e.target.value)} placeholder="e.g. MTN, Vodafone, Visa" />
+              <Label>Provider / Network *</Label>
+              <Input value={pmProvider} onChange={(e) => setPmProvider(e.target.value)} placeholder="e.g. MTN MoMo, Vodafone Cash, Ecobank" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Account Name</Label>
-                <Input value={pmAccountName} onChange={(e) => setPmAccountName(e.target.value)} />
+                <Input value={pmAccountName} onChange={(e) => setPmAccountName(e.target.value)} placeholder="e.g. Jesi AI Ltd" />
               </div>
               <div className="space-y-2">
-                <Label>Account Number</Label>
-                <Input value={pmAccountNumber} onChange={(e) => setPmAccountNumber(e.target.value)} />
+                <Label>Account / Phone Number</Label>
+                <Input value={pmAccountNumber} onChange={(e) => setPmAccountNumber(e.target.value)} placeholder="e.g. 024XXXXXXX" />
               </div>
             </div>
-            <Button onClick={handleAddPaymentMethod} disabled={saving} variant="hero" className="w-full gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Switch checked={pmIsDefault} onCheckedChange={setPmIsDefault} />
+                <Label>Set as default</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={pmIsActive} onCheckedChange={setPmIsActive} />
+                <Label>Active</Label>
+              </div>
+            </div>
+            <Button onClick={handleSavePaymentMethod} disabled={saving} variant="hero" className="w-full gap-2">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-              Add Payment Method
+              {editingPm ? 'Update Method' : 'Add Method'}
             </Button>
           </div>
         </DialogContent>
