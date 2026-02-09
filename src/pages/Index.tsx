@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
@@ -15,6 +16,7 @@ import PaymentStep from '@/components/onboarding/PaymentStep';
 import MainApp from '@/components/MainApp';
 import StudentApp from '@/components/student/StudentApp';
 import SchoolAdminApp from '@/components/school-admin/SchoolAdminApp';
+import SuperAdminApp from '@/components/super-admin/SuperAdminApp';
 import StudentJoinClassStep from '@/components/student/onboarding/StudentJoinClassStep';
 import StudentPlansStep from '@/components/student/onboarding/StudentPlansStep';
 import StudentProfileStep from '@/components/student/onboarding/StudentProfileStep';
@@ -247,8 +249,25 @@ const PostAuthContent: React.FC = () => {
 
 const AuthenticatedApp: React.FC = () => {
   const { user, profile, loading } = useAuth();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [roleChecked, setRoleChecked] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    const checkSuperAdmin = async () => {
+      if (!user) { setRoleChecked(true); return; }
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      setIsSuperAdmin(!!data);
+      setRoleChecked(true);
+    };
+    checkSuperAdmin();
+  }, [user]);
+
+  if (loading || !roleChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -263,6 +282,11 @@ const AuthenticatedApp: React.FC = () => {
         <PreAuthContent />
       </OnboardingProvider>
     );
+  }
+
+  // Super admin gets their own dashboard - no onboarding needed
+  if (isSuperAdmin) {
+    return <SuperAdminApp />;
   }
 
   // Authenticated but profile setup not complete
