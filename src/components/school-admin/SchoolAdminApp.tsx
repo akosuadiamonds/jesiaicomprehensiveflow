@@ -5,6 +5,7 @@ import SchoolAdminLayout from './layout/SchoolAdminLayout';
 import AdminDashboard from './dashboard/AdminDashboard';
 import AdminManageUsers from './dashboard/AdminManageUsers';
 import AdminSettings from './dashboard/AdminSettings';
+import AdminInsights from './dashboard/AdminInsights';
 
 interface Institution {
   id: string;
@@ -74,6 +75,8 @@ const SchoolAdminApp: React.FC = () => {
         return <AdminDashboard />;
       case 'users':
         return <AdminManageUsers />;
+      case 'insights':
+        return <AdminInsights />;
       case 'settings':
         return <AdminSettings />;
       default:
