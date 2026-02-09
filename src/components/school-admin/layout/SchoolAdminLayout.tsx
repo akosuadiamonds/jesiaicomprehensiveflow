@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '../SchoolAdminApp';
-import { Building2, LayoutDashboard, Users, Settings, LogOut } from 'lucide-react';
+import { Building2, LayoutDashboard, Users, Settings, LogOut, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface SchoolAdminLayoutProps {
@@ -11,6 +11,7 @@ interface SchoolAdminLayoutProps {
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'users', label: 'Manage Users', icon: Users },
+  { id: 'insights', label: 'Insights', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 

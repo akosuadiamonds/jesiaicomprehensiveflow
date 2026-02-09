@@ -41,25 +41,29 @@ const AdminManageUsers: React.FC = () => {
 
   const fetchMembers = async () => {
     if (!institution) return;
+    setLoading(true);
     const { data } = await supabase
-      .from('institution_members' as any)
+      .from('institution_members')
       .select('*')
       .eq('institution_id', institution.id)
       .order('joined_at', { ascending: false });
 
     if (data) {
-      // Fetch profiles for each member
       const memberList = data as any[];
-      const userIds = memberList.map(m => m.user_id);
+      const userIds = memberList.map(m => m.user_id).filter(Boolean);
       
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, first_name, last_name')
-        .in('user_id', userIds);
+      let profiles: any[] = [];
+      if (userIds.length > 0) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name')
+          .in('user_id', userIds);
+        profiles = (profileData as any[]) || [];
+      }
 
       const enriched = memberList.map(m => ({
         ...m,
-        profile: (profiles as any[])?.find(p => p.user_id === m.user_id) || null,
+        profile: profiles.find(p => p.user_id === m.user_id) || null,
       }));
 
       setMembers(enriched);
