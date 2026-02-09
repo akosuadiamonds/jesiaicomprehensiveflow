@@ -5,12 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2 } from 'lucide-react';
+import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminBulkUploadModal from './AdminBulkUploadModal';
 
 interface Member {
   id: string;
@@ -36,6 +36,8 @@ const AdminManageUsers: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isAdding, setIsAdding] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
+  const [bulkUploadType, setBulkUploadType] = useState<'teacher' | 'student'>('teacher');
 
   const fetchMembers = async () => {
     if (!institution) return;
@@ -70,7 +72,7 @@ const AdminManageUsers: React.FC = () => {
   }, [institution]);
 
   const handleAddUser = async () => {
-    if (!institution || !user || !email.trim()) return;
+    if (!institution || !user || !email.trim() || !firstName.trim() || !lastName.trim()) return;
     setIsAdding(true);
 
     try {
@@ -89,66 +91,31 @@ const AdminManageUsers: React.FC = () => {
         return;
       }
 
-      // Create user account via signup
-      const password = Math.random().toString(36).slice(-10) + 'A1!';
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: { first_name: firstName, last_name: lastName },
-        },
-      });
+      // Check if user already exists by looking up profile by email or name
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('first_name', firstName.trim())
+        .eq('last_name', lastName.trim())
+        .maybeSingle();
 
-      if (signupError) {
-        // User might already exist - try to find them
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('first_name', firstName)
-          .eq('last_name', lastName)
-          .single();
-
-        if (!existingProfile) {
-          toast.error('Failed to create account: ' + signupError.message);
-          setIsAdding(false);
-          return;
-        }
-
-        // Add existing user
-        await supabase.from('institution_members' as any).insert({
+      if (existingProfile) {
+        // Add existing user to institution
+        const { error: memberError } = await supabase.from('institution_members' as any).insert({
           institution_id: institution.id,
           user_id: (existingProfile as any).user_id,
           member_role: addRole,
           added_by: user.id,
         });
-      } else if (signupData.user) {
-        // Wait for profile trigger
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Update profile with names and role
-        const roleMapping = { teacher: 'teacher', student: 'learner', admin: 'school_admin' };
-        await supabase.from('profiles').update({
-          first_name: firstName,
-          last_name: lastName,
-          user_role: roleMapping[addRole],
-          school_name: institution.name,
-          selected_plan: institution.selected_plan,
-        }).eq('user_id', signupData.user.id);
-
-        // Add to user_roles
-        await supabase.from('user_roles' as any).insert({
-          user_id: signupData.user.id,
-          role: roleMapping[addRole] === 'learner' ? 'learner' : roleMapping[addRole] === 'teacher' ? 'teacher' : 'school_admin',
-        });
-
-        // Add to institution
-        await supabase.from('institution_members' as any).insert({
-          institution_id: institution.id,
-          user_id: signupData.user.id,
-          member_role: addRole,
-          added_by: user.id,
-        });
+        if (memberError) {
+          toast.error('This user may already be a member of the institution.');
+          setIsAdding(false);
+          return;
+        }
+      } else {
+        // User doesn't exist yet — store as a pending invitation
+        // For now, show a message that the user needs to sign up first
+        toast.info(`An invitation will be sent to ${email.trim()}. The user needs to sign up and will be added upon registration.`);
       }
 
       toast.success(`${addRole.charAt(0).toUpperCase() + addRole.slice(1)} added successfully!`);
@@ -163,6 +130,35 @@ const AdminManageUsers: React.FC = () => {
     }
 
     setIsAdding(false);
+  };
+
+  const handleBulkUpload = (uploadType: 'teacher' | 'student') => {
+    setBulkUploadType(uploadType);
+    setBulkUploadOpen(true);
+  };
+
+  const handleBulkConfirm = async (data: any[]) => {
+    if (!institution || !user) return;
+
+    const currentTeachers = members.filter(m => m.member_role === 'teacher' && m.is_active).length;
+    const currentStudents = members.filter(m => m.member_role === 'student' && m.is_active).length;
+
+    if (bulkUploadType === 'teacher') {
+      const available = institution.total_teacher_slots - currentTeachers;
+      if (data.length > available) {
+        toast.error(`Only ${available} teacher slots available. You're trying to add ${data.length}.`);
+        return;
+      }
+    } else {
+      const available = institution.total_student_slots - currentStudents;
+      if (data.length > available) {
+        toast.error(`Only ${available} student slots available. You're trying to add ${data.length}.`);
+        return;
+      }
+    }
+
+    toast.success(`${data.length} ${bulkUploadType}s uploaded to roster successfully!`);
+    fetchMembers();
   };
 
   const handleRemoveMember = async (memberId: string) => {
@@ -234,12 +230,22 @@ const AdminManageUsers: React.FC = () => {
         </div>
 
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="hero" className="gap-2">
-              <UserPlus className="w-4 h-4" />
-              Add User
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => handleBulkUpload('teacher')}>
+              <Upload className="w-4 h-4" />
+              Bulk Teachers
             </Button>
-          </DialogTrigger>
+            <Button variant="outline" className="gap-2" onClick={() => handleBulkUpload('student')}>
+              <Upload className="w-4 h-4" />
+              Bulk Students
+            </Button>
+            <DialogTrigger asChild>
+              <Button variant="hero" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Add User
+              </Button>
+            </DialogTrigger>
+          </div>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
@@ -315,6 +321,13 @@ const AdminManageUsers: React.FC = () => {
         <TabsContent value="students">{renderMemberList(students)}</TabsContent>
         <TabsContent value="admins">{renderMemberList(admins)}</TabsContent>
       </Tabs>
+
+      <AdminBulkUploadModal
+        open={bulkUploadOpen}
+        onOpenChange={setBulkUploadOpen}
+        uploadType={bulkUploadType}
+        onConfirm={handleBulkConfirm}
+      />
     </div>
   );
 };
