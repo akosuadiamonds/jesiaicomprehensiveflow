@@ -53,11 +53,19 @@ const AdminPaymentStep: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 2500));
 
     try {
-      // 1. Upsert user_role (handles case where user already has a role entry)
-      await supabase.from('user_roles' as any).upsert(
+      // 1. Upsert user_role first so RLS policies work
+      const { error: roleError } = await supabase.from('user_roles' as any).upsert(
         { user_id: user.id, role: 'school_admin' },
         { onConflict: 'user_id,role' }
       );
+      if (roleError) {
+        console.error('Role upsert error:', roleError);
+        // Try insert if upsert fails
+        await supabase.from('user_roles' as any).insert({
+          user_id: user.id,
+          role: 'school_admin',
+        });
+      }
 
       // 2. Create institution
       const { data: institution, error: instError } = await supabase
@@ -80,12 +88,13 @@ const AdminPaymentStep: React.FC = () => {
       if (instError) throw instError;
 
       // 3. Add self as admin member
-      await supabase.from('institution_members' as any).insert({
+      const { error: memberError } = await supabase.from('institution_members' as any).insert({
         institution_id: (institution as any).id,
         user_id: user.id,
         member_role: 'admin',
         added_by: user.id,
       });
+      if (memberError) console.error('Member insert error:', memberError);
 
       // 4. Update profile
       await updateProfile({
