@@ -15,7 +15,7 @@ export interface TeacherProfileData {
   subjects: string[];
 }
 
-export type UserRole = 'teacher' | 'learner' | null;
+export type UserRole = 'teacher' | 'learner' | 'school_admin' | null;
 
 export type PlanType = 'free' | 'pro' | 'premium';
 
@@ -46,4 +46,7 @@ export type OnboardingStep =
   | 'student-profile'
   | 'student-join-class'
   | 'student-plans'
-  | 'student-payment';
+  | 'student-payment'
+  | 'admin-school-details'
+  | 'admin-select-package'
+  | 'admin-payment';

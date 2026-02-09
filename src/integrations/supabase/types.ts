@@ -215,6 +215,98 @@ export type Database = {
         }
         Relationships: []
       }
+      institution_members: {
+        Row: {
+          added_by: string | null
+          id: string
+          institution_id: string
+          is_active: boolean
+          joined_at: string
+          member_role: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          id?: string
+          institution_id: string
+          is_active?: boolean
+          joined_at?: string
+          member_role?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          id?: string
+          institution_id?: string
+          is_active?: boolean
+          joined_at?: string
+          member_role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_members_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institutions: {
+        Row: {
+          address: string | null
+          billing_cycle: string
+          city: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          phone: string | null
+          region: string | null
+          selected_plan: string
+          total_student_slots: number
+          total_teacher_slots: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          billing_cycle?: string
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          phone?: string | null
+          region?: string | null
+          selected_plan?: string
+          total_student_slots?: number
+          total_teacher_slots?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          billing_cycle?: string
+          city?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          phone?: string | null
+          region?: string | null
+          selected_plan?: string
+          total_student_slots?: number
+          total_teacher_slots?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       learning_progress: {
         Row: {
           created_at: string
@@ -625,6 +717,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -639,8 +752,16 @@ export type Database = {
         Args: { p_teacher_id: string }
         Returns: string[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "teacher" | "learner" | "school_admin"
       classroom_type: "school" | "private"
     }
     CompositeTypes: {
@@ -769,6 +890,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["teacher", "learner", "school_admin"],
       classroom_type: ["school", "private"],
     },
   },
