@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Save, Loader2 } from 'lucide-react';
+import { Building2, Save, Loader2, ArrowUpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import UpgradePlanModal from '@/components/upgrade/UpgradePlanModal';
 
 const AdminSettings: React.FC = () => {
   const { institution, refreshInstitution } = useAdmin();
@@ -18,6 +19,7 @@ const AdminSettings: React.FC = () => {
   const [phone, setPhone] = useState(institution?.phone || '');
   const [email, setEmail] = useState(institution?.email || '');
   const [saving, setSaving] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const handleSave = async () => {
     if (!institution) return;
@@ -103,10 +105,15 @@ const AdminSettings: React.FC = () => {
                 {institution?.total_teacher_slots} teacher slots • {institution?.total_student_slots} student slots
               </p>
             </div>
-            <Button variant="outline" disabled>Upgrade (Coming Soon)</Button>
+            <Button variant="outline" className="gap-2" onClick={() => setUpgradeOpen(true)}>
+              <ArrowUpCircle className="w-4 h-4" />
+              Upgrade Plan
+            </Button>
           </div>
         </CardContent>
       </Card>
+
+      <UpgradePlanModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
     </div>
   );
 };
