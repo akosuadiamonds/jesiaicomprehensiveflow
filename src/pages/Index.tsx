@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
@@ -55,7 +55,7 @@ const postAuthStepConfig: Record<string, { step: number; showProgress: boolean; 
 const OnboardingStepSync: React.FC = () => {
   const { profile } = useAuth();
   const { setCurrentStep, setUserRole, setTeacherProfile, currentStep } = useOnboarding();
-  const hasSynced = React.useRef(false);
+  const hasSynced = useRef(false);
 
   useEffect(() => {
     if (!profile || hasSynced.current) return;
