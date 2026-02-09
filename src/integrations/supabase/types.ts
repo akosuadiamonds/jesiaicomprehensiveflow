@@ -346,6 +346,59 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_institution_invites: {
+        Row: {
+          created_at: string
+          date_of_birth: string | null
+          email: string
+          first_name: string
+          id: string
+          institution_id: string
+          invited_by: string
+          invited_role: string
+          last_name: string
+          level_grade: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_of_birth?: string | null
+          email: string
+          first_name: string
+          id?: string
+          institution_id: string
+          invited_by: string
+          invited_role?: string
+          last_name: string
+          level_grade?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string
+          first_name?: string
+          id?: string
+          institution_id?: string
+          invited_by?: string
+          invited_role?: string
+          last_name?: string
+          level_grade?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_institution_invites_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       practice_sessions: {
         Row: {
           completed_at: string | null

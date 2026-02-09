@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload } from 'lucide-react';
+import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminBulkUploadModal from './AdminBulkUploadModal';
 
@@ -21,14 +21,27 @@ interface Member {
   profile?: {
     first_name: string | null;
     last_name: string | null;
-    email?: string;
   };
 }
 
+interface PendingInvite {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  invited_role: string;
+  date_of_birth: string | null;
+  level_grade: string | null;
+  subject: string | null;
+  status: string;
+  created_at: string;
+}
+
 const AdminManageUsers: React.FC = () => {
-  const { institution, refreshInstitution } = useAdmin();
+  const { institution } = useAdmin();
   const { user } = useAuth();
   const [members, setMembers] = useState<Member[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addRole, setAddRole] = useState<'teacher' | 'student' | 'admin'>('teacher');
@@ -42,16 +55,17 @@ const AdminManageUsers: React.FC = () => {
   const fetchMembers = async () => {
     if (!institution) return;
     setLoading(true);
-    const { data } = await supabase
+
+    // Fetch active members + profiles
+    const { data: memberData } = await supabase
       .from('institution_members')
       .select('*')
       .eq('institution_id', institution.id)
+      .eq('is_active', true)
       .order('joined_at', { ascending: false });
 
-    if (data) {
-      const memberList = data as any[];
-      const userIds = memberList.map(m => m.user_id).filter(Boolean);
-      
+    if (memberData) {
+      const userIds = (memberData as any[]).map(m => m.user_id).filter(Boolean);
       let profiles: any[] = [];
       if (userIds.length > 0) {
         const { data: profileData } = await supabase
@@ -60,14 +74,21 @@ const AdminManageUsers: React.FC = () => {
           .in('user_id', userIds);
         profiles = (profileData as any[]) || [];
       }
-
-      const enriched = memberList.map(m => ({
+      setMembers((memberData as any[]).map(m => ({
         ...m,
         profile: profiles.find(p => p.user_id === m.user_id) || null,
-      }));
-
-      setMembers(enriched);
+      })));
     }
+
+    // Fetch pending invites
+    const { data: inviteData } = await supabase
+      .from('pending_institution_invites' as any)
+      .select('*')
+      .eq('institution_id', institution.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    setPendingInvites((inviteData as any[]) || []);
     setLoading(false);
   };
 
@@ -80,9 +101,10 @@ const AdminManageUsers: React.FC = () => {
     setIsAdding(true);
 
     try {
-      // Check slot availability
-      const currentTeachers = members.filter(m => m.member_role === 'teacher' && m.is_active).length;
-      const currentStudents = members.filter(m => m.member_role === 'student' && m.is_active).length;
+      const currentTeachers = members.filter(m => m.member_role === 'teacher').length +
+        pendingInvites.filter(i => i.invited_role === 'teacher').length;
+      const currentStudents = members.filter(m => m.member_role === 'student').length +
+        pendingInvites.filter(i => i.invited_role === 'student').length;
 
       if (addRole === 'teacher' && currentTeachers >= institution.total_teacher_slots) {
         toast.error('Teacher slot limit reached. Please upgrade your package.');
@@ -95,7 +117,7 @@ const AdminManageUsers: React.FC = () => {
         return;
       }
 
-      // Check if user already exists by looking up profile by email or name
+      // Check if user already exists by profile lookup
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('user_id')
@@ -104,25 +126,37 @@ const AdminManageUsers: React.FC = () => {
         .maybeSingle();
 
       if (existingProfile) {
-        // Add existing user to institution
-        const { error: memberError } = await supabase.from('institution_members' as any).insert({
+        const { error: memberError } = await supabase.from('institution_members').insert({
           institution_id: institution.id,
           user_id: (existingProfile as any).user_id,
           member_role: addRole,
           added_by: user.id,
         });
         if (memberError) {
-          toast.error('This user may already be a member of the institution.');
+          toast.error('This user may already be a member.');
           setIsAdding(false);
           return;
         }
+        toast.success(`${addRole.charAt(0).toUpperCase() + addRole.slice(1)} added successfully!`);
       } else {
-        // User doesn't exist yet — store as a pending invitation
-        // For now, show a message that the user needs to sign up first
-        toast.info(`An invitation will be sent to ${email.trim()}. The user needs to sign up and will be added upon registration.`);
+        // Save as pending invite
+        const { error: inviteError } = await supabase.from('pending_institution_invites' as any).insert({
+          institution_id: institution.id,
+          email: email.trim(),
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          invited_role: addRole,
+          invited_by: user.id,
+        });
+        if (inviteError) {
+          console.error('Invite error:', inviteError);
+          toast.error('Failed to add user.');
+          setIsAdding(false);
+          return;
+        }
+        toast.success(`${firstName.trim()} ${lastName.trim()} added as pending ${addRole}.`);
       }
 
-      toast.success(`${addRole.charAt(0).toUpperCase() + addRole.slice(1)} added successfully!`);
       setAddDialogOpen(false);
       setEmail('');
       setFirstName('');
@@ -132,7 +166,6 @@ const AdminManageUsers: React.FC = () => {
       console.error('Error adding user:', error);
       toast.error('Failed to add user');
     }
-
     setIsAdding(false);
   };
 
@@ -144,8 +177,10 @@ const AdminManageUsers: React.FC = () => {
   const handleBulkConfirm = async (data: any[]) => {
     if (!institution || !user) return;
 
-    const currentTeachers = members.filter(m => m.member_role === 'teacher' && m.is_active).length;
-    const currentStudents = members.filter(m => m.member_role === 'student' && m.is_active).length;
+    const currentTeachers = members.filter(m => m.member_role === 'teacher').length +
+      pendingInvites.filter(i => i.invited_role === 'teacher').length;
+    const currentStudents = members.filter(m => m.member_role === 'student').length +
+      pendingInvites.filter(i => i.invited_role === 'student').length;
 
     if (bulkUploadType === 'teacher') {
       const available = institution.total_teacher_slots - currentTeachers;
@@ -161,13 +196,46 @@ const AdminManageUsers: React.FC = () => {
       }
     }
 
-    toast.success(`${data.length} ${bulkUploadType}s uploaded to roster successfully!`);
+    // Insert all as pending invites
+    const invites = data.map((d: any) => {
+      const nameParts = (d.name || '').split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      return {
+        institution_id: institution.id,
+        email: d.email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@pending`,
+        first_name: firstName,
+        last_name: lastName,
+        invited_role: bulkUploadType,
+        date_of_birth: d.dateOfBirth || null,
+        level_grade: d.level || null,
+        subject: d.subject || null,
+        invited_by: user.id,
+      };
+    });
+
+    const { error } = await supabase.from('pending_institution_invites' as any).insert(invites);
+    if (error) {
+      console.error('Bulk insert error:', error);
+      toast.error('Failed to upload users.');
+      return;
+    }
+
+    toast.success(`${data.length} ${bulkUploadType}s added successfully!`);
+    setBulkUploadOpen(false);
     fetchMembers();
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    await supabase.from('institution_members' as any).update({ is_active: false }).eq('id', memberId);
-    toast.success('User removed from institution');
+    await supabase.from('institution_members').update({ is_active: false } as any).eq('id', memberId);
+    toast.success('User removed');
+    fetchMembers();
+  };
+
+  const handleRemoveInvite = async (inviteId: string) => {
+    await supabase.from('pending_institution_invites' as any).delete().eq('id', inviteId);
+    toast.success('Pending invite removed');
     fetchMembers();
   };
 
@@ -175,52 +243,76 @@ const AdminManageUsers: React.FC = () => {
     switch (role) {
       case 'admin': return <Badge className="bg-primary/10 text-primary border-primary/20">Admin</Badge>;
       case 'teacher': return <Badge className="bg-accent/10 text-accent border-accent/20">Teacher</Badge>;
-      case 'student': return <Badge className="bg-success/10 text-success border-success/20">Student</Badge>;
+      case 'student': return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Student</Badge>;
       default: return <Badge variant="secondary">{role}</Badge>;
     }
   };
 
-  const teachers = members.filter(m => m.member_role === 'teacher' && m.is_active);
-  const students = members.filter(m => m.member_role === 'student' && m.is_active);
-  const admins = members.filter(m => m.member_role === 'admin' && m.is_active);
+  const teachers = members.filter(m => m.member_role === 'teacher');
+  const students = members.filter(m => m.member_role === 'student');
+  const admins = members.filter(m => m.member_role === 'admin');
+  const pendingTeachers = pendingInvites.filter(i => i.invited_role === 'teacher');
+  const pendingStudents = pendingInvites.filter(i => i.invited_role === 'student');
 
-  const renderMemberList = (list: Member[]) => (
+  const renderMemberList = (list: Member[], pendingList: PendingInvite[]) => (
     <div className="space-y-2">
-      {list.length === 0 ? (
+      {list.length === 0 && pendingList.length === 0 ? (
         <p className="text-center py-8 text-muted-foreground">No users in this category yet</p>
       ) : (
-        list.map((member) => (
-          <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {member.profile?.first_name?.[0]}{member.profile?.last_name?.[0]}
-                </span>
+        <>
+          {list.map((member) => (
+            <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {member.profile?.first_name?.[0]}{member.profile?.last_name?.[0]}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">
+                    {member.profile?.first_name || 'Unknown'} {member.profile?.last_name || ''}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Joined {new Date(member.joined_at).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-foreground">
-                  {member.profile?.first_name || 'Unknown'} {member.profile?.last_name || ''}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Joined {new Date(member.joined_at).toLocaleDateString()}
-                </p>
+              <div className="flex items-center gap-3">
+                {getRoleBadge(member.member_role)}
+                {member.user_id !== user?.id && (
+                  <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(member.id)} className="text-destructive hover:text-destructive">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {getRoleBadge(member.member_role)}
-              {member.user_id !== user?.id && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveMember(member.id)}
-                  className="text-destructive hover:text-destructive"
-                >
+          ))}
+          {pendingList.map((invite) => (
+            <div key={invite.id} className="flex items-center justify-between p-4 rounded-xl border border-dashed border-yellow-500/40 bg-yellow-50/30 dark:bg-yellow-900/10 hover:bg-yellow-50/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">
+                    {invite.first_name} {invite.last_name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {invite.email} · {invite.subject || invite.level_grade || 'Pending signup'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                  Pending
+                </Badge>
+                <Button variant="ghost" size="sm" onClick={() => handleRemoveInvite(invite.id)} className="text-destructive hover:text-destructive">
                   <Trash2 className="w-4 h-4" />
                 </Button>
-              )}
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </>
       )}
     </div>
   );
@@ -310,20 +402,20 @@ const AdminManageUsers: React.FC = () => {
         <TabsList>
           <TabsTrigger value="teachers" className="gap-2">
             <GraduationCap className="w-4 h-4" />
-            Teachers ({teachers.length})
+            Teachers ({teachers.length + pendingTeachers.length})
           </TabsTrigger>
           <TabsTrigger value="students" className="gap-2">
             <Users className="w-4 h-4" />
-            Students ({students.length})
+            Students ({students.length + pendingStudents.length})
           </TabsTrigger>
           <TabsTrigger value="admins" className="gap-2">
             <Shield className="w-4 h-4" />
             Admins ({admins.length})
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="teachers">{renderMemberList(teachers)}</TabsContent>
-        <TabsContent value="students">{renderMemberList(students)}</TabsContent>
-        <TabsContent value="admins">{renderMemberList(admins)}</TabsContent>
+        <TabsContent value="teachers">{renderMemberList(teachers, pendingTeachers)}</TabsContent>
+        <TabsContent value="students">{renderMemberList(students, pendingStudents)}</TabsContent>
+        <TabsContent value="admins">{renderMemberList(admins, [])}</TabsContent>
       </Tabs>
 
       <AdminBulkUploadModal
