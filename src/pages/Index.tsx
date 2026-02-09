@@ -60,6 +60,9 @@ const OnboardingStepSync: React.FC = () => {
   useEffect(() => {
     if (!profile || hasSynced.current) return;
     if (currentStep === 'payment' || currentStep === 'student-payment' || currentStep === 'admin-payment') return;
+    // Don't override navigation if already on a forward admin/student step
+    if (currentStep === 'admin-select-package' || currentStep === 'admin-school-details') return;
+    if (currentStep === 'student-join-class' || currentStep === 'student-plans') return;
     hasSynced.current = true;
 
     // Sync role from profile
