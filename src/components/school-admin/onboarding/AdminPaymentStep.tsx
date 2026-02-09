@@ -53,11 +53,11 @@ const AdminPaymentStep: React.FC = () => {
     await new Promise(resolve => setTimeout(resolve, 2500));
 
     try {
-      // 1. Insert user_role
-      await supabase.from('user_roles' as any).insert({
-        user_id: user.id,
-        role: 'school_admin',
-      });
+      // 1. Upsert user_role (handles case where user already has a role entry)
+      await supabase.from('user_roles' as any).upsert(
+        { user_id: user.id, role: 'school_admin' },
+        { onConflict: 'user_id,role' }
+      );
 
       // 2. Create institution
       const { data: institution, error: instError } = await supabase
