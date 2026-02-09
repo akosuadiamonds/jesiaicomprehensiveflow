@@ -2,10 +2,31 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Search } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Loader2, Search, MoreHorizontal, Trash2, ArrowUpCircle, Shield } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UserRow {
   id: string;
@@ -24,14 +45,22 @@ const SAUsers: React.FC = () => {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
 
-  useEffect(() => {
-    const fetch = async () => {
-      const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-      setUsers((data as any[]) || []);
-      setLoading(false);
-    };
-    fetch();
-  }, []);
+  // Plan change
+  const [planDialogUser, setPlanDialogUser] = useState<UserRow | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [savingPlan, setSavingPlan] = useState(false);
+
+  // Delete
+  const [deleteUser, setDeleteUser] = useState<UserRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    setUsers((data as any[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchUsers(); }, []);
 
   const filtered = users.filter((u) => {
     const matchesSearch = !search || 
@@ -49,6 +78,49 @@ const SAUsers: React.FC = () => {
       case 'super_admin': return <Badge className="bg-red-100 text-red-700 border-0">Super Admin</Badge>;
       default: return <Badge variant="secondary">Unknown</Badge>;
     }
+  };
+
+  const handleChangePlan = async () => {
+    if (!planDialogUser || !selectedPlan) return;
+    setSavingPlan(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ selected_plan: selectedPlan })
+      .eq('user_id', planDialogUser.user_id);
+    if (error) {
+      toast.error('Failed to update plan');
+    } else {
+      toast.success(`Plan updated to ${selectedPlan} for ${planDialogUser.first_name}`);
+      setPlanDialogUser(null);
+      fetchUsers();
+    }
+    setSavingPlan(false);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return;
+    setDeleting(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('delete-user', {
+        body: { user_id: deleteUser.user_id },
+      });
+      if (res.error) {
+        toast.error('Failed to delete user: ' + (res.error.message || 'Unknown error'));
+      } else {
+        toast.success(`User ${deleteUser.first_name} ${deleteUser.last_name} deleted`);
+        setDeleteUser(null);
+        fetchUsers();
+      }
+    } catch (err: any) {
+      toast.error('Failed to delete user');
+    }
+    setDeleting(false);
+  };
+
+  const openPlanDialog = (user: UserRow) => {
+    setSelectedPlan(user.selected_plan || 'free');
+    setPlanDialogUser(user);
   };
 
   return (
@@ -89,6 +161,7 @@ const SAUsers: React.FC = () => {
                   <TableHead>School</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Joined</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -103,6 +176,31 @@ const SAUsers: React.FC = () => {
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(u.created_at).toLocaleDateString()}
                     </TableCell>
+                    <TableCell>
+                      {u.user_role !== 'super_admin' && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => openPlanDialog(u)} className="gap-2">
+                              <ArrowUpCircle className="w-4 h-4" />
+                              Change Plan
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDeleteUser(u)}
+                              className="gap-2 text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete Account
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -110,6 +208,66 @@ const SAUsers: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Change Plan Dialog */}
+      <Dialog open={!!planDialogUser} onOpenChange={(o) => !o && setPlanDialogUser(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Change Plan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <p className="text-sm text-muted-foreground">
+              Changing plan for <strong>{planDialogUser?.first_name} {planDialogUser?.last_name}</strong>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Current plan: <Badge variant="outline" className="capitalize ml-1">{planDialogUser?.selected_plan || 'none'}</Badge>
+            </p>
+            <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+              <SelectTrigger><SelectValue placeholder="Select plan" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">Free Trial</SelectItem>
+                <SelectItem value="pro">Pro</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleChangePlan}
+              disabled={savingPlan || selectedPlan === (planDialogUser?.selected_plan || 'free')}
+              variant="hero"
+              className="w-full gap-2"
+            >
+              {savingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
+              Update Plan
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteUser} onOpenChange={(o) => !o && setDeleteUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="w-5 h-5 text-destructive" />
+              Delete User Account
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete <strong>{deleteUser?.first_name} {deleteUser?.last_name}</strong>'s account? 
+              This action cannot be undone. All their data including lesson plans, quizzes, and classroom data will be removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete Permanently'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
