@@ -14,9 +14,13 @@ import PlansStep from '@/components/onboarding/PlansStep';
 import PaymentStep from '@/components/onboarding/PaymentStep';
 import MainApp from '@/components/MainApp';
 import StudentApp from '@/components/student/StudentApp';
+import SchoolAdminApp from '@/components/school-admin/SchoolAdminApp';
 import StudentJoinClassStep from '@/components/student/onboarding/StudentJoinClassStep';
 import StudentPlansStep from '@/components/student/onboarding/StudentPlansStep';
 import StudentProfileStep from '@/components/student/onboarding/StudentProfileStep';
+import SchoolDetailsStep from '@/components/school-admin/onboarding/SchoolDetailsStep';
+import AdminSelectPackageStep from '@/components/school-admin/onboarding/AdminSelectPackageStep';
+import AdminPaymentStep from '@/components/school-admin/onboarding/AdminPaymentStep';
 import { Loader2 } from 'lucide-react';
 
 // Pre-auth steps (before user is authenticated)
@@ -42,6 +46,9 @@ const postAuthStepConfig: Record<string, { step: number; showProgress: boolean; 
   'student-join-class': { step: 3, showProgress: true, totalSteps: 5 },
   'student-plans': { step: 4, showProgress: true, totalSteps: 5 },
   'student-payment': { step: 5, showProgress: true, totalSteps: 5 },
+  'admin-school-details': { step: 2, showProgress: true, totalSteps: 4 },
+  'admin-select-package': { step: 3, showProgress: true, totalSteps: 4 },
+  'admin-payment': { step: 4, showProgress: true, totalSteps: 4 },
 };
 
 // Component that syncs onboarding state with profile from database
@@ -52,8 +59,7 @@ const OnboardingStepSync: React.FC = () => {
 
   useEffect(() => {
     if (!profile || hasSynced.current) return;
-    // Don't override navigation if user is already on payment step
-    if (currentStep === 'payment' || currentStep === 'student-payment') return;
+    if (currentStep === 'payment' || currentStep === 'student-payment' || currentStep === 'admin-payment') return;
     hasSynced.current = true;
 
     // Sync role from profile
@@ -78,6 +84,11 @@ const OnboardingStepSync: React.FC = () => {
 
     if (!hasRole) {
       setCurrentStep('role');
+    } else if (profile.user_role === 'school_admin') {
+      // School admin flow
+      if (!hasSelectedPlan) {
+        setCurrentStep('admin-school-details');
+      }
     } else if (profile.user_role === 'learner') {
       const hasParentContact = !!(profile as any).parent_contact;
       if (!hasParentContact) {
@@ -164,12 +175,31 @@ const PostAuthContent: React.FC = () => {
     );
   }
 
-  // Payment step for paid plans
+  // Admin package selection needs wider layout
+  if (currentStep === 'admin-select-package') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <OnboardingStepSync />
+        <AdminSelectPackageStep />
+      </div>
+    );
+  }
+
+  // Payment steps
   if (currentStep === 'payment' || currentStep === 'student-payment') {
     return (
       <OnboardingLayout showProgress={true} currentStep={4} totalSteps={4}>
         <OnboardingStepSync />
         <PaymentStep />
+      </OnboardingLayout>
+    );
+  }
+
+  if (currentStep === 'admin-payment') {
+    return (
+      <OnboardingLayout showProgress={true} currentStep={4} totalSteps={4}>
+        <OnboardingStepSync />
+        <AdminPaymentStep />
       </OnboardingLayout>
     );
   }
@@ -188,13 +218,15 @@ const PostAuthContent: React.FC = () => {
         return <StudentProfileStep />;
       case 'student-join-class':
         return <StudentJoinClassStep />;
+      case 'admin-school-details':
+        return <SchoolDetailsStep />;
       default:
         return <RoleStep />;
     }
   };
 
   // Student onboarding uses 5 steps, teacher uses 4
-  const totalSteps = currentStep.startsWith('student') ? 5 : 4;
+  const totalSteps = currentStep.startsWith('student') ? 5 : currentStep.startsWith('admin') ? 4 : 4;
 
   return (
     <>
@@ -245,10 +277,11 @@ const AuthenticatedApp: React.FC = () => {
 
   // Fully authenticated and onboarded - show appropriate app based on role
   const isLearner = profile?.user_role === 'learner';
+  const isSchoolAdmin = profile?.user_role === 'school_admin';
   
   return (
     <OnboardingProvider>
-      {isLearner ? <StudentApp /> : <MainApp />}
+      {isSchoolAdmin ? <SchoolAdminApp /> : isLearner ? <StudentApp /> : <MainApp />}
     </OnboardingProvider>
   );
 };
