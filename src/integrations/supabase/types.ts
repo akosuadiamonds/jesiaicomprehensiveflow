@@ -346,6 +346,119 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          institution_id: string
+          is_active: boolean
+          is_default: boolean
+          method_type: string
+          provider: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id: string
+          is_active?: boolean
+          is_default?: boolean
+          method_type?: string
+          provider?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          institution_id?: string
+          is_active?: boolean
+          is_default?: boolean
+          method_type?: string
+          provider?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          institution_id: string
+          notes: string | null
+          payment_method: string | null
+          recorded_by: string | null
+          reference_number: string | null
+          status: string
+          subscription_id: string | null
+          transaction_date: string
+          transaction_type: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          institution_id: string
+          notes?: string | null
+          payment_method?: string | null
+          recorded_by?: string | null
+          reference_number?: string | null
+          status?: string
+          subscription_id?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          institution_id?: string
+          notes?: string | null
+          payment_method?: string | null
+          recorded_by?: string | null
+          reference_number?: string | null
+          status?: string
+          subscription_id?: string | null
+          transaction_date?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "school_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_institution_invites: {
         Row: {
           created_at: string
@@ -687,8 +800,10 @@ export type Database = {
           id: string
           institution_id: string
           invited_email: string | null
+          last_renewal_sent_at: string | null
           payment_status: string
           plan_id: string
+          renewal_count: number
           starts_at: string | null
           status: string
           student_slots: number
@@ -704,8 +819,10 @@ export type Database = {
           id?: string
           institution_id: string
           invited_email?: string | null
+          last_renewal_sent_at?: string | null
           payment_status?: string
           plan_id: string
+          renewal_count?: number
           starts_at?: string | null
           status?: string
           student_slots?: number
@@ -721,8 +838,10 @@ export type Database = {
           id?: string
           institution_id?: string
           invited_email?: string | null
+          last_renewal_sent_at?: string | null
           payment_status?: string
           plan_id?: string
+          renewal_count?: number
           starts_at?: string | null
           status?: string
           student_slots?: number

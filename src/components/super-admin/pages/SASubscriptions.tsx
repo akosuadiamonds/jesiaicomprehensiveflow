@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Loader2, Send } from 'lucide-react';
+import { Plus, Loader2, Send, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import EmailPreviewModal from '../components/EmailPreviewModal';
 
 interface SubRow {
   id: string;
@@ -24,6 +25,8 @@ interface SubRow {
   total_amount: number;
   currency: string;
   created_at: string;
+  last_renewal_sent_at: string | null;
+  renewal_count: number;
   institution_name?: string;
   plan_name?: string;
 }
@@ -36,6 +39,12 @@ const SASubscriptions: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sendingRenewal, setSendingRenewal] = useState<string | null>(null);
+
+  // Email preview state
+  const [emailPreviewOpen, setEmailPreviewOpen] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [pendingSubscription, setPendingSubscription] = useState<any>(null);
 
   // Form
   const [schoolId, setSchoolId] = useState('');
@@ -69,31 +78,78 @@ const SASubscriptions: React.FC = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleCreate = async () => {
+  const handleCreateAndPreview = () => {
     if (!schoolId || !planId) { toast.error('Select a school and plan'); return; }
-    setSaving(true);
+    if (!invitedEmail) { toast.error('Email is required to send payment link'); return; }
 
-    const { error } = await supabase.from('school_subscriptions').insert({
+    const school = schools.find(s => s.id === schoolId);
+    const plan = plans.find(p => p.id === planId);
+
+    setPendingSubscription({
       institution_id: schoolId,
       plan_id: planId,
-      invited_email: invitedEmail || null,
+      invited_email: invitedEmail,
       teacher_slots: parseInt(teacherSlots) || 0,
       student_slots: parseInt(studentSlots) || 0,
       total_amount: parseFloat(totalAmount) || 0,
+      schoolName: school?.name || 'Unknown',
+      planName: plan?.name || 'Unknown',
+    });
+
+    setCreateOpen(false);
+    setEmailPreviewOpen(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!pendingSubscription) return;
+    setEmailSending(true);
+
+    const { error } = await supabase.from('school_subscriptions').insert({
+      institution_id: pendingSubscription.institution_id,
+      plan_id: pendingSubscription.plan_id,
+      invited_email: pendingSubscription.invited_email,
+      teacher_slots: pendingSubscription.teacher_slots,
+      student_slots: pendingSubscription.student_slots,
+      total_amount: pendingSubscription.total_amount,
       created_by: user?.id,
     } as any);
 
     if (error) {
       toast.error('Failed to create subscription');
     } else {
-      toast.success(invitedEmail 
-        ? `Subscription created! Payment link would be sent to ${invitedEmail}` 
-        : 'Subscription created successfully'
-      );
-      setCreateOpen(false);
+      toast.success(`Subscription created! Payment link sent to ${pendingSubscription.invited_email}`);
+      setEmailPreviewOpen(false);
+      setPendingSubscription(null);
+      resetForm();
       fetchData();
     }
-    setSaving(false);
+    setEmailSending(false);
+  };
+
+  const handleSendRenewal = async (sub: SubRow) => {
+    if (!sub.invited_email) {
+      toast.error('No email address on file for this subscription');
+      return;
+    }
+    setSendingRenewal(sub.id);
+
+    const { error } = await supabase.from('school_subscriptions').update({
+      last_renewal_sent_at: new Date().toISOString(),
+      renewal_count: (sub.renewal_count || 0) + 1,
+    } as any).eq('id', sub.id);
+
+    if (error) {
+      toast.error('Failed to send renewal');
+    } else {
+      toast.success(`Renewal notice sent to ${sub.invited_email}`);
+      fetchData();
+    }
+    setSendingRenewal(null);
+  };
+
+  const resetForm = () => {
+    setSchoolId(''); setPlanId(''); setInvitedEmail('');
+    setTeacherSlots('10'); setStudentSlots('50'); setTotalAmount('0');
   };
 
   const statusBadge = (status: string) => {
@@ -123,6 +179,7 @@ const SASubscriptions: React.FC = () => {
         </Button>
       </div>
 
+      {/* Create Subscription Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -152,7 +209,7 @@ const SASubscriptions: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>School Admin Email (to send payment link)</Label>
+              <Label>School Admin Email *</Label>
               <Input type="email" value={invitedEmail} onChange={(e) => setInvitedEmail(e.target.value)}
                 placeholder="admin@school.edu" />
             </div>
@@ -170,13 +227,33 @@ const SASubscriptions: React.FC = () => {
               <Label>Total Amount (GHS)</Label>
               <Input type="number" value={totalAmount} onChange={(e) => setTotalAmount(e.target.value)} />
             </div>
-            <Button onClick={handleCreate} disabled={saving} variant="hero" className="w-full gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Create & Send
+            <Button onClick={handleCreateAndPreview} disabled={saving} variant="hero" className="w-full gap-2">
+              <Send className="w-4 h-4" />
+              Preview Email & Create
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Email Preview Modal */}
+      {pendingSubscription && (
+        <EmailPreviewModal
+          open={emailPreviewOpen}
+          onOpenChange={(open) => {
+            setEmailPreviewOpen(open);
+            if (!open) setPendingSubscription(null);
+          }}
+          recipientEmail={pendingSubscription.invited_email}
+          schoolName={pendingSubscription.schoolName}
+          planName={pendingSubscription.planName}
+          amount={pendingSubscription.total_amount}
+          currency="GHS"
+          teacherSlots={pendingSubscription.teacher_slots}
+          studentSlots={pendingSubscription.student_slots}
+          onSend={handleSendEmail}
+          sending={emailSending}
+        />
+      )}
 
       <Card>
         <CardContent className="p-0">
@@ -195,6 +272,7 @@ const SASubscriptions: React.FC = () => {
                   <TableHead>Status</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -207,6 +285,23 @@ const SASubscriptions: React.FC = () => {
                     <TableCell>{statusBadge(s.status)}</TableCell>
                     <TableCell>{paymentBadge(s.payment_status)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{s.invited_email || '—'}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs"
+                        disabled={sendingRenewal === s.id}
+                        onClick={() => handleSendRenewal(s)}
+                        title={s.last_renewal_sent_at ? `Last sent: ${new Date(s.last_renewal_sent_at).toLocaleDateString()} (${s.renewal_count}x)` : 'Send renewal'}
+                      >
+                        {sendingRenewal === s.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-3 h-3" />
+                        )}
+                        Renew
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

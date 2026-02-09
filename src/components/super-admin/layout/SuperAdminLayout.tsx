@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSuperAdmin } from '../SuperAdminApp';
-import { Shield, LayoutDashboard, School, Users, CreditCard, BarChart3, Package, LogOut } from 'lucide-react';
+import { Shield, LayoutDashboard, School, Users, CreditCard, BarChart3, Package, LogOut, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const NAV_ITEMS = [
@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { id: 'users', label: 'Users', icon: Users },
   { id: 'plans', label: 'Plans', icon: Package },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
+  { id: 'financials', label: 'Financials', icon: DollarSign },
   { id: 'insights', label: 'Insights', icon: BarChart3 },
 ];
 
