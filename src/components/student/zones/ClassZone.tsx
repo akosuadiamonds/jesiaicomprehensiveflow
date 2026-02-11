@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStudent } from '@/contexts/StudentContext';
 import PrivateClassOverview from './PrivateClassOverview';
 
 interface ClassroomData {
@@ -124,6 +125,7 @@ const SUPPORT_OPTIONS = [
 
 const ClassZone: React.FC = () => {
   const { user } = useAuth();
+  const { setCurrentPage } = useStudent();
   const [inviteCode, setInviteCode] = useState('');
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [myClasses, setMyClasses] = useState<ClassroomData[]>([]);
@@ -484,13 +486,13 @@ const ClassZone: React.FC = () => {
             </TabsTrigger>
             <TabsTrigger value="practice" className="gap-1">
               <ClipboardList className="w-4 h-4" />
-              <span className="hidden sm:inline">Practice</span>
-              <span className="sm:hidden">Practice</span>
+              <span className="hidden sm:inline">Homework</span>
+              <span className="sm:hidden">Homework</span>
             </TabsTrigger>
             <TabsTrigger value="videos" className="gap-1">
               <PlayCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Videos</span>
-              <span className="sm:hidden">Videos</span>
+              <span className="hidden sm:inline">Resources</span>
+              <span className="sm:hidden">Resources</span>
             </TabsTrigger>
             <TabsTrigger value="announcements" className="gap-1">
               <Bell className="w-4 h-4" />
@@ -562,7 +564,6 @@ const ClassZone: React.FC = () => {
             )}
           </TabsContent>
 
-          {/* Practice Homework Tab */}
           <TabsContent value="practice" className="mt-4 space-y-3">
             {!notesComplete && lessonNotes.length > 0 && (
               <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10">
@@ -571,7 +572,7 @@ const ClassZone: React.FC = () => {
                   <div>
                     <p className="font-medium text-sm">Complete lesson notes first</p>
                     <p className="text-xs text-muted-foreground">
-                      Read all {lessonNotes.length} lesson note{lessonNotes.length > 1 ? 's' : ''} to unlock practice homework
+                      Read all {lessonNotes.length} lesson note{lessonNotes.length > 1 ? 's' : ''} to unlock homework
                     </p>
                   </div>
                 </CardContent>
@@ -582,37 +583,53 @@ const ClassZone: React.FC = () => {
               <Card>
                 <CardContent className="p-8 text-center text-muted-foreground">
                   <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="font-medium">No practice homework yet</p>
+                  <p className="font-medium">No homework yet</p>
                   <p className="text-sm">Your teacher will assign quizzes and tests here</p>
                 </CardContent>
               </Card>
             ) : (
-              practiceHomework.map((hw) => {
-                const locked = !notesComplete && lessonNotes.length > 0;
-                return (
-                  <Card key={hw.id} className={`transition-all ${locked ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'}`}>
-                    <CardContent className="p-4 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        {locked ? (
-                          <Lock className="w-5 h-5 text-muted-foreground" />
-                        ) : (
-                          <ClipboardList className="w-5 h-5 text-primary" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">{hw.title}</h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs capitalize">{hw.resource_type}</Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(hw.created_at).toLocaleDateString()}
-                          </span>
+              <>
+                {practiceHomework.map((hw) => {
+                  const locked = !notesComplete && lessonNotes.length > 0;
+                  return (
+                    <Card key={hw.id} className={`transition-all ${locked ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'}`}>
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          {locked ? (
+                            <Lock className="w-5 h-5 text-muted-foreground" />
+                          ) : (
+                            <ClipboardList className="w-5 h-5 text-primary" />
+                          )}
                         </div>
-                      </div>
-                      {locked && <Lock className="w-4 h-4 text-amber-500" />}
-                    </CardContent>
-                  </Card>
-                );
-              })
+                        <div className="flex-1">
+                          <h4 className="font-medium">{hw.title}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs capitalize">{hw.resource_type}</Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(hw.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        {locked && <Lock className="w-4 h-4 text-amber-500" />}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                {/* Learn More button after homework */}
+                <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+                  <CardContent className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Done with homework? Keep learning!</p>
+                    <Button
+                      variant="outline"
+                      className="gap-2"
+                      onClick={() => setCurrentPage('learn')}
+                    >
+                      <BookOpen className="w-4 h-4" />
+                      Learn More
+                    </Button>
+                  </CardContent>
+                </Card>
+              </>
             )}
           </TabsContent>
 
@@ -708,8 +725,8 @@ const ClassZone: React.FC = () => {
         <Tabs defaultValue="notes">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="practice">Practice</TabsTrigger>
-            <TabsTrigger value="videos">Videos</TabsTrigger>
+            <TabsTrigger value="practice">Homework</TabsTrigger>
+            <TabsTrigger value="videos">Resources</TabsTrigger>
             <TabsTrigger value="announcements">
               Updates
               {classAnns.length > 0 && (

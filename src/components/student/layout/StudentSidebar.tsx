@@ -28,6 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
 const menuItems = [
+  { id: 'dashboard' as const, label: 'Dashboard', icon: GraduationCap, emoji: '🏠' },
   { id: 'learn' as const, label: 'Learn Zone', icon: BookOpen, emoji: '📚' },
   { id: 'practice' as const, label: 'Practice Zone', icon: Dumbbell, emoji: '💪' },
   { id: 'class' as const, label: 'Class Zone', icon: Users, emoji: '🏫' },

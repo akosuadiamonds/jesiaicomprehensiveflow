@@ -1,4 +1,4 @@
-export type StudentPage = 'learn' | 'practice' | 'class' | 'streak' | 'insights' | 'profile';
+export type StudentPage = 'dashboard' | 'learn' | 'practice' | 'class' | 'streak' | 'insights' | 'profile';
 
 export interface StudentCoins {
   id: string;

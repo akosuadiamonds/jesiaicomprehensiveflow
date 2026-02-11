@@ -17,7 +17,7 @@ interface StudentContextType {
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 export const StudentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentPage, setCurrentPage] = useState<StudentPage>('learn');
+  const [currentPage, setCurrentPage] = useState<StudentPage>('dashboard');
   const [practiceNavigation, setPracticeNavigation] = useState<PracticeNavigation | null>(null);
 
   const navigateToPractice = (subject?: string, topic?: string) => {

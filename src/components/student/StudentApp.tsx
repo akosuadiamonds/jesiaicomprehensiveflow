@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStudent, StudentProvider } from '@/contexts/StudentContext';
 import StudentLayout from '@/components/student/layout/StudentLayout';
+import StudentDashboard from '@/components/student/zones/StudentDashboard';
 import LearnZone from '@/components/student/zones/LearnZone';
 import PracticeZone from '@/components/student/zones/PracticeZone';
 import ClassZone from '@/components/student/zones/ClassZone';
@@ -13,6 +14,8 @@ const StudentAppContent: React.FC = () => {
 
   const renderPage = () => {
     switch (currentPage) {
+      case 'dashboard':
+        return <StudentDashboard />;
       case 'learn':
         return <LearnZone />;
       case 'practice':
@@ -26,7 +29,7 @@ const StudentAppContent: React.FC = () => {
       case 'profile':
         return <StudentProfilePage />;
       default:
-        return <LearnZone />;
+        return <StudentDashboard />;
     }
   };
 
