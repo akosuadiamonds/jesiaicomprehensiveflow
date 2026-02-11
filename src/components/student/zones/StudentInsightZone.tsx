@@ -5,14 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, Radar
+  LineChart, Line
 } from 'recharts';
 import { 
-  TrendingUp, Target, BookOpen, Clock, Brain, Award, Lightbulb,
-  ArrowUp, CheckCircle2, AlertTriangle, Calendar, Share2, FileText
+  TrendingUp, Brain, ArrowUp, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudent } from '@/contexts/StudentContext';
+import { toast } from 'sonner';
 
 const weeklyActivity = [
   { day: 'Mon', questions: 25, time: 45 },
@@ -56,15 +56,6 @@ const subjectBreakdown = [
   },
 ];
 
-const skillsData = [
-  { skill: 'Problem Solving', value: 70 },
-  { skill: 'Reading', value: 85 },
-  { skill: 'Critical Thinking', value: 65 },
-  { skill: 'Memory', value: 80 },
-  { skill: 'Creativity', value: 60 },
-  { skill: 'Focus', value: 72 },
-];
-
 const mockExamScores = [
   { subject: 'Mathematics', score: 68, total: 100 },
   { subject: 'English', score: 55, total: 100 },
@@ -72,9 +63,16 @@ const mockExamScores = [
   { subject: 'Social Studies', score: 72, total: 100 },
 ];
 
+// AI recommendation based on weakest areas
+const aiRecommendation = {
+  message: "Practice 10 comprehension questions today.",
+  subject: "English Language",
+  topic: "Comprehension",
+};
+
 const StudentInsightZone: React.FC = () => {
   const { profile } = useAuth();
-  const { setCurrentPage } = useStudent();
+  const { navigateToPractice } = useStudent();
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
 
   const studentName = profile?.first_name || 'Student';
@@ -85,6 +83,19 @@ const StudentInsightZone: React.FC = () => {
   const avgAccuracy = 70;
   const subjectsThisWeek = 4;
   const learningScore = 72;
+
+  const handleShareWithParent = () => {
+    // Build a summary text
+    const summary = `📊 ${studentName}'s Learning Progress\n\nClass: ${classGrade} | School: ${schoolName}\nLearning Score: ${learningScore}%\nSubjects studied this week: ${subjectsThisWeek}\nAverage accuracy: ${avgAccuracy}%\n\nStrong areas: Solving math questions, Science definitions\nNeeds work: Comprehension, Word problems\n\nPowered by Jesi AI`;
+    
+    // Try native share, fallback to clipboard
+    if (navigator.share) {
+      navigator.share({ title: `${studentName}'s Progress`, text: summary }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(summary);
+      toast.success('Progress summary copied to clipboard! Share it with your parent.');
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -199,7 +210,17 @@ const StudentInsightZone: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  <Button size="sm" variant="outline" className="w-full mt-2" onClick={(e) => { e.stopPropagation(); setCurrentPage('practice'); }}>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full mt-2" 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      // Navigate to practice with the weak topic pre-selected
+                      const topic = subject.weakTopics[0] || subject.strongTopics[0] || '';
+                      navigateToPractice(subject.name, topic);
+                    }}
+                  >
                     👉 Practice Now
                   </Button>
                 </div>
@@ -209,84 +230,64 @@ const StudentInsightZone: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 🧠 Strengths & Gaps */}
-        <Card>
-          <CardHeader>
-            <CardTitle>🧠 My Strengths & Gaps</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-green-600 mb-2">You are good at:</p>
-              <div className="space-y-1">
-                {['Solving direct math questions', 'Science definitions', 'Grammar exercises'].map(s => (
-                  <div key={s} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span>{s}</span>
-                  </div>
-                ))}
-              </div>
+      {/* 🧠 Strengths & Gaps - full width now */}
+      <Card>
+        <CardHeader>
+          <CardTitle>🧠 My Strengths & Gaps</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-green-600 mb-2">You are good at:</p>
+            <div className="space-y-1">
+              {['Solving direct math questions', 'Science definitions', 'Grammar exercises'].map(s => (
+                <div key={s} className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>{s}</span>
+                </div>
+              ))}
             </div>
-            <div>
-              <p className="text-sm font-medium text-amber-600 mb-2">You need to work on:</p>
-              <div className="space-y-1">
-                {['Explaining answers in English', 'Long word problems'].map(s => (
-                  <div key={s} className="flex items-center gap-2 text-sm">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span>{s}</span>
-                  </div>
-                ))}
-              </div>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-amber-600 mb-2">You need to work on:</p>
+            <div className="space-y-1">
+              {['Explaining answers in English', 'Long word problems'].map(s => (
+                <div key={s} className="flex items-center gap-2 text-sm">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <span>{s}</span>
+                </div>
+              ))}
             </div>
-            <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-              <p className="text-xs font-medium text-primary mb-1">💡 Jesi AI Suggestion:</p>
-              <p className="text-sm">"Practice 10 comprehension questions today."</p>
-            </div>
-            <Button size="sm" className="w-full" onClick={() => setCurrentPage('practice')}>
-              Start Recommended Practice
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Skills Radar */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Skills Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <RadarChart data={skillsData}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11 }} />
-                <Radar name="Skills" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.3} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+          <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <p className="text-xs font-medium text-primary mb-1">💡 Jesi AI Suggestion:</p>
+            <p className="text-sm">"{aiRecommendation.message}"</p>
+          </div>
+          <Button 
+            size="sm" 
+            className="w-full" 
+            onClick={() => navigateToPractice(aiRecommendation.subject, aiRecommendation.topic)}
+          >
+            Start Recommended Practice
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* 🕒 Study Habits */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            🕒 My Study Habits
-          </CardTitle>
+          <CardTitle>🕒 My Study Habits</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="text-center p-4 rounded-lg bg-muted/50">
-              <Calendar className="w-5 h-5 mx-auto mb-2 text-primary" />
               <p className="text-xl font-bold">4 / 7</p>
               <p className="text-xs text-muted-foreground">Days studied this week</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-muted/50">
-              <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
               <p className="text-xl font-bold">6pm – 8pm</p>
               <p className="text-xs text-muted-foreground">Best study time</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-muted/50">
-              <TrendingUp className="w-5 h-5 mx-auto mb-2 text-primary" />
               <p className="text-xl font-bold">25 min</p>
               <p className="text-xs text-muted-foreground">Avg daily study time</p>
             </div>
@@ -298,10 +299,7 @@ const StudentInsightZone: React.FC = () => {
       {/* 📝 Exam Readiness */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            📝 Exam Readiness
-          </CardTitle>
+          <CardTitle>📝 Exam Readiness</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">Mock exam scores per subject:</p>
@@ -320,7 +318,7 @@ const StudentInsightZone: React.FC = () => {
             <p className="text-sm font-medium">🟡 Readiness Level: <span className="text-amber-600">Almost Ready</span></p>
             <p className="text-xs text-muted-foreground mt-1">Jesi AI recommends you revise: <strong>Ratio</strong>, <strong>Word problems</strong></p>
           </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => setCurrentPage('practice')}>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => navigateToPractice('Mathematics', 'Word problems')}>
             Revise for Test
           </Button>
         </CardContent>
@@ -351,10 +349,7 @@ const StudentInsightZone: React.FC = () => {
       {/* 👨‍👩‍👧 Parent View */}
       <Card className="bg-gradient-to-r from-secondary/50 to-secondary/30">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5" />
-            👨‍👩‍👧 What My Parents Can See
-          </CardTitle>
+          <CardTitle>👨‍👩‍👧 What My Parents Can See</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="space-y-1 text-sm">
@@ -362,9 +357,8 @@ const StudentInsightZone: React.FC = () => {
             <p>✅ Topics I need help with</p>
             <p>✅ My weekly study effort</p>
           </div>
-          <Button variant="outline" size="sm" className="mt-3">
-            <Share2 className="w-4 h-4 mr-2" />
-            Share Progress with Parent
+          <Button variant="outline" size="sm" className="mt-3" onClick={handleShareWithParent}>
+            📤 Share Progress with Parent
           </Button>
         </CardContent>
       </Card>

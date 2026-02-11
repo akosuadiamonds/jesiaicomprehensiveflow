@@ -28,6 +28,7 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStudent } from '@/contexts/StudentContext';
 import PracticeHistory from './PracticeHistory';
 
 const subjects = [
@@ -69,8 +70,9 @@ const dokDescriptions: Record<DOKLevel, string> = {
 
 const PracticeZone: React.FC = () => {
   const { user } = useAuth();
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedTopic, setSelectedTopic] = useState('');
+  const { practiceNavigation, clearPracticeNavigation } = useStudent();
+  const [selectedSubject, setSelectedSubject] = useState(practiceNavigation?.subject || '');
+  const [selectedTopic, setSelectedTopic] = useState(practiceNavigation?.topic || '');
   const [practiceType, setPracticeType] = useState<'quick' | 'mock' | 'exam'>('quick');
   const [dokLevel, setDokLevel] = useState<DOKLevel>(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -80,6 +82,15 @@ const PracticeZone: React.FC = () => {
   const [showResults, setShowResults] = useState(false);
   const [showExplanation, setShowExplanation] = useState<number | null>(null);
   const [startTime] = useState<number>(Date.now());
+
+  // Auto-start practice if navigated with pre-selected subject/topic
+  React.useEffect(() => {
+    if (practiceNavigation?.subject && practiceNavigation?.topic) {
+      setSelectedSubject(practiceNavigation.subject);
+      setSelectedTopic(practiceNavigation.topic);
+      clearPracticeNavigation();
+    }
+  }, [practiceNavigation, clearPracticeNavigation]);
 
   const handleStartPractice = async () => {
     if (!selectedSubject || !selectedTopic) {
