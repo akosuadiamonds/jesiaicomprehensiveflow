@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft, Users, BookOpen, FileText, Bell, Copy, Plus, Send,
-  School, Briefcase, ClipboardList,
+  School, Briefcase, ClipboardList, BarChart3,
 } from 'lucide-react';
 import { Classroom, ClassroomAnnouncement, ClassroomResource } from '@/types/classroom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import ClassroomStudentsTab from './ClassroomStudentsTab';
+import ClassroomPerformanceTab from './ClassroomPerformanceTab';
 import AddResourceModal from './AddResourceModal';
 
 interface ClassroomDetailProps {
@@ -129,7 +130,7 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
                 </Badge>
                 {isPrivate && classroom.monthly_fee > 0 && (
                   <Badge className="bg-primary/10 text-primary">
-                    GHS {classroom.monthly_fee}/mo
+                    GHS {classroom.monthly_fee}/{classroom.fee_frequency === 'daily' ? 'day' : classroom.fee_frequency === 'weekly' ? 'wk' : 'mo'}
                   </Badge>
                 )}
               </div>
@@ -202,6 +203,10 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
+          <TabsTrigger value="performance">
+            <BarChart3 className="w-4 h-4 mr-1" />
+            Performance
+          </TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
         </TabsList>
@@ -259,6 +264,10 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
             inviteCode={classroom.invite_code}
             maxStudents={classroom.max_students}
           />
+        </TabsContent>
+
+        <TabsContent value="performance" className="mt-4">
+          <ClassroomPerformanceTab classroomId={classroom.id} />
         </TabsContent>
 
         <TabsContent value="resources" className="mt-4">

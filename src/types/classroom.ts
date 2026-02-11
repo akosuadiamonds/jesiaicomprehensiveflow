@@ -1,5 +1,7 @@
 export type ClassroomType = 'school' | 'private';
 
+export type FeeFrequency = 'daily' | 'weekly' | 'monthly';
+
 export interface Classroom {
   id: string;
   teacher_id: string;
@@ -9,6 +11,7 @@ export interface Classroom {
   classroom_type: ClassroomType;
   invite_code: string;
   monthly_fee: number;
+  fee_frequency: FeeFrequency;
   currency: string;
   max_students: number;
   is_active: boolean;
@@ -54,5 +57,6 @@ export interface CreateClassroomData {
   subject: string;
   classroom_type: ClassroomType;
   monthly_fee?: number;
+  fee_frequency?: FeeFrequency;
   max_students?: number;
 }
