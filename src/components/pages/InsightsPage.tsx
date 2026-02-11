@@ -1,433 +1,493 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Users, 
-  FileText, 
-  BookOpen, 
-  GraduationCap,
-  Calendar,
-  Target,
-  Award,
-  Clock,
-  Sparkles,
-  School,
-  Wallet
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLessonPlans } from '@/hooks/useLessonPlans';
-import { useClassrooms } from '@/hooks/useClassrooms';
-import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent,
-  ChartConfig 
-} from '@/components/ui/chart';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  CartesianGrid,
-  Legend
-} from 'recharts';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import {
+  BarChart3, TrendingUp, Users, FileText, BookOpen, GraduationCap,
+  Target, Sparkles, Wallet, ChevronRight, AlertTriangle, Eye,
+  Bell, CheckCircle2, XCircle, Save, ArrowLeft
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useApp } from '@/contexts/AppContext';
+import { useLessonPlans } from '@/hooks/useLessonPlans';
+import { useClassrooms } from '@/hooks/useClassrooms';
+import {
+  ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig
+} from '@/components/ui/chart';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell
+} from 'recharts';
 
 const InsightsPage: React.FC = () => {
   const { profile } = useAuth();
+  const { setCurrentPage } = useApp();
   const { plans: savedLessonPlans } = useLessonPlans();
-  const { classrooms, schoolClassrooms, privateClassrooms } = useClassrooms();
+  const { classrooms } = useClassrooms();
 
-  // Calculate metrics
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [selectedWeek, setSelectedWeek] = useState('1');
+  const [hwWeek, setHwWeek] = useState('1');
+  const [studentFilter, setStudentFilter] = useState('');
+
   const totalLessonPlans = savedLessonPlans.length;
-  const totalClassrooms = classrooms.length;
-  const totalSchoolClasses = schoolClassrooms.length;
-  const totalPrivateClasses = privateClassrooms.length;
-  const subjectsCount = profile?.subjects?.length || 0;
 
-  // Mock data for charts (in production, this would come from the database)
-  const weeklyActivityData = [
-    { day: 'Mon', plans: 2, tests: 1, resources: 3 },
-    { day: 'Tue', plans: 3, tests: 2, resources: 1 },
-    { day: 'Wed', plans: 1, tests: 0, resources: 2 },
-    { day: 'Thu', plans: 4, tests: 3, resources: 4 },
-    { day: 'Fri', plans: 2, tests: 1, resources: 2 },
-    { day: 'Sat', plans: 0, tests: 0, resources: 0 },
-    { day: 'Sun', plans: 1, tests: 0, resources: 1 },
+  // Summary cards
+  const summaryCards = [
+    { label: 'Lesson Plans', value: totalLessonPlans, icon: FileText, color: 'bg-primary/10 text-primary' },
+    { label: 'Tests Created', value: 12, icon: GraduationCap, color: 'bg-accent/10 text-accent' },
+    { label: 'Total Saved', value: totalLessonPlans + 12, icon: Save, color: 'bg-success/10 text-success' },
+    { label: 'Revenue', value: 'GHS 450', icon: Wallet, color: 'bg-primary/10 text-primary' },
   ];
 
-  const subjectDistribution = profile?.subjects?.map((subject, index) => ({
-    name: subject,
-    value: Math.floor(Math.random() * 10) + 1, // Mock data
-    fill: `hsl(var(--chart-${(index % 5) + 1}))`,
-  })) || [];
+  const handleViewInsights = () => {
+    if (selectedClass && selectedSubject) {
+      setShowDashboard(true);
+    }
+  };
 
-  const classroomTypeData = [
-    { name: 'School', value: totalSchoolClasses, fill: 'hsl(var(--primary))' },
-    { name: 'Private', value: totalPrivateClasses, fill: 'hsl(var(--accent))' },
-  ];
+  // Mock data
+  const engagementData: Record<string, { highly: number; moderate: number; inactive: number }> = {
+    '1': { highly: 18, moderate: 10, inactive: 12 },
+    '2': { highly: 22, moderate: 8, inactive: 10 },
+    '3': { highly: 15, moderate: 12, inactive: 13 },
+  };
 
-  const monthlyTrendData = [
-    { month: 'Sep', plans: 5, tests: 3, students: 12 },
-    { month: 'Oct', plans: 8, tests: 5, students: 18 },
-    { month: 'Nov', plans: 12, tests: 7, students: 25 },
-    { month: 'Dec', plans: 6, tests: 4, students: 28 },
-    { month: 'Jan', plans: 15, tests: 9, students: 35 },
-    { month: 'Feb', plans: totalLessonPlans || 3, tests: 2, students: 40 },
+  const hwData: Record<string, { assigned: number; completed: number; onTime: number; avg: number; failQ: string }> = {
+    '1': { assigned: 40, completed: 30, onTime: 24, avg: 62, failQ: 'Question 4 failed by 70% of class' },
+    '2': { assigned: 38, completed: 35, onTime: 30, avg: 71, failQ: 'Question 2 failed by 55% of class' },
+    '3': { assigned: 40, completed: 28, onTime: 20, avg: 58, failQ: 'Question 6 failed by 65% of class' },
+  };
+
+  const engagement = engagementData[selectedWeek] || engagementData['1'];
+  const hw = hwData[hwWeek] || hwData['1'];
+
+  const engagementChartData = [
+    { name: 'Highly Active', value: engagement.highly, fill: 'hsl(var(--success))' },
+    { name: 'Moderate', value: engagement.moderate, fill: 'hsl(var(--accent))' },
+    { name: 'Inactive', value: engagement.inactive, fill: 'hsl(var(--destructive))' },
   ];
 
   const chartConfig: ChartConfig = {
-    plans: { label: 'Lesson Plans', color: 'hsl(var(--primary))' },
-    tests: { label: 'Tests', color: 'hsl(var(--accent))' },
-    resources: { label: 'Resources', color: 'hsl(var(--chart-3))' },
-    students: { label: 'Students', color: 'hsl(var(--chart-4))' },
+    value: { label: 'Students', color: 'hsl(var(--primary))' },
   };
 
-  // Stats cards data
-  const statCards = [
-    {
-      title: 'Lesson Plans',
-      value: totalLessonPlans,
-      subtitle: 'Total created',
-      icon: FileText,
-      color: 'bg-primary/10 text-primary',
-      trend: '+12% this month',
-      trendUp: true,
-    },
-    {
-      title: 'Classrooms',
-      value: totalClassrooms,
-      subtitle: `${totalSchoolClasses} school · ${totalPrivateClasses} private`,
-      icon: Users,
-      color: 'bg-accent/10 text-accent',
-      trend: `${totalClassrooms} active`,
-      trendUp: true,
-    },
-    {
-      title: 'Tests Created',
-      value: 12, // Mock - would come from DB
-      subtitle: '3 quizzes, 6 tests, 3 exams',
-      icon: GraduationCap,
-      color: 'bg-success/10 text-success',
-      trend: '+5 this week',
-      trendUp: true,
-    },
-    {
-      title: 'Subjects',
-      value: subjectsCount,
-      subtitle: 'Teaching areas',
-      icon: BookOpen,
-      color: 'bg-primary/10 text-primary',
-      trend: 'Active',
-      trendUp: true,
-    },
+  const mockStudents = [
+    { name: 'Ama Mensah', trend: 'improving', scores: [65, 70, 75] },
+    { name: 'Kofi Asante', trend: 'declining', scores: [80, 72, 60] },
+    { name: 'Akua Boateng', trend: 'stagnant', scores: [55, 56, 55] },
+    { name: 'Yaw Frimpong', trend: 'improving', scores: [50, 60, 72] },
+    { name: 'Esi Appiah', trend: 'stagnant', scores: [68, 67, 69] },
+    { name: 'Kwame Owusu', trend: 'declining', scores: [75, 65, 58] },
   ];
 
-  // AI Suggestions based on activity
-  const aiSuggestions = [
-    {
-      title: 'Create more Science content',
-      description: 'Your Science lessons have the highest student engagement. Consider creating more resources.',
-      priority: 'high',
-    },
-    {
-      title: 'Weekly quiz routine',
-      description: 'Classes with weekly quizzes show 40% better retention. Try adding a quiz schedule.',
-      priority: 'medium',
-    },
-    {
-      title: 'Expand private tutoring',
-      description: 'Your private class has room for more students. Share your invite code to grow.',
-      priority: 'low',
-    },
-  ];
+  const filteredStudents = mockStudents.filter(s =>
+    s.name.toLowerCase().includes(studentFilter.toLowerCase())
+  );
 
-  return (
-    <div className="container mx-auto px-4 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">
-          Insights & Analytics
-        </h1>
-        <p className="text-muted-foreground">
-          Track your teaching progress and get AI-powered recommendations
-        </p>
-      </div>
+  const trendColor = (t: string) =>
+    t === 'improving' ? 'text-success' : t === 'declining' ? 'text-destructive' : 'text-muted-foreground';
+  const trendLabel = (t: string) =>
+    t === 'improving' ? '📈 Improving' : t === 'declining' ? '📉 Declining' : '➡️ Stagnant';
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map((stat, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 rounded-xl ${stat.color} flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5" />
-                </div>
-                <div className="flex items-center gap-1 text-xs text-success">
-                  <TrendingUp className="w-3 h-3" />
-                  <span>{stat.trend}</span>
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm font-medium text-foreground">{stat.title}</p>
-              <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Charts Area */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Weekly Activity Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" />
-                Weekly Activity
-              </CardTitle>
-              <CardDescription>Your content creation this week</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[280px]">
-                <BarChart data={weeklyActivityData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="day" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="plans" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="tests" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="resources" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ChartContainer>
-              <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-primary" />
-                  <span className="text-muted-foreground">Lesson Plans</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-accent" />
-                  <span className="text-muted-foreground">Tests</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-3))' }} />
-                  <span className="text-muted-foreground">Resources</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Monthly Trend */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-success" />
-                Growth Trend
-              </CardTitle>
-              <CardDescription>Your progress over the past 6 months</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={chartConfig} className="h-[280px]">
-                <LineChart data={monthlyTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="month" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="plans" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="tests" 
-                    stroke="hsl(var(--accent))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--accent))' }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="students" 
-                    stroke="hsl(var(--chart-4))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--chart-4))' }}
-                  />
-                </LineChart>
-              </ChartContainer>
-              <div className="flex items-center justify-center gap-6 mt-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  <span className="text-muted-foreground">Plans</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-accent" />
-                  <span className="text-muted-foreground">Tests</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-4))' }} />
-                  <span className="text-muted-foreground">Students</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+  if (showDashboard) {
+    return (
+      <div className="container mx-auto px-4 lg:px-8 py-8 space-y-6 animate-fade-in">
+        <div className="flex items-center gap-3 mb-2">
+          <Button variant="ghost" size="sm" onClick={() => setShowDashboard(false)}>
+            <ArrowLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+          <div>
+            <h1 className="text-xl lg:text-2xl font-bold text-foreground">
+              {selectedClass} · {selectedSubject}
+            </h1>
+            <p className="text-sm text-muted-foreground">Class performance insights</p>
+          </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Classroom Distribution */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <School className="w-4 h-4" />
-                Classroom Types
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {totalClassrooms > 0 ? (
-                <>
-                  <ChartContainer config={chartConfig} className="h-[160px]">
-                    <PieChart>
-                      <Pie
-                        data={classroomTypeData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={60}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {classroomTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                    </PieChart>
-                  </ChartContainer>
-                  <div className="flex items-center justify-center gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-primary" />
-                      <span className="text-muted-foreground">School ({totalSchoolClasses})</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-accent" />
-                      <span className="text-muted-foreground">Private ({totalPrivateClasses})</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  No classrooms yet
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Subject Coverage */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                Subject Coverage
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {profile?.subjects && profile.subjects.length > 0 ? (
-                profile.subjects.map((subject, index) => {
-                  const progress = Math.floor(Math.random() * 40) + 60; // Mock progress
-                  return (
-                    <div key={index}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="text-foreground">{subject}</span>
-                        <span className="text-muted-foreground">{progress}%</span>
-                      </div>
-                      <Progress value={progress} className="h-2" />
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-4 text-muted-foreground text-sm">
-                  No subjects selected
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* AI Suggestions */}
-          <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
+        {/* 1. Class Health Overview */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">📊 Class Health Overview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div className="p-3 rounded-xl bg-muted/50 text-center">
+                <p className="text-2xl font-bold text-primary">64%</p>
+                <p className="text-xs text-muted-foreground">Class Average</p>
+                <span className="text-xs text-success">⬆ improving</span>
+              </div>
+              <div className="p-3 rounded-xl bg-muted/50 text-center">
+                <p className="text-2xl font-bold text-foreground">32/40</p>
+                <p className="text-xs text-muted-foreground">Active Students</p>
+              </div>
+              <div className="p-3 rounded-xl bg-muted/50 text-center">
+                <p className="text-2xl font-bold text-foreground">6/8</p>
+                <p className="text-xs text-muted-foreground">Lessons Covered</p>
+              </div>
+              <div className="p-3 rounded-xl bg-muted/50 text-center">
+                <p className="text-lg font-bold text-foreground">🟡 Needs Support</p>
+                <p className="text-xs text-muted-foreground">Overall Status</p>
+              </div>
+            </div>
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="flex items-center gap-2 mb-1">
                 <Sparkles className="w-4 h-4 text-primary" />
-                AI Suggestions
-              </CardTitle>
+                <span className="text-sm font-semibold text-primary">Jesi AI Insight</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                "Your class is improving, but engagement dropped this week."
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* 2. Key Learning Gaps */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">🔍 Key Learning Gaps (Top 3)</CardTitle>
+              <CardDescription>Topics students struggle with most</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {aiSuggestions.map((suggestion, index) => (
-                <div 
-                  key={index} 
-                  className="p-3 rounded-lg bg-background/80 border border-border/50"
-                >
-                  <div className="flex items-start gap-2 mb-1">
-                    <Badge 
-                      variant="outline" 
-                      className={`text-xs ${
-                        suggestion.priority === 'high' 
-                          ? 'border-primary text-primary' 
-                          : suggestion.priority === 'medium'
-                          ? 'border-accent text-accent'
-                          : 'border-muted-foreground text-muted-foreground'
-                      }`}
-                    >
-                      {suggestion.priority}
-                    </Badge>
+              {[
+                { topic: 'Word Problems', accuracy: 58 },
+                { topic: 'Ratios', accuracy: 61 },
+                { topic: 'Fractions', accuracy: 65 },
+              ].map((gap, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div>
+                    <p className="font-medium text-foreground">{gap.topic}</p>
+                    <p className="text-xs text-muted-foreground">{gap.accuracy}% accuracy</p>
                   </div>
-                  <p className="text-sm font-medium text-foreground">{suggestion.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{suggestion.description}</p>
+                  <Progress value={gap.accuracy} className="w-20 h-2" />
                 </div>
               ))}
+              <div className="flex gap-2 pt-2">
+                <Button size="sm" variant="outline" onClick={() => setCurrentPage('planner')}>
+                  Reteach Topic
+                </Button>
+                <Button size="sm" onClick={() => setCurrentPage('test')}>
+                  Assign Practice
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Quick Summary */}
+          {/* 3. At-Risk Students */}
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Award className="w-4 h-4" />
-                This Month
-              </CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">⚠️ At-Risk Students Alert</CardTitle>
+              <CardDescription>Students needing immediate support</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-primary">{totalLessonPlans}</p>
-                  <p className="text-xs text-muted-foreground">Plans Created</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-accent">12</p>
-                  <p className="text-xs text-muted-foreground">Tests Generated</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-success">40</p>
-                  <p className="text-xs text-muted-foreground">Total Students</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-foreground">{totalClassrooms}</p>
-                  <p className="text-xs text-muted-foreground">Active Classes</p>
-                </div>
+              <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+                <span className="font-semibold text-destructive">5 students flagged</span>
+              </div>
+              <div className="space-y-2 mb-4">
+                {['Low engagement', 'Repeated low scores', 'Missed homework'].map((reason, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <XCircle className="w-3.5 h-3.5 text-destructive" />
+                    {reason}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => setCurrentPage('classroom')}>
+                  <Eye className="w-3.5 h-3.5 mr-1" /> View Students
+                </Button>
+                <Button size="sm" variant="outline">
+                  <Bell className="w-3.5 h-3.5 mr-1" /> Send Reminder
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* 4. Lesson Effectiveness */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">📘 Lesson Effectiveness</CardTitle>
+            <CardDescription>How your last lesson performed</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-3 rounded-xl bg-muted/50">
+                <p className="text-sm text-muted-foreground">Lesson Objective Met</p>
+                <p className="text-lg font-bold text-foreground">❌ Partially</p>
+              </div>
+              <div className="p-3 rounded-xl bg-muted/50">
+                <p className="text-sm text-muted-foreground">Students Who Understood</p>
+                <p className="text-lg font-bold text-primary">60%</p>
+              </div>
+              <div className="p-3 rounded-xl bg-muted/50">
+                <p className="text-sm text-muted-foreground">Most Confusing Part</p>
+                <p className="text-lg font-bold text-foreground">Word problem examples</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* 5. Student Engagement Tracker */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">📈 Student Engagement</CardTitle>
+                <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                  <SelectTrigger className="w-28 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Week 1</SelectItem>
+                    <SelectItem value="2">Week 2</SelectItem>
+                    <SelectItem value="3">Week 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[180px]">
+                <PieChart>
+                  <Pie data={engagementChartData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} dataKey="value">
+                    {engagementChartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ChartContainer>
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xs mt-2">
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-success" /> Highly Active ({engagement.highly})</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-accent" /> Moderate ({engagement.moderate})</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-destructive" /> Inactive ({engagement.inactive})</span>
+              </div>
+              <p className="text-xs text-muted-foreground text-center mt-3">📊 Best activity time: 6pm – 8pm</p>
+            </CardContent>
+          </Card>
+
+          {/* 6. Homework & Assessment Snapshot */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">📝 Homework & Assessment</CardTitle>
+                <Select value={hwWeek} onValueChange={setHwWeek}>
+                  <SelectTrigger className="w-28 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Week 1</SelectItem>
+                    <SelectItem value="2">Week 2</SelectItem>
+                    <SelectItem value="3">Week 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-2 rounded-lg bg-muted/50 text-center">
+                  <p className="text-lg font-bold text-foreground">{hw.assigned}</p>
+                  <p className="text-xs text-muted-foreground">Assigned</p>
+                </div>
+                <div className="p-2 rounded-lg bg-muted/50 text-center">
+                  <p className="text-lg font-bold text-foreground">{hw.completed}</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+                <div className="p-2 rounded-lg bg-muted/50 text-center">
+                  <p className="text-lg font-bold text-foreground">{hw.onTime}</p>
+                  <p className="text-xs text-muted-foreground">On Time</p>
+                </div>
+                <div className="p-2 rounded-lg bg-muted/50 text-center">
+                  <p className="text-lg font-bold text-primary">{hw.avg}%</p>
+                  <p className="text-xs text-muted-foreground">Avg Score</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 text-xs text-destructive">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                {hw.failQ}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="text-xs">Review Question</Button>
+                <Button size="sm" variant="outline" className="text-xs">Edit Homework</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 7. Individual Student Progress */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <CardTitle className="text-lg">👤 Individual Student Progress</CardTitle>
+                <CardDescription>Quick scan view</CardDescription>
+              </div>
+              <Input
+                placeholder="Filter by student name..."
+                className="w-56 h-8 text-sm"
+                value={studentFilter}
+                onChange={(e) => setStudentFilter(e.target.value)}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3 mb-4 text-sm">
+              <Badge variant="outline" className="border-success text-success">📈 Improving: {mockStudents.filter(s => s.trend === 'improving').length}</Badge>
+              <Badge variant="outline" className="border-muted-foreground text-muted-foreground">➡️ Stagnant: {mockStudents.filter(s => s.trend === 'stagnant').length}</Badge>
+              <Badge variant="outline" className="border-destructive text-destructive">📉 Declining: {mockStudents.filter(s => s.trend === 'declining').length}</Badge>
+            </div>
+            <div className="space-y-2">
+              {filteredStudents.map((student, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                      {student.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground text-sm">{student.name}</p>
+                      <p className={`text-xs ${trendColor(student.trend)}`}>{trendLabel(student.trend)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1">
+                      {student.scores.map((s, j) => (
+                        <span key={j} className="text-xs px-1.5 py-0.5 rounded bg-background border border-border">{s}%</span>
+                      ))}
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setCurrentPage('classroom')}>
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 9. Jesi AI Recommendations */}
+        <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Jesi AI Recommendations
+            </CardTitle>
+            <CardDescription>What to do next</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 mb-4">
+              {[
+                'Reteach word problems using real-life examples',
+                'Group 5 at-risk students for extra support',
+                'Assign 10-question practice on ratios',
+              ].map((rec, i) => (
+                <div key={i} className="flex items-start gap-2 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-success mt-0.5 shrink-0" />
+                  <span className="text-foreground">{rec}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => setCurrentPage('planner')}>Apply All</Button>
+              <Button size="sm" variant="outline">Customize</Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+    );
+  }
+
+  // Default view: summary + focus selector
+  return (
+    <div className="container mx-auto px-4 lg:px-8 py-8 space-y-8 animate-fade-in">
+      <div>
+        <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Insights & Analytics</h1>
+        <p className="text-muted-foreground">Track your teaching progress and get AI-powered recommendations</p>
+      </div>
+
+      {/* Subject Coverage Summary Cards */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Target className="w-5 h-5 text-primary" /> Subject Coverage
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {summaryCards.map((card, i) => (
+            <Card key={i} className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center mb-3`}>
+                  <card.icon className="w-5 h-5" />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{card.value}</p>
+                <p className="text-sm text-muted-foreground">{card.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Choose Focus Card */}
+      <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            Choose Your Focus
+          </CardTitle>
+          <CardDescription>Select a class and subject to view detailed insights</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classrooms.length > 0 ? (
+                  classrooms.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="JHS 1">JHS 1</SelectItem>
+                    <SelectItem value="JHS 2">JHS 2</SelectItem>
+                    <SelectItem value="JHS 3">JHS 3</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Select subject" />
+              </SelectTrigger>
+              <SelectContent>
+                {profile?.subjects && profile.subjects.length > 0 ? (
+                  profile.subjects.map((s, i) => (
+                    <SelectItem key={i} value={s}>{s}</SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="Mathematics">Mathematics</SelectItem>
+                    <SelectItem value="English Language">English Language</SelectItem>
+                    <SelectItem value="Integrated Science">Integrated Science</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={handleViewInsights}
+              disabled={!selectedClass || !selectedSubject}
+              className="shrink-0"
+            >
+              View Insights <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
