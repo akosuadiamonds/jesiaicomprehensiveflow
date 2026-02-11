@@ -7,8 +7,20 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getSubjectsForLevel, getCurrentTerm, SubjectData, StrandData, SubStrandData } from '@/data/gesCurriculum';
 import LessonContentPage from './LessonContentPage';
 
+const getEffectiveTerm = (userId?: string): { term: number; label: string } => {
+  if (userId) {
+    const override = localStorage.getItem(`jesi_term_override_${userId}`);
+    if (override) {
+      const termNum = parseInt(override);
+      const labels: Record<number, string> = { 1: 'First Term', 2: 'Second Term', 3: 'Third Term' };
+      return { term: termNum, label: labels[termNum] || 'First Term' };
+    }
+  }
+  return getCurrentTerm();
+};
+
 const LearnZone: React.FC = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [selectedSubject, setSelectedSubject] = useState<SubjectData | null>(null);
   const [selectedStrand, setSelectedStrand] = useState<StrandData | null>(null);
   const [selectedSubStrand, setSelectedSubStrand] = useState<SubStrandData | null>(null);
@@ -16,7 +28,7 @@ const LearnZone: React.FC = () => {
   const classGrade = (profile as any)?.class_grade || 'JHS 1';
   const firstName = profile?.first_name || 'Learner';
   const subjects = getSubjectsForLevel(classGrade);
-  const { term, label: termLabel } = getCurrentTerm();
+  const { term, label: termLabel } = getEffectiveTerm(user?.id);
 
   const handleBack = () => {
     if (selectedSubStrand) {
