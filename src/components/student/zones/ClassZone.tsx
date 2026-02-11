@@ -14,6 +14,11 @@ import {
   Loader2,
   ChevronRight,
   Lock,
+  PlayCircle,
+  FileText,
+  ClipboardList,
+  CheckCircle2,
+  Heart,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -55,6 +60,7 @@ interface ResourceData {
   content: any;
   created_at: string;
   classroom_id: string;
+  is_published: boolean | null;
 }
 
 // Sample classes shown when user has no real classes yet
@@ -100,6 +106,21 @@ const sampleAnnouncements: AnnouncementData[] = [
   },
 ];
 
+const MOOD_OPTIONS = [
+  { emoji: '😊', label: 'Great', type: 'positive' as const },
+  { emoji: '🙂', label: 'Good', type: 'positive' as const },
+  { emoji: '😐', label: 'Okay', type: 'positive' as const },
+  { emoji: '😕', label: 'Confusing', type: 'negative' as const },
+  { emoji: '😞', label: 'Tough', type: 'negative' as const },
+];
+
+const SUPPORT_OPTIONS = [
+  { emoji: '📖', label: 'Review lesson notes', description: 'Go over what was taught in class' },
+  { emoji: '🤖', label: 'Chat with Jesi AI', description: 'Get help from your AI tutor' },
+  { emoji: '📝', label: 'Try practice questions', description: 'Practice at your own pace' },
+  { emoji: '🎥', label: 'Watch video explanations', description: 'Learn through videos' },
+];
+
 const ClassZone: React.FC = () => {
   const { user } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
@@ -116,8 +137,26 @@ const ClassZone: React.FC = () => {
   const [mainTab, setMainTab] = useState('my-classes');
   const [usingSamples, setUsingSamples] = useState(false);
 
+  // Check-in state
+  const [showCheckIn, setShowCheckIn] = useState(true);
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+
+  // Lesson note read tracking per class (localStorage)
+  const [readNotes, setReadNotes] = useState<Record<string, string[]>>({});
+
   useEffect(() => {
-    if (user) fetchClassrooms();
+    if (user) {
+      fetchClassrooms();
+      // Load read notes from localStorage
+      const saved = localStorage.getItem(`jesi_read_notes_${user.id}`);
+      if (saved) setReadNotes(JSON.parse(saved));
+      // Check if already checked in today
+      const lastCheckIn = localStorage.getItem(`jesi_checkin_${user.id}`);
+      if (lastCheckIn === new Date().toDateString()) {
+        setShowCheckIn(false);
+      }
+    }
   }, [user]);
 
   useEffect(() => {
@@ -125,6 +164,46 @@ const ClassZone: React.FC = () => {
       fetchBrowseClasses();
     }
   }, [mainTab]);
+
+  const markNoteAsRead = (classId: string, resourceId: string) => {
+    if (!user) return;
+    const updated = { ...readNotes };
+    if (!updated[classId]) updated[classId] = [];
+    if (!updated[classId].includes(resourceId)) {
+      updated[classId] = [...updated[classId], resourceId];
+    }
+    setReadNotes(updated);
+    localStorage.setItem(`jesi_read_notes_${user.id}`, JSON.stringify(updated));
+    toast.success('Lesson note marked as read ✅');
+  };
+
+  const areAllNotesRead = (classId: string) => {
+    const lessonNotes = resources.filter(
+      r => r.classroom_id === classId && r.resource_type === 'lesson_plan'
+    );
+    if (lessonNotes.length === 0) return true;
+    const read = readNotes[classId] || [];
+    return lessonNotes.every(n => read.includes(n.id));
+  };
+
+  const handleMoodSelect = (mood: typeof MOOD_OPTIONS[0]) => {
+    setSelectedMood(mood.label);
+    if (!user) return;
+    localStorage.setItem(`jesi_checkin_${user.id}`, new Date().toDateString());
+
+    if (mood.type === 'negative') {
+      setShowSupportDialog(true);
+    } else {
+      toast.success(`Thanks for sharing! Let's keep going 💪`);
+      setShowCheckIn(false);
+    }
+  };
+
+  const handleSupportSelect = (option: typeof SUPPORT_OPTIONS[0]) => {
+    setShowSupportDialog(false);
+    setShowCheckIn(false);
+    toast.success(`${option.emoji} ${option.label} — you've got this! 💙`);
+  };
 
   const fetchClassrooms = async () => {
     if (!user) return;
@@ -172,7 +251,6 @@ const ClassZone: React.FC = () => {
           .order('created_at', { ascending: false });
         setResources(res || []);
       } else {
-        // No real classes — show samples for visualization
         setMyClasses(sampleClasses);
         setAnnouncements(sampleAnnouncements);
         setUsingSamples(true);
@@ -277,10 +355,105 @@ const ClassZone: React.FC = () => {
     );
   }
 
-  // Class detail view (not for samples)
+  // ─── Check-in Screen ───
+  if (showCheckIn) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold mb-2">How was class today? 🎒</h2>
+          <p className="text-muted-foreground">Let us know how you're feeling</p>
+        </div>
+
+        <div className="grid grid-cols-5 gap-3 max-w-lg w-full mb-8">
+          {MOOD_OPTIONS.map((mood) => (
+            <Card
+              key={mood.label}
+              className={`cursor-pointer hover:shadow-lg transition-all hover:scale-105 border-2 ${
+                selectedMood === mood.label ? 'border-primary bg-primary/5' : 'border-transparent'
+              }`}
+              onClick={() => handleMoodSelect(mood)}
+            >
+              <CardContent className="p-4 flex flex-col items-center gap-2">
+                <span className="text-4xl">{mood.emoji}</span>
+                <span className="text-xs font-medium text-center">{mood.label}</span>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Button
+          variant="ghost"
+          className="text-muted-foreground"
+          onClick={() => {
+            setShowCheckIn(false);
+            if (user) localStorage.setItem(`jesi_checkin_${user.id}`, new Date().toDateString());
+          }}
+        >
+          Skip for now
+        </Button>
+
+        {/* Support Dialog for Confusing / Tough */}
+        <Dialog open={showSupportDialog} onOpenChange={setShowSupportDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-red-500" />
+                We're here for you 💙
+              </DialogTitle>
+              <DialogDescription>
+                {selectedMood === 'Tough'
+                  ? "It's okay to have tough days. You're braver than you think! Let's find a way to help."
+                  : "Feeling confused is totally normal — it means you're learning something new! Let's clear things up."}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2">
+              <p className="text-sm font-medium text-muted-foreground">What kind of support do you need?</p>
+              {SUPPORT_OPTIONS.map((option) => (
+                <Card
+                  key={option.label}
+                  className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all"
+                  onClick={() => handleSupportSelect(option)}
+                >
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <span className="text-2xl">{option.emoji}</span>
+                    <div>
+                      <p className="font-medium text-sm">{option.label}</p>
+                      <p className="text-xs text-muted-foreground">{option.description}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowSupportDialog(false);
+                  setShowCheckIn(false);
+                  if (user) localStorage.setItem(`jesi_checkin_${user.id}`, new Date().toDateString());
+                }}
+              >
+                I'm okay, continue to classes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // ─── Class Detail View (real classes) ───
   if (selectedClass && !selectedClass.id.startsWith('sample-')) {
     const classAnnouncements = getClassAnnouncements(selectedClass.id);
     const classResources = getClassResources(selectedClass.id);
+    const lessonNotes = classResources.filter(r => r.resource_type === 'lesson_plan');
+    const practiceHomework = classResources.filter(r => ['test', 'quiz'].includes(r.resource_type));
+    const videoResources = classResources.filter(r => r.resource_type === 'material');
+    const notesComplete = areAllNotesRead(selectedClass.id);
+    const readList = readNotes[selectedClass.id] || [];
 
     return (
       <div className="space-y-6 animate-fade-in">
@@ -300,35 +473,169 @@ const ClassZone: React.FC = () => {
           )}
         </div>
 
-        <Tabs defaultValue="resources">
-          <TabsList>
-            <TabsTrigger value="resources">Notes & Materials</TabsTrigger>
-            <TabsTrigger value="announcements">
-              Announcements
+        <Tabs defaultValue="notes">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="notes" className="gap-1">
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Lesson Notes</span>
+              <span className="sm:hidden">Notes</span>
+            </TabsTrigger>
+            <TabsTrigger value="practice" className="gap-1">
+              <ClipboardList className="w-4 h-4" />
+              <span className="hidden sm:inline">Practice</span>
+              <span className="sm:hidden">Practice</span>
+            </TabsTrigger>
+            <TabsTrigger value="videos" className="gap-1">
+              <PlayCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Videos</span>
+              <span className="sm:hidden">Videos</span>
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="gap-1">
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Updates</span>
+              <span className="sm:hidden">Updates</span>
               {classAnnouncements.length > 0 && (
-                <Badge variant="destructive" className="ml-2 text-xs">{classAnnouncements.length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs h-5 w-5 p-0 flex items-center justify-center">
+                  {classAnnouncements.length}
+                </Badge>
               )}
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="resources" className="mt-4 space-y-3">
-            {classResources.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No materials shared yet</CardContent></Card>
+          {/* Lesson Notes Tab */}
+          <TabsContent value="notes" className="mt-4 space-y-3">
+            {lessonNotes.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No lesson notes yet</p>
+                  <p className="text-sm">Your teacher will share lesson notes here</p>
+                </CardContent>
+              </Card>
             ) : (
-              classResources.map((res) => (
-                <Card key={res.id} className="hover:shadow-md transition-shadow">
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {readList.length}/{lessonNotes.length} completed
+                  </p>
+                  {notesComplete && (
+                    <Badge className="bg-green-500 text-white gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      All Done
+                    </Badge>
+                  )}
+                </div>
+                {lessonNotes.map((note) => {
+                  const isRead = readList.includes(note.id);
+                  return (
+                    <Card key={note.id} className={`transition-all ${isRead ? 'border-green-400/50 bg-green-50/30 dark:bg-green-900/10' : 'hover:shadow-md'}`}>
+                      <CardContent className="p-4 flex items-center gap-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isRead ? 'bg-green-100 dark:bg-green-900/30' : 'bg-primary/10'}`}>
+                          {isRead ? (
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <FileText className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">{note.title}</h4>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(note.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {!isRead && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => markNoteAsRead(selectedClass.id, note.id)}
+                          >
+                            Mark as Read
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </>
+            )}
+          </TabsContent>
+
+          {/* Practice Homework Tab */}
+          <TabsContent value="practice" className="mt-4 space-y-3">
+            {!notesComplete && lessonNotes.length > 0 && (
+              <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-900/10">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <Lock className="w-5 h-5 text-amber-500" />
+                  <div>
+                    <p className="font-medium text-sm">Complete lesson notes first</p>
+                    <p className="text-xs text-muted-foreground">
+                      Read all {lessonNotes.length} lesson note{lessonNotes.length > 1 ? 's' : ''} to unlock practice homework
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {practiceHomework.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No practice homework yet</p>
+                  <p className="text-sm">Your teacher will assign quizzes and tests here</p>
+                </CardContent>
+              </Card>
+            ) : (
+              practiceHomework.map((hw) => {
+                const locked = !notesComplete && lessonNotes.length > 0;
+                return (
+                  <Card key={hw.id} className={`transition-all ${locked ? 'opacity-50 pointer-events-none' : 'hover:shadow-md'}`}>
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        {locked ? (
+                          <Lock className="w-5 h-5 text-muted-foreground" />
+                        ) : (
+                          <ClipboardList className="w-5 h-5 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{hw.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs capitalize">{hw.resource_type}</Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(hw.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      {locked && <Lock className="w-4 h-4 text-amber-500" />}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </TabsContent>
+
+          {/* Video Resources Tab */}
+          <TabsContent value="videos" className="mt-4 space-y-3">
+            {videoResources.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <PlayCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No video resources yet</p>
+                  <p className="text-sm">Your teacher will share video materials here</p>
+                </CardContent>
+              </Card>
+            ) : (
+              videoResources.map((vid) => (
+                <Card key={vid.id} className="hover:shadow-md transition-all">
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-primary" />
+                      <PlayCircle className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium">{res.title}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs capitalize">{res.resource_type}</Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(res.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
+                      <h4 className="font-medium">{vid.title}</h4>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(vid.created_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -336,9 +643,16 @@ const ClassZone: React.FC = () => {
             )}
           </TabsContent>
 
+          {/* Announcements Tab */}
           <TabsContent value="announcements" className="mt-4 space-y-3">
             {classAnnouncements.length === 0 ? (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">No announcements yet</CardContent></Card>
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p className="font-medium">No announcements yet</p>
+                  <p className="text-sm">Your teacher will post updates here</p>
+                </CardContent>
+              </Card>
             ) : (
               classAnnouncements.map((ann) => (
                 <Card key={ann.id} className="hover:shadow-md transition-shadow">
@@ -367,7 +681,7 @@ const ClassZone: React.FC = () => {
     );
   }
 
-  // Sample class detail view
+  // ─── Sample Class Detail View ───
   if (selectedClass && selectedClass.id.startsWith('sample-')) {
     const classAnns = getClassAnnouncements(selectedClass.id);
     return (
@@ -389,19 +703,29 @@ const ClassZone: React.FC = () => {
           )}
         </div>
 
-        <Tabs defaultValue="announcements">
-          <TabsList>
-            <TabsTrigger value="resources">Notes & Materials</TabsTrigger>
+        <Tabs defaultValue="notes">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="practice">Practice</TabsTrigger>
+            <TabsTrigger value="videos">Videos</TabsTrigger>
             <TabsTrigger value="announcements">
-              Announcements
+              Updates
               {classAnns.length > 0 && (
-                <Badge variant="destructive" className="ml-2 text-xs">{classAnns.length}</Badge>
+                <Badge variant="destructive" className="ml-1 text-xs">{classAnns.length}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="resources" className="mt-4">
-            <Card><CardContent className="p-6 text-center text-muted-foreground">No materials shared yet — your teacher will add notes here</CardContent></Card>
+          <TabsContent value="notes" className="mt-4">
+            <Card><CardContent className="p-6 text-center text-muted-foreground">No lesson notes yet — your teacher will add notes here</CardContent></Card>
+          </TabsContent>
+
+          <TabsContent value="practice" className="mt-4">
+            <Card><CardContent className="p-6 text-center text-muted-foreground">No practice homework yet</CardContent></Card>
+          </TabsContent>
+
+          <TabsContent value="videos" className="mt-4">
+            <Card><CardContent className="p-6 text-center text-muted-foreground">No video resources yet</CardContent></Card>
           </TabsContent>
 
           <TabsContent value="announcements" className="mt-4 space-y-3">
@@ -431,7 +755,7 @@ const ClassZone: React.FC = () => {
     );
   }
 
-  // Main view
+  // ─── Main View ───
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
