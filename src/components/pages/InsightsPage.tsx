@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   BarChart3, TrendingUp, Users, FileText, BookOpen, GraduationCap,
   Target, Sparkles, Wallet, ChevronRight, AlertTriangle, Eye,
@@ -33,6 +34,7 @@ const InsightsPage: React.FC = () => {
   const [selectedWeek, setSelectedWeek] = useState('1');
   const [hwWeek, setHwWeek] = useState('1');
   const [studentFilter, setStudentFilter] = useState('');
+  const [showAtRiskModal, setShowAtRiskModal] = useState(false);
 
   const totalLessonPlans = savedLessonPlans.length;
 
@@ -40,8 +42,17 @@ const InsightsPage: React.FC = () => {
   const summaryCards = [
     { label: 'Lesson Plans', value: totalLessonPlans, icon: FileText, color: 'bg-primary/10 text-primary' },
     { label: 'Tests Created', value: 12, icon: GraduationCap, color: 'bg-accent/10 text-accent' },
-    { label: 'Total Saved', value: totalLessonPlans + 12, icon: Save, color: 'bg-success/10 text-success' },
+    { label: 'Hours Saved', value: totalLessonPlans + 12, icon: Save, color: 'bg-success/10 text-success' },
     { label: 'Revenue', value: 'GHS 450', icon: Wallet, color: 'bg-primary/10 text-primary' },
+  ];
+
+  // Mock at-risk students data
+  const atRiskStudents = [
+    { name: 'Kwame Owusu', trend: 'declining', reason: 'Repeated low scores', lastScore: 58 },
+    { name: 'Akua Boateng', trend: 'stagnant', reason: 'Low engagement', lastScore: 55 },
+    { name: 'Kofi Asante', trend: 'declining', reason: 'Missed homework', lastScore: 60 },
+    { name: 'Esi Appiah', trend: 'stagnant', reason: 'Low test performance', lastScore: 56 },
+    { name: 'Yaw Mensah', trend: 'declining', reason: 'Missed multiple sessions', lastScore: 48 },
   ];
 
   const handleViewInsights = () => {
@@ -198,7 +209,7 @@ const InsightsPage: React.FC = () => {
                 ))}
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => setCurrentPage('classroom')}>
+                <Button size="sm" variant="outline" onClick={() => setShowAtRiskModal(true)}>
                   <Eye className="w-3.5 h-3.5 mr-1" /> View Students
                 </Button>
                 <Button size="sm" variant="outline">
@@ -369,7 +380,7 @@ const InsightsPage: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* 9. Jesi AI Recommendations */}
+        {/* 8. Jesi AI Recommendations */}
         <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -397,6 +408,43 @@ const InsightsPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modal for At-Risk Students Details */}
+        <Dialog open={showAtRiskModal} onOpenChange={setShowAtRiskModal}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>At-Risk Students - Detailed View</DialogTitle>
+              <DialogDescription>Students flagged for immediate support and intervention</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              {atRiskStudents.map((student, i) => (
+                <div key={i} className="p-4 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center text-sm font-bold text-destructive">
+                        {student.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{student.name}</p>
+                        <p className="text-xs text-muted-foreground">Last Score: {student.lastScore}%</p>
+                      </div>
+                    </div>
+                    <Badge variant="destructive" className="shrink-0">{student.trend === 'declining' ? '📉 Declining' : '➡️ Stagnant'}</Badge>
+                  </div>
+                  <div className="ml-13 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    <span className="text-sm text-muted-foreground">{student.reason}</span>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button size="sm" variant="outline" className="text-xs">View Profile</Button>
+                    <Button size="sm" variant="outline" className="text-xs">Send Message</Button>
+                    <Button size="sm" className="text-xs">Schedule Session</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }
