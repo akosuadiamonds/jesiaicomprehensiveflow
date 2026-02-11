@@ -294,7 +294,48 @@ const StudentProfilePage: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="subscription" className="mt-6">
+        <TabsContent value="subscription" className="mt-6 space-y-6">
+          {/* Buy Tokens */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Coins className="w-5 h-5" />
+                Buy Tokens
+              </CardTitle>
+              <CardDescription>Purchase AI tokens to generate lessons, practice questions, and more</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { tokens: 50, price: 5, emoji: '🪙', label: 'Starter Pack' },
+                  { tokens: 150, price: 12, emoji: '💰', label: 'Value Pack', popular: true },
+                  { tokens: 400, price: 25, emoji: '🏦', label: 'Power Pack' },
+                ].map((pack) => (
+                  <Card
+                    key={pack.tokens}
+                    className={`relative cursor-pointer hover:shadow-md transition-all ${pack.popular ? 'ring-2 ring-primary border-primary' : ''}`}
+                  >
+                    {pack.popular && (
+                      <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-400 to-orange-500 text-xs">
+                        Best Value
+                      </Badge>
+                    )}
+                    <CardContent className="p-4 text-center space-y-2 pt-6">
+                      <div className="text-3xl">{pack.emoji}</div>
+                      <h4 className="font-bold">{pack.label}</h4>
+                      <p className="text-2xl font-bold text-primary">{pack.tokens} tokens</p>
+                      <p className="text-sm text-muted-foreground">GHS {pack.price}</p>
+                      <Button size="sm" className="w-full" variant={pack.popular ? 'default' : 'outline'}>
+                        Buy Now
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Current Plan */}
           <Card>
             <CardHeader>
               <CardTitle>Current Plan</CardTitle>
