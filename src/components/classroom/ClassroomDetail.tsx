@@ -166,9 +166,9 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
             </div>
             <div>
               <p className="text-2xl font-bold">
-                {resources.filter(r => r.resource_type === 'lesson_plan').length}
+                {studentCount}/{classroom.max_students}
               </p>
-              <p className="text-sm text-muted-foreground">Lesson Plans</p>
+              <p className="text-sm text-muted-foreground">Active Learners</p>
             </div>
           </CardContent>
         </Card>
@@ -188,11 +188,11 @@ const ClassroomDetail: React.FC<ClassroomDetailProps> = ({ classroom, onBack }) 
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-              <Bell className="h-5 w-5 text-foreground" />
+              <BarChart3 className="h-5 w-5 text-foreground" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{announcements.length}</p>
-              <p className="text-sm text-muted-foreground">Announcements</p>
+              <p className="text-2xl font-bold">72%</p>
+              <p className="text-sm text-muted-foreground">Avg. Performance</p>
             </div>
           </CardContent>
         </Card>

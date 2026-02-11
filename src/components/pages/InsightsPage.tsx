@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   BarChart3, TrendingUp, Users, FileText, BookOpen, GraduationCap,
   Target, Sparkles, Wallet, ChevronRight, AlertTriangle, Eye,
-  Bell, CheckCircle2, XCircle, Save, ArrowLeft
+  Bell, CheckCircle2, XCircle, Save, ArrowLeft, Download, User
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApp } from '@/contexts/AppContext';
@@ -29,12 +30,18 @@ const InsightsPage: React.FC = () => {
   const { classrooms } = useClassrooms();
 
   const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
   const [showDashboard, setShowDashboard] = useState(false);
   const [selectedWeek, setSelectedWeek] = useState('1');
   const [hwWeek, setHwWeek] = useState('1');
   const [studentFilter, setStudentFilter] = useState('');
   const [showAtRiskModal, setShowAtRiskModal] = useState(false);
+  const [gapsFilter, setGapsFilter] = useState<'week' | 'month'>('week');
+  const [atRiskFilter, setAtRiskFilter] = useState<'week' | 'month'>('week');
+  const [selectedStudentDetail, setSelectedStudentDetail] = useState<any>(null);
+  const [showStudentDetailModal, setShowStudentDetailModal] = useState(false);
+  const [showStudentProfile, setShowStudentProfile] = useState<any>(null);
+  const [detailSubjectFilter, setDetailSubjectFilter] = useState('all');
+  const [detailTimeFilter, setDetailTimeFilter] = useState<'week' | 'month'>('week');
 
   const totalLessonPlans = savedLessonPlans.length;
 
@@ -46,17 +53,27 @@ const InsightsPage: React.FC = () => {
     { label: 'Revenue', value: 'GHS 450', icon: Wallet, color: 'bg-primary/10 text-primary' },
   ];
 
-  // Mock at-risk students data
+  // Mock at-risk students data with detailed info
   const atRiskStudents = [
-    { name: 'Kwame Owusu', trend: 'declining', reason: 'Repeated low scores', lastScore: 58 },
-    { name: 'Akua Boateng', trend: 'stagnant', reason: 'Low engagement', lastScore: 55 },
-    { name: 'Kofi Asante', trend: 'declining', reason: 'Missed homework', lastScore: 60 },
-    { name: 'Esi Appiah', trend: 'stagnant', reason: 'Low test performance', lastScore: 56 },
-    { name: 'Yaw Mensah', trend: 'declining', reason: 'Missed multiple sessions', lastScore: 48 },
+    { name: 'Kwame Owusu', trend: 'declining', reason: 'Repeated low scores', lastScore: 58, class: 'JHS 2', subject: 'Mathematics', attendance: '65%', avgScore: 55, testsCompleted: 8, joinedDate: '2025-09-15' },
+    { name: 'Akua Boateng', trend: 'stagnant', reason: 'Low engagement', lastScore: 55, class: 'JHS 2', subject: 'Mathematics', attendance: '70%', avgScore: 52, testsCompleted: 6, joinedDate: '2025-09-20' },
+    { name: 'Kofi Asante', trend: 'declining', reason: 'Missed homework', lastScore: 60, class: 'JHS 1', subject: 'English', attendance: '60%', avgScore: 58, testsCompleted: 7, joinedDate: '2025-10-01' },
+    { name: 'Esi Appiah', trend: 'stagnant', reason: 'Low test performance', lastScore: 56, class: 'JHS 3', subject: 'Science', attendance: '75%', avgScore: 54, testsCompleted: 9, joinedDate: '2025-09-10' },
+    { name: 'Yaw Mensah', trend: 'declining', reason: 'Missed multiple sessions', lastScore: 48, class: 'JHS 2', subject: 'Mathematics', attendance: '50%', avgScore: 45, testsCompleted: 5, joinedDate: '2025-10-05' },
+  ];
+
+  // Mock detailed test scores for individual student progress
+  const mockStudentTests = [
+    { test: 'Mid-Term Exam', subject: 'Mathematics', score: 72, avgScore: 68, weight20: 13.6, date: '2025-11-15' },
+    { test: 'Quiz 3 - Fractions', subject: 'Mathematics', score: 65, avgScore: 70, weight20: 14.0, date: '2025-11-08' },
+    { test: 'Weekly Test 5', subject: 'Mathematics', score: 80, avgScore: 72, weight20: 14.4, date: '2025-11-01' },
+    { test: 'Quiz 2 - Ratios', subject: 'Mathematics', score: 58, avgScore: 65, weight20: 13.0, date: '2025-10-25' },
+    { test: 'Weekly Test 4', subject: 'English Language', score: 75, avgScore: 71, weight20: 14.2, date: '2025-10-18' },
+    { test: 'Quiz 1 - Grammar', subject: 'English Language', score: 82, avgScore: 74, weight20: 14.8, date: '2025-10-11' },
   ];
 
   const handleViewInsights = () => {
-    if (selectedClass && selectedSubject) {
+    if (selectedClass) {
       setShowDashboard(true);
     }
   };
@@ -114,7 +131,7 @@ const InsightsPage: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-xl lg:text-2xl font-bold text-foreground">
-              {selectedClass} · {selectedSubject}
+              {selectedClass}
             </h1>
             <p className="text-sm text-muted-foreground">Class performance insights</p>
           </div>
@@ -336,7 +353,7 @@ const InsightsPage: React.FC = () => {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle className="text-lg">👤 Individual Student Progress</CardTitle>
-                <CardDescription>Quick scan view</CardDescription>
+                <CardDescription>Click a student for detailed scores</CardDescription>
               </div>
               <Input
                 placeholder="Filter by student name..."
@@ -354,7 +371,7 @@ const InsightsPage: React.FC = () => {
             </div>
             <div className="space-y-2">
               {filteredStudents.map((student, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors" onClick={() => { setSelectedStudentDetail(student); setShowStudentDetailModal(true); }}>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
                       {student.name.split(' ').map(n => n[0]).join('')}
@@ -370,9 +387,7 @@ const InsightsPage: React.FC = () => {
                         <span key={j} className="text-xs px-1.5 py-0.5 rounded bg-background border border-border">{s}%</span>
                       ))}
                     </div>
-                    <Button size="sm" variant="ghost" className="text-xs h-7" onClick={() => setCurrentPage('classroom')}>
-                      <Eye className="w-3.5 h-3.5" />
-                    </Button>
+                    <Eye className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
                 </div>
               ))}
@@ -435,14 +450,134 @@ const InsightsPage: React.FC = () => {
                     <AlertTriangle className="w-4 h-4 text-destructive" />
                     <span className="text-sm text-muted-foreground">{student.reason}</span>
                   </div>
-                  <div className="mt-3 flex gap-2">
-                    <Button size="sm" variant="outline" className="text-xs">View Profile</Button>
-                    <Button size="sm" variant="outline" className="text-xs">Send Message</Button>
-                    <Button size="sm" className="text-xs">Schedule Session</Button>
+                  <div className="mt-3">
+                    <Button size="sm" variant="outline" className="text-xs" onClick={() => { setShowStudentProfile(student); setShowAtRiskModal(false); }}>
+                      <User className="w-3.5 h-3.5 mr-1" /> View Profile
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Student Profile Modal */}
+        <Dialog open={!!showStudentProfile} onOpenChange={(open) => !open && setShowStudentProfile(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Student Profile</DialogTitle>
+              <DialogDescription>Detailed information about the student</DialogDescription>
+            </DialogHeader>
+            {showStudentProfile && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center text-lg font-bold text-primary">
+                    {showStudentProfile.name.split(' ').map((n: string) => n[0]).join('')}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">{showStudentProfile.name}</h3>
+                    <p className="text-sm text-muted-foreground">{showStudentProfile.class} · {showStudentProfile.subject}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Attendance</p>
+                    <p className="text-lg font-bold text-foreground">{showStudentProfile.attendance}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Average Score</p>
+                    <p className="text-lg font-bold text-foreground">{showStudentProfile.avgScore}%</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Tests Completed</p>
+                    <p className="text-lg font-bold text-foreground">{showStudentProfile.testsCompleted}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground">Last Score</p>
+                    <p className="text-lg font-bold text-foreground">{showStudentProfile.lastScore}%</p>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs text-muted-foreground">Trend</p>
+                  <Badge variant="destructive" className="mt-1">{showStudentProfile.trend === 'declining' ? '📉 Declining' : '➡️ Stagnant'}</Badge>
+                </div>
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-xs text-muted-foreground mb-1">Alert Reason</p>
+                  <p className="text-sm text-destructive font-medium">{showStudentProfile.reason}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-xs text-muted-foreground">Joined</p>
+                  <p className="text-sm font-medium text-foreground">{new Date(showStudentProfile.joinedDate).toLocaleDateString()}</p>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Individual Student Scores Detail Modal */}
+        <Dialog open={showStudentDetailModal} onOpenChange={setShowStudentDetailModal}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedStudentDetail?.name} - Detailed Scores</DialogTitle>
+              <DialogDescription>Raw test scores and performance breakdown</DialogDescription>
+            </DialogHeader>
+            {selectedStudentDetail && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select value={detailSubjectFilter} onValueChange={setDetailSubjectFilter}>
+                    <SelectTrigger className="w-40 h-8 text-xs">
+                      <SelectValue placeholder="Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Subjects</SelectItem>
+                      <SelectItem value="Mathematics">Mathematics</SelectItem>
+                      <SelectItem value="English Language">English Language</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1">
+                    {(['week', 'month'] as const).map(f => (
+                      <Button key={f} size="sm" variant={detailTimeFilter === f ? 'default' : 'outline'} className="text-xs h-8 px-3" onClick={() => setDetailTimeFilter(f)}>
+                        {f === 'week' ? 'This Week' : 'This Month'}
+                      </Button>
+                    ))}
+                  </div>
+                  <Button size="sm" variant="outline" className="ml-auto text-xs h-8" onClick={() => {
+                    const csv = 'Test,Subject,Score,Avg Score,20% of Avg\n' + mockStudentTests.filter(t => detailSubjectFilter === 'all' || t.subject === detailSubjectFilter).map(t => `${t.test},${t.subject},${t.score},${t.avgScore},${t.weight20}`).join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = `${selectedStudentDetail.name}_scores.csv`; a.click();
+                  }}>
+                    <Download className="w-3.5 h-3.5 mr-1" /> Download CSV
+                  </Button>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Test</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead className="text-right">Score</TableHead>
+                      <TableHead className="text-right">Avg Score</TableHead>
+                      <TableHead className="text-right">20% of Avg</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockStudentTests
+                      .filter(t => detailSubjectFilter === 'all' || t.subject === detailSubjectFilter)
+                      .map((t, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{t.test}</TableCell>
+                        <TableCell>{t.subject}</TableCell>
+                        <TableCell className="text-right">
+                          <span className={t.score >= t.avgScore ? 'text-success' : 'text-destructive'}>{t.score}%</span>
+                        </TableCell>
+                        <TableCell className="text-right">{t.avgScore}%</TableCell>
+                        <TableCell className="text-right">{t.weight20}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -484,7 +619,7 @@ const InsightsPage: React.FC = () => {
             <BarChart3 className="w-5 h-5 text-primary" />
             Choose Your Focus
           </CardTitle>
-          <CardDescription>Select a class and subject to view detailed insights</CardDescription>
+          <CardDescription>Select a class to view detailed insights</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -507,28 +642,9 @@ const InsightsPage: React.FC = () => {
               </SelectContent>
             </Select>
 
-            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select subject" />
-              </SelectTrigger>
-              <SelectContent>
-                {profile?.subjects && profile.subjects.length > 0 ? (
-                  profile.subjects.map((s, i) => (
-                    <SelectItem key={i} value={s}>{s}</SelectItem>
-                  ))
-                ) : (
-                  <>
-                    <SelectItem value="Mathematics">Mathematics</SelectItem>
-                    <SelectItem value="English Language">English Language</SelectItem>
-                    <SelectItem value="Integrated Science">Integrated Science</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-
             <Button
               onClick={handleViewInsights}
-              disabled={!selectedClass || !selectedSubject}
+              disabled={!selectedClass}
               className="shrink-0"
             >
               View Insights <ChevronRight className="w-4 h-4 ml-1" />
