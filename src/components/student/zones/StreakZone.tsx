@@ -286,6 +286,46 @@ const StreakZone: React.FC = () => {
         </Card>
       </div>
 
+      {/* Weekly Leaderboard */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            Weekly Leaderboard
+          </CardTitle>
+          <CardDescription>Top earners this week — can you make it to #1?</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {[
+              { rank: 1, name: 'Ama K.', coins: 320, avatar: '👑', highlight: true },
+              { rank: 2, name: 'Kwame A.', coins: 285, avatar: '🥈', highlight: false },
+              { rank: 3, name: 'Abena M.', coins: 260, avatar: '🥉', highlight: false },
+              { rank: 4, name: 'Yaw B.', coins: 210, avatar: '🔥', highlight: false },
+              { rank: 5, name: 'Efua S.', coins: 195, avatar: '⭐', highlight: false },
+              { rank: 6, name: 'Kofi D.', coins: 180, avatar: '💪', highlight: false },
+              { rank: 7, name: 'You', coins: totalCoins > 0 ? 155 : 0, avatar: '🧑‍🎓', highlight: true },
+            ].map((player) => (
+              <div
+                key={player.rank}
+                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+                  player.highlight
+                    ? 'bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-950/20 border border-amber-200 dark:border-amber-800'
+                    : 'bg-muted/50 hover:bg-muted'
+                }`}
+              >
+                <span className="w-7 text-center font-bold text-sm text-muted-foreground">#{player.rank}</span>
+                <span className="text-xl">{player.avatar}</span>
+                <span className={`flex-1 font-medium text-sm ${player.name === 'You' ? 'text-primary font-bold' : ''}`}>
+                  {player.name}
+                </span>
+                <Badge className="bg-amber-500 hover:bg-amber-600">{player.coins} 🪙</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* How to Earn */}
       <Card className="bg-gradient-to-r from-secondary/50 to-secondary/30">
         <CardHeader>
