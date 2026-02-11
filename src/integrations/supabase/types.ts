@@ -143,6 +143,7 @@ export type Database = {
           created_at: string
           currency: string | null
           description: string | null
+          fee_frequency: string
           id: string
           invite_code: string
           is_active: boolean | null
@@ -158,6 +159,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          fee_frequency?: string
           id?: string
           invite_code: string
           is_active?: boolean | null
@@ -173,6 +175,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           description?: string | null
+          fee_frequency?: string
           id?: string
           invite_code?: string
           is_active?: boolean | null

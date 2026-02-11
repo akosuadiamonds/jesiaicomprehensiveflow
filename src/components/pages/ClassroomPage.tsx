@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, School, Briefcase, Users, Lock, DollarSign, TrendingUp, CreditCard } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, School, Briefcase, Users, Lock, DollarSign, TrendingUp, CreditCard, Wallet } from 'lucide-react';
 import { useClassrooms } from '@/hooks/useClassrooms';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import CreateClassroomModal from '@/components/classroom/CreateClassroomModal';
 import ClassroomCard from '@/components/classroom/ClassroomCard';
 import ClassroomDetail from '@/components/classroom/ClassroomDetail';
@@ -26,12 +29,21 @@ type ClassroomTab = 'school' | 'private' | 'monetization';
 const ClassroomPage: React.FC = () => {
   const { schoolClassrooms, privateClassrooms, loading, createClassroom, deleteClassroom } = useClassrooms();
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<ClassroomTab>('school');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classroomToDelete, setClassroomToDelete] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  
+  // Monetization payment details state
+  const [paymentMethod, setPaymentMethod] = useState('mobile_money');
+  const [momoNetwork, setMomoNetwork] = useState('');
+  const [momoNumber, setMomoNumber] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
 
   const isPremium = profile?.selected_plan === 'premium';
 
@@ -146,7 +158,7 @@ const ClassroomPage: React.FC = () => {
                 <TrendingUp className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
+                <p className="text-sm text-muted-foreground">Available Balance</p>
                 <p className="text-2xl font-bold text-foreground">GHS 0.00</p>
               </div>
             </div>
@@ -154,23 +166,110 @@ const ClassroomPage: React.FC = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-16">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <CreditCard className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Monetization Dashboard</h3>
-          <p className="text-muted-foreground text-center max-w-md mb-6">
-            Track your earnings from private classes. Create private classes with monthly fees and start earning from your tutoring sessions.
-          </p>
-          {privateClassrooms.length === 0 && (
+      {/* Cashout & Payment Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-primary" />
+              Payment Details
+            </h3>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground">Payment Method</label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {paymentMethod === 'mobile_money' ? (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-muted-foreground">Network</label>
+                    <Select value={momoNetwork} onValueChange={setMomoNetwork}>
+                      <SelectTrigger><SelectValue placeholder="Select network" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                        <SelectItem value="vodafone">Vodafone Cash</SelectItem>
+                        <SelectItem value="airteltigo">AirtelTigo Money</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-muted-foreground">Phone Number</label>
+                    <Input placeholder="e.g. 024 XXX XXXX" value={momoNumber} onChange={(e) => setMomoNumber(e.target.value)} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-muted-foreground">Bank Name</label>
+                    <Input placeholder="e.g. GCB Bank" value={bankName} onChange={(e) => setBankName(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-muted-foreground">Account Number</label>
+                    <Input placeholder="Account number" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm text-muted-foreground">Account Name</label>
+                    <Input placeholder="Name on account" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
+                  </div>
+                </>
+              )}
+              <Button className="w-full" onClick={() => {
+                toast({ title: 'Saved', description: 'Payment details saved successfully' });
+              }}>
+                Save Payment Details
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-primary" />
+              Cash Out
+            </h3>
+            <div className="p-4 bg-muted/50 rounded-lg text-center">
+              <p className="text-sm text-muted-foreground">Available Balance</p>
+              <p className="text-3xl font-bold text-foreground mt-1">GHS 0.00</p>
+              <p className="text-xs text-muted-foreground mt-1">Minimum cashout: GHS 50.00</p>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm text-muted-foreground">Amount to withdraw</label>
+              <Input type="number" placeholder="0.00" min="50" />
+            </div>
+            <Button className="w-full" disabled>
+              Request Cashout
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Cashouts are processed within 24-48 hours
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {privateClassrooms.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <CreditCard className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Get Started</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-6">
+              Create private classes with fees to start earning from your tutoring sessions.
+            </p>
             <Button onClick={() => { setActiveTab('private'); setShowCreateModal(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Create Your First Private Class
             </Button>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 

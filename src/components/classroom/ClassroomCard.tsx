@@ -77,7 +77,7 @@ const ClassroomCard: React.FC<ClassroomCardProps> = ({ classroom, onView, onDele
                 </Badge>
                 {isPrivate && classroom.monthly_fee > 0 && (
                   <Badge className="text-xs bg-primary/10 text-primary hover:bg-primary/20">
-                    GHS {classroom.monthly_fee}/mo
+                    GHS {classroom.monthly_fee}/{classroom.fee_frequency === 'daily' ? 'day' : classroom.fee_frequency === 'weekly' ? 'wk' : 'mo'}
                   </Badge>
                 )}
               </div>
