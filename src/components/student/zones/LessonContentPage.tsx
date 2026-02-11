@@ -13,6 +13,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudent } from '@/contexts/StudentContext';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface LessonContent {
   title: string;
@@ -36,6 +44,13 @@ interface LessonContentPageProps {
   onBack: () => void;
 }
 
+const SURVEY_OPTIONS = [
+  { emoji: '😊', label: 'Yes, I understood it well', value: 'understood' },
+  { emoji: '🤔', label: 'Somewhat, but I have questions', value: 'partial' },
+  { emoji: '😕', label: 'Not really, I need more help', value: 'not_understood' },
+  { emoji: '📖', label: 'I need to re-read it', value: 'reread' },
+];
+
 const LessonContentPage: React.FC<LessonContentPageProps> = ({
   subject, strand, subStrand, classGrade, onBack
 }) => {
@@ -51,6 +66,8 @@ const LessonContentPage: React.FC<LessonContentPageProps> = ({
   const [expandedSections, setExpandedSections] = useState({
     reading: true, videos: false, links: false, chat: false, practice: false
   });
+  const [showSurvey, setShowSurvey] = useState(false);
+  const [surveyContext, setSurveyContext] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,8 +98,13 @@ const LessonContentPage: React.FC<LessonContentPageProps> = ({
     newRead.add(index);
     setSectionsRead(newRead);
     if (lessonContent) {
-      const totalSections = lessonContent.sections.length + 2; // intro + sections + summary
+      const totalSections = lessonContent.sections.length + 2;
       setReadProgress(Math.round((newRead.size / totalSections) * 100));
+    }
+    // Show survey randomly (~50% of the time) or on key sections
+    if (Math.random() > 0.5 || index === 999) {
+      setSurveyContext('reading');
+      setShowSurvey(true);
     }
   };
 
@@ -157,6 +179,11 @@ const LessonContentPage: React.FC<LessonContentPageProps> = ({
       setChatMessages(prev => prev.filter(m => m !== userMsg));
     } finally {
       setIsChatting(false);
+      // Randomly trigger understanding survey after chat
+      if (Math.random() > 0.6) {
+        setSurveyContext('chat');
+        setShowSurvey(true);
+      }
     }
   };
 
@@ -494,6 +521,52 @@ const LessonContentPage: React.FC<LessonContentPageProps> = ({
           </div>
         )}
       </div>
+
+      {/* Understanding Survey Dialog */}
+      <Dialog open={showSurvey} onOpenChange={setShowSurvey}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              📋 Quick Check-in
+            </DialogTitle>
+            <DialogDescription>
+              {surveyContext === 'chat'
+                ? 'After chatting with Jesi AI, did the explanation help?'
+                : 'Did you understand the material you just read?'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            {SURVEY_OPTIONS.map((option) => (
+              <Card
+                key={option.value}
+                className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all"
+                onClick={() => {
+                  setShowSurvey(false);
+                  if (option.value === 'understood') {
+                    toast.success('Great job! Keep going! 🎉');
+                  } else if (option.value === 'partial') {
+                    toast.info('Try asking Jesi AI for more help! 🤖');
+                  } else if (option.value === 'not_understood') {
+                    toast.info("That's okay! Try re-reading or ask Jesi AI for help 💪");
+                  } else {
+                    toast.info('Take your time — re-reading helps! 📖');
+                  }
+                }}
+              >
+                <CardContent className="p-3 flex items-center gap-3">
+                  <span className="text-2xl">{option.emoji}</span>
+                  <span className="text-sm font-medium">{option.label}</span>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setShowSurvey(false)}>
+              Skip
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

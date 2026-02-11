@@ -4,11 +4,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line
 } from 'recharts';
 import { 
-  TrendingUp, Brain, ArrowUp, CheckCircle2, AlertTriangle
+  Brain, ArrowUp, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStudent } from '@/contexts/StudentContext';
@@ -141,23 +141,24 @@ const StudentInsightZone: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Weekly Progress Chart */}
+      {/* Performance Trend */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Weekly Progress Chart
+            <Brain className="w-5 h-5" />
+            Performance Trend
           </CardTitle>
+          <CardDescription>Your average score progression over weeks</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={weeklyActivity}>
+            <LineChart data={progressTrend}>
               <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
+              <XAxis dataKey="week" tick={{ fontSize: 12 }} />
+              <YAxis domain={[50, 100]} tick={{ fontSize: 12 }} />
               <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-              <Bar dataKey="questions" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Questions" />
-            </BarChart>
+              <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }} />
+            </LineChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
@@ -321,28 +322,6 @@ const StudentInsightZone: React.FC = () => {
           <Button variant="outline" size="sm" className="w-full" onClick={() => navigateToPractice('Mathematics', 'Word problems')}>
             Revise for Test
           </Button>
-        </CardContent>
-      </Card>
-
-      {/* Performance Trend */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5" />
-            Performance Trend
-          </CardTitle>
-          <CardDescription>Your average score progression</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={progressTrend}>
-              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-              <XAxis dataKey="week" tick={{ fontSize: 12 }} />
-              <YAxis domain={[50, 100]} tick={{ fontSize: 12 }} />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px' }} />
-              <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--primary))', strokeWidth: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
         </CardContent>
       </Card>
 
