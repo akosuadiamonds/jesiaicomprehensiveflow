@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import PrivateClassOverview from './PrivateClassOverview';
 
 interface ClassroomData {
   id: string;
@@ -136,6 +137,7 @@ const ClassZone: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState<ClassroomData | null>(null);
   const [mainTab, setMainTab] = useState('my-classes');
   const [usingSamples, setUsingSamples] = useState(false);
+  const [browseSelectedClass, setBrowseSelectedClass] = useState<ClassroomData | null>(null);
 
   // Check-in state
   const [showCheckIn, setShowCheckIn] = useState(true);
@@ -911,73 +913,89 @@ const ClassZone: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="browse" className="mt-6 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search private classes by name, subject..."
-              className="pl-10"
-              value={browseSearch}
-              onChange={(e) => setBrowseSearch(e.target.value)}
+          {browseSelectedClass ? (
+            <PrivateClassOverview
+              classroom={browseSelectedClass}
+              onBack={() => setBrowseSelectedClass(null)}
+              onJoinSuccess={() => {
+                setBrowseSelectedClass(null);
+                setPendingClasses(prev => [...prev, browseSelectedClass.id]);
+                fetchClassrooms();
+              }}
+              isAlreadyJoined={!usingSamples && myClasses.some(c => c.id === browseSelectedClass.id)}
+              isPending={pendingClasses.includes(browseSelectedClass.id)}
             />
-          </div>
-
-          {isBrowseLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : filteredBrowseClasses.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <div className="text-4xl mb-3">🔍</div>
-                <p>No private classes found</p>
-              </CardContent>
-            </Card>
           ) : (
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-              {filteredBrowseClasses.map((cls) => {
-                const joined = isAlreadyJoinedOrPending(cls.id);
-                const isPending = pendingClasses.includes(cls.id);
-                return (
-                  <Card key={cls.id} className={`transition-all ${joined ? 'border-green-400/50 bg-green-50/50 dark:bg-green-900/10' : 'hover:shadow-md'}`}>
-                    <CardContent className="p-4 flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
-                          <BookOpen className="w-6 h-6 text-primary" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-medium truncate">{cls.name}</h4>
-                          <p className="text-sm text-muted-foreground">{cls.subject}</p>
-                          {cls.description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{cls.description}</p>
-                          )}
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">📚 Private</Badge>
-                            {cls.monthly_fee && cls.monthly_fee > 0 && (
-                              <Badge variant="secondary" className="text-xs">
-                                {cls.currency || 'GHS'} {cls.monthly_fee}/mo
-                              </Badge>
-                            )}
+            <>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search private classes by name, subject..."
+                  className="pl-10"
+                  value={browseSearch}
+                  onChange={(e) => setBrowseSearch(e.target.value)}
+                />
+              </div>
+
+              {isBrowseLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : filteredBrowseClasses.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="p-8 text-center text-muted-foreground">
+                    <div className="text-4xl mb-3">🔍</div>
+                    <p>No private classes found</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                  {filteredBrowseClasses.map((cls) => {
+                    const joined = isAlreadyJoinedOrPending(cls.id);
+                    const isPending = pendingClasses.includes(cls.id);
+                    return (
+                      <Card key={cls.id} className={`transition-all ${joined ? 'border-green-400/50 bg-green-50/50 dark:bg-green-900/10' : 'hover:shadow-md'}`}>
+                        <CardContent className="p-4 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0">
+                              <BookOpen className="w-6 h-6 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-medium truncate">{cls.name}</h4>
+                              <p className="text-sm text-muted-foreground">{cls.subject}</p>
+                              {cls.description && (
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{cls.description}</p>
+                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">📚 Private</Badge>
+                                {cls.monthly_fee && cls.monthly_fee > 0 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {cls.currency || 'GHS'} {cls.monthly_fee}/mo
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      {isPending ? (
-                        <Badge className="bg-amber-500 shrink-0">Pending ⏳</Badge>
-                      ) : (!usingSamples && myClasses.some(c => c.id === cls.id)) ? (
-                        <Badge className="bg-green-500 shrink-0">Joined ✓</Badge>
-                      ) : (
-                        <Button
-                          size="sm"
-                          className="shrink-0"
-                          onClick={() => joinClassroom(cls.id, cls.name)}
-                        >
-                          Request to Join
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                          {isPending ? (
+                            <Badge className="bg-amber-500 shrink-0">Pending ⏳</Badge>
+                          ) : (!usingSamples && myClasses.some(c => c.id === cls.id)) ? (
+                            <Badge className="bg-green-500 shrink-0">Joined ✓</Badge>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="shrink-0"
+                              onClick={() => setBrowseSelectedClass(cls)}
+                            >
+                              View Class
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>
