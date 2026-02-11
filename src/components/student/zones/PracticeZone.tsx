@@ -14,7 +14,6 @@ import {
   Dumbbell,
   Clock,
   Target,
-  Trophy,
   Brain,
   Play,
   Zap,
@@ -28,6 +27,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import PracticeHistory from './PracticeHistory';
 
 const subjects = [
   'Mathematics', 'English Language', 'Science', 'Social Studies', 'ICT',
@@ -41,6 +42,8 @@ const topics: Record<string, string[]> = {
   'Social Studies': ['Government', 'History', 'Geography', 'Civics', 'Economics'],
   'ICT': ['Programming', 'Hardware', 'Software', 'Internet', 'Data Management'],
 };
+
+type DOKLevel = 1 | 2 | 3 | 4;
 
 interface PracticeQuestion {
   number: number;
@@ -57,17 +60,26 @@ interface PracticeData {
   estimatedTime: string;
 }
 
+const dokDescriptions: Record<DOKLevel, string> = {
+  1: 'Recall & Reproduce',
+  2: 'Skills & Concepts',
+  3: 'Strategic Thinking',
+  4: 'Extended Thinking',
+};
+
 const PracticeZone: React.FC = () => {
+  const { user } = useAuth();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [practiceType, setPracticeType] = useState<'quick' | 'mock' | 'exam'>('quick');
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [dokLevel, setDokLevel] = useState<DOKLevel>(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [practiceData, setPracticeData] = useState<PracticeData | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showResults, setShowResults] = useState(false);
   const [showExplanation, setShowExplanation] = useState<number | null>(null);
+  const [startTime] = useState<number>(Date.now());
 
   const handleStartPractice = async () => {
     if (!selectedSubject || !selectedTopic) {
@@ -83,7 +95,7 @@ const PracticeZone: React.FC = () => {
           subject: selectedSubject,
           topic: selectedTopic,
           practiceType,
-          difficulty,
+          difficulty: dokLevel,
           questionCount: questionCounts[practiceType],
         },
       });
@@ -104,14 +116,6 @@ const PracticeZone: React.FC = () => {
     setAnswers({ ...answers, [questionNum]: answer });
   };
 
-  const handleSubmit = () => {
-    const totalAnswered = Object.keys(answers).length;
-    if (totalAnswered < (practiceData?.questions.length || 0)) {
-      toast.info(`You have ${(practiceData?.questions.length || 0) - totalAnswered} unanswered questions`);
-    }
-    setShowResults(true);
-  };
-
   const getScore = () => {
     if (!practiceData) return 0;
     let correct = 0;
@@ -119,6 +123,32 @@ const PracticeZone: React.FC = () => {
       if (answers[q.number]?.toLowerCase() === q.correctAnswer.toLowerCase()) correct++;
     });
     return correct;
+  };
+
+  const savePracticeSession = async (score: number, total: number) => {
+    if (!user) return;
+    const timeSpent = Math.round((Date.now() - startTime) / 1000);
+    await supabase.from('practice_sessions').insert({
+      student_id: user.id,
+      subject: selectedSubject,
+      topic: selectedTopic,
+      session_type: practiceType === 'exam' ? 'timed_exam' : practiceType,
+      total_questions: total,
+      correct_answers: score,
+      difficulty_level: String(dokLevel),
+      time_spent_seconds: timeSpent,
+      completed_at: new Date().toISOString(),
+    });
+  };
+
+  const handleSubmit = async () => {
+    const totalAnswered = Object.keys(answers).length;
+    if (totalAnswered < (practiceData?.questions.length || 0)) {
+      toast.info(`You have ${(practiceData?.questions.length || 0) - totalAnswered} unanswered questions`);
+    }
+    const score = getScore();
+    await savePracticeSession(score, practiceData?.questions.length || 0);
+    setShowResults(true);
   };
 
   const handleBackToSetup = () => {
@@ -168,7 +198,6 @@ const PracticeZone: React.FC = () => {
         <div className="space-y-3">
           {practiceData.questions.map((q) => {
             const isCorrect = answers[q.number]?.toLowerCase() === q.correctAnswer.toLowerCase();
-            const wasAnswered = !!answers[q.number];
             return (
               <Card key={q.number} className={`border-l-4 ${isCorrect ? 'border-l-green-500' : 'border-l-red-500'}`}>
                 <CardContent className="p-4">
@@ -180,9 +209,7 @@ const PracticeZone: React.FC = () => {
                       </div>
                       <p className="text-sm">{q.question}</p>
                       {!isCorrect && (
-                        <p className="text-xs text-green-600 mt-1">
-                          Correct: {q.correctAnswer}
-                        </p>
+                        <p className="text-xs text-green-600 mt-1">Correct: {q.correctAnswer}</p>
                       )}
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => setShowExplanation(showExplanation === q.number ? null : q.number)}>
@@ -190,9 +217,7 @@ const PracticeZone: React.FC = () => {
                     </Button>
                   </div>
                   {showExplanation === q.number && (
-                    <div className="mt-3 p-3 rounded-lg bg-muted text-sm">
-                      {q.explanation}
-                    </div>
+                    <div className="mt-3 p-3 rounded-lg bg-muted text-sm">{q.explanation}</div>
                   )}
                 </CardContent>
               </Card>
@@ -351,9 +376,9 @@ const PracticeZone: React.FC = () => {
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { id: 'quick', title: 'Quick Practice', desc: '10 questions', icon: Zap, emoji: '⚡' },
-              { id: 'mock', title: 'Mock Test', desc: '20 questions', icon: Brain, emoji: '📝' },
-              { id: 'exam', title: 'Timed Exam', desc: '30 questions', icon: Timer, emoji: '🎯' },
+              { id: 'quick', title: 'Quick Practice', desc: '10 questions', emoji: '⚡' },
+              { id: 'mock', title: 'Mock Test', desc: '20 questions', emoji: '📝' },
+              { id: 'exam', title: 'Timed Exam', desc: '30 questions', emoji: '🎯' },
             ].map((type) => (
               <Card
                 key={type.id}
@@ -393,19 +418,20 @@ const PracticeZone: React.FC = () => {
           </div>
 
           <div className="p-4 rounded-lg bg-muted/50 space-y-3">
-            <p className="text-sm font-medium">Difficulty Level</p>
-            <div className="flex gap-2">
-              {(['easy', 'medium', 'hard'] as const).map((level) => (
+            <p className="text-sm font-medium">DOK Level (Depth of Knowledge)</p>
+            <div className="flex gap-2 flex-wrap">
+              {([1, 2, 3, 4] as DOKLevel[]).map((level) => (
                 <Badge
                   key={level}
-                  variant={difficulty === level ? 'default' : 'outline'}
-                  className="cursor-pointer transition-colors px-4 py-2 capitalize"
-                  onClick={() => setDifficulty(level)}
+                  variant={dokLevel === level ? 'default' : 'outline'}
+                  className="cursor-pointer transition-colors px-4 py-2"
+                  onClick={() => setDokLevel(level)}
                 >
-                  {level}
+                  DOK {level}
                 </Badge>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground">{dokDescriptions[dokLevel]}</p>
           </div>
 
           <Button
@@ -418,6 +444,8 @@ const PracticeZone: React.FC = () => {
           </Button>
         </CardContent>
       </Card>
+
+      <PracticeHistory />
     </div>
   );
 };

@@ -5,11 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   User, 
-  Mail, 
-  Phone, 
-  School, 
   BookOpen,
   Settings,
   Bell,
@@ -18,7 +22,8 @@ import {
   Trophy,
   Edit2,
   Save,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -33,6 +38,13 @@ const StudentProfilePage: React.FC = () => {
     last_name: profile?.last_name || '',
     phone_number: profile?.phone_number || '',
     school_name: profile?.school_name || '',
+  });
+
+  // Term override: stored in localStorage per user
+  const storageKey = user ? `jesi_term_override_${user.id}` : '';
+  const [termOverride, setTermOverride] = useState<string>(() => {
+    if (!storageKey) return '';
+    return localStorage.getItem(storageKey) || '';
   });
 
   const getInitials = () => {
@@ -59,6 +71,18 @@ const StudentProfilePage: React.FC = () => {
       school_name: profile?.school_name || '',
     });
     setIsEditing(false);
+  };
+
+  const handleTermChange = (value: string) => {
+    if (value === 'auto') {
+      localStorage.removeItem(storageKey);
+      setTermOverride('');
+      toast.success('Term set to automatic detection');
+    } else {
+      localStorage.setItem(storageKey, value);
+      setTermOverride(value);
+      toast.success(`Term changed to ${value === '1' ? 'First' : value === '2' ? 'Second' : 'Third'} Term`);
+    }
   };
 
   return (
@@ -209,7 +233,41 @@ const StudentProfilePage: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="preferences" className="mt-6">
+        <TabsContent value="preferences" className="mt-6 space-y-6">
+          {/* Term Override */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Academic Term
+              </CardTitle>
+              <CardDescription>
+                Change your term to learn ahead of your class or revisit previous material
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Current Learning Term</Label>
+                <Select value={termOverride || 'auto'} onValueChange={handleTermChange}>
+                  <SelectTrigger className="w-full md:w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">🔄 Auto-detect (based on date)</SelectItem>
+                    <SelectItem value="1">📚 First Term (Sep - Dec)</SelectItem>
+                    <SelectItem value="2">📖 Second Term (Jan - Mar)</SelectItem>
+                    <SelectItem value="3">📝 Third Term (Apr - Jul)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {termOverride
+                    ? `You are learning ${termOverride === '1' ? 'First' : termOverride === '2' ? 'Second' : 'Third'} Term content regardless of the current date.`
+                    : 'The platform automatically detects the current term based on the Ghana school calendar.'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
