@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { School, Briefcase, Loader2, Lock } from 'lucide-react';
+import { School, Briefcase, Loader2, Lock, Users, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ClassroomType, CreateClassroomData, FeeFrequency } from '@/types/classroom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CreateClassroomModalProps {
   open: boolean;
@@ -25,11 +26,18 @@ const SUBJECTS = [
   'Physical Education', 'Other',
 ];
 
+const CLASS_GRADES = [
+  'Basic 1', 'Basic 2', 'Basic 3', 'Basic 4', 'Basic 5', 'Basic 6',
+  'JHS 1', 'JHS 2', 'JHS 3',
+];
+
 const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
   open, onOpenChange, onSubmit, defaultType = 'school', isPremium = false,
 }) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [institutionId, setInstitutionId] = useState<string | null>(null);
+  const [matchingStudentCount, setMatchingStudentCount] = useState<number>(0);
   const [formData, setFormData] = useState<CreateClassroomData>({
     name: '',
     description: '',
@@ -38,9 +46,71 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
     monthly_fee: 0,
     fee_frequency: 'monthly',
     max_students: 50,
+    class_grade: '',
   });
 
   const isPrivate = formData.classroom_type === 'private';
+  const isSchoolLinked = !!institutionId && !isPrivate;
+
+  // Check if teacher belongs to an institution
+  useEffect(() => {
+    const checkInstitution = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('institution_members')
+        .select('institution_id')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .single();
+      setInstitutionId(data?.institution_id || null);
+    };
+    if (open) checkInstitution();
+  }, [user, open]);
+
+  // Count matching students when class_grade changes
+  useEffect(() => {
+    const countStudents = async () => {
+      if (!institutionId || !formData.class_grade || isPrivate) {
+        setMatchingStudentCount(0);
+        return;
+      }
+      const { count } = await supabase
+        .from('institution_members')
+        .select('id, user_id', { count: 'exact', head: false })
+        .eq('institution_id', institutionId)
+        .eq('is_active', true)
+        .eq('member_role', 'student');
+
+      if (!count) {
+        setMatchingStudentCount(0);
+        return;
+      }
+
+      // Now filter by class_grade from profiles
+      const { data: members } = await supabase
+        .from('institution_members')
+        .select('user_id')
+        .eq('institution_id', institutionId)
+        .eq('is_active', true)
+        .eq('member_role', 'student');
+
+      if (!members || members.length === 0) {
+        setMatchingStudentCount(0);
+        return;
+      }
+
+      const studentIds = members.map(m => m.user_id);
+      const { count: matchCount } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true })
+        .in('user_id', studentIds)
+        .eq('class_grade', formData.class_grade);
+
+      setMatchingStudentCount(matchCount || 0);
+    };
+    countStudents();
+  }, [institutionId, formData.class_grade, isPrivate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +121,7 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
     if (!result.error) {
       setFormData({
         name: '', description: '', subject: profile?.subjects?.[0] || '',
-        classroom_type: defaultType, monthly_fee: 0, fee_frequency: 'monthly', max_students: 50,
+        classroom_type: defaultType, monthly_fee: 0, fee_frequency: 'monthly', max_students: 50, class_grade: '',
       });
       onOpenChange(false);
     }
@@ -111,6 +181,32 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
               </div>
             </RadioGroup>
           </div>
+
+          {/* Class Grade - shown for school type when teacher is in an institution */}
+          {isSchoolLinked && (
+            <div className="space-y-2">
+              <Label>Class / Grade</Label>
+              <Select
+                value={formData.class_grade}
+                onValueChange={(value) => setFormData({ ...formData, class_grade: value })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                <SelectContent>
+                  {CLASS_GRADES.map((grade) => (
+                    <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formData.class_grade && (
+                <div className="flex items-center gap-2 p-2.5 rounded-md bg-primary/5 border border-primary/10">
+                  <Users className="w-4 h-4 text-primary shrink-0" />
+                  <p className="text-sm text-primary">
+                    <span className="font-semibold">{matchingStudentCount}</span> student{matchingStudentCount !== 1 ? 's' : ''} in {formData.class_grade} will be auto-enrolled
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="name">Class Name</Label>
@@ -183,6 +279,15 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, max_students: parseInt(e.target.value) || 50 })}
                 />
               </div>
+            </div>
+          )}
+
+          {isSchoolLinked && !isPrivate && (
+            <div className="flex items-start gap-2 p-3 rounded-md bg-muted/50 border">
+              <Info className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground">
+                Your school has been onboarded. Students in the selected class will be automatically added to this classroom.
+              </p>
             </div>
           )}
 

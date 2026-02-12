@@ -59,4 +59,5 @@ export interface CreateClassroomData {
   monthly_fee?: number;
   fee_frequency?: FeeFrequency;
   max_students?: number;
+  class_grade?: string;
 }

@@ -184,6 +184,7 @@ export type Database = {
       }
       classrooms: {
         Row: {
+          class_grade: string | null
           classroom_type: Database["public"]["Enums"]["classroom_type"]
           created_at: string
           currency: string | null
@@ -200,6 +201,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          class_grade?: string | null
           classroom_type?: Database["public"]["Enums"]["classroom_type"]
           created_at?: string
           currency?: string | null
@@ -216,6 +218,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          class_grade?: string | null
           classroom_type?: Database["public"]["Enums"]["classroom_type"]
           created_at?: string
           currency?: string | null
