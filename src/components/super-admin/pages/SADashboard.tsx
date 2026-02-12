@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { School, Users, GraduationCap, BookOpen, CreditCard, TrendingUp } from 'lucide-react';
+import { School, Users, GraduationCap, BookOpen, CreditCard, TrendingUp, UserCheck, Activity, CalendarDays, CalendarClock } from 'lucide-react';
 import { useSuperAdmin } from '../SuperAdminApp';
+import { Separator } from '@/components/ui/separator';
 
 const SADashboard: React.FC = () => {
   const { setCurrentPage } = useSuperAdmin();
@@ -13,6 +14,17 @@ const SADashboard: React.FC = () => {
     totalPlans: 0,
     activeSubscriptions: 0,
     pendingPayments: 0,
+  });
+
+  const [userMetrics, setUserMetrics] = useState({
+    registeredStudents: 0,
+    activatedStudents: 0,
+    malStudents: 0,
+    walStudents: 0,
+    registeredTeachers: 0,
+    activatedTeachers: 0,
+    matTeachers: 0,
+    watTeachers: 0,
   });
 
   useEffect(() => {
@@ -35,16 +47,70 @@ const SADashboard: React.FC = () => {
         pendingPayments: subData.filter((s: any) => s.payment_status === 'unpaid').length,
       });
     };
+
+    const fetchUserMetrics = async () => {
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Fetch all profiles for metric calculations
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, user_role, selected_plan, updated_at, created_at');
+
+      const profiles = allProfiles || [];
+      const studentProfiles = profiles.filter(p => p.user_role === 'learner');
+      const teacherProfiles = profiles.filter(p => p.user_role === 'teacher');
+
+      // Activated = has a selected_plan that is not null/free
+      const activatedStudents = studentProfiles.filter(p => p.selected_plan && p.selected_plan !== 'free').length;
+      const activatedTeachers = teacherProfiles.filter(p => p.selected_plan && p.selected_plan !== 'free').length;
+
+      // Monthly active = updated_at within last 30 days (proxy for activity)
+      const malStudents = studentProfiles.filter(p => p.updated_at >= thirtyDaysAgo).length;
+      const matTeachers = teacherProfiles.filter(p => p.updated_at >= thirtyDaysAgo).length;
+
+      // Weekly active = updated_at within last 7 days
+      const walStudents = studentProfiles.filter(p => p.updated_at >= sevenDaysAgo).length;
+      const watTeachers = teacherProfiles.filter(p => p.updated_at >= sevenDaysAgo).length;
+
+      setUserMetrics({
+        registeredStudents: studentProfiles.length,
+        activatedStudents,
+        malStudents,
+        walStudents,
+        registeredTeachers: teacherProfiles.length,
+        activatedTeachers,
+        matTeachers,
+        watTeachers,
+      });
+    };
+
     fetchStats();
+    fetchUserMetrics();
   }, []);
 
-  const cards = [
+  const overviewCards = [
     { label: 'Schools', value: stats.totalSchools, icon: School, color: 'text-blue-500', page: 'schools' },
     { label: 'Teachers', value: stats.totalTeachers, icon: GraduationCap, color: 'text-green-500', page: 'users' },
     { label: 'Students', value: stats.totalStudents, icon: BookOpen, color: 'text-purple-500', page: 'users' },
     { label: 'Plans', value: stats.totalPlans, icon: CreditCard, color: 'text-orange-500', page: 'plans' },
     { label: 'Active Subs', value: stats.activeSubscriptions, icon: TrendingUp, color: 'text-emerald-500', page: 'subscriptions' },
     { label: 'Pending Payments', value: stats.pendingPayments, icon: CreditCard, color: 'text-red-500', page: 'subscriptions' },
+  ];
+
+  const studentMetricCards = [
+    { label: 'Registered Users', value: userMetrics.registeredStudents, icon: Users, color: 'text-purple-500', desc: 'Total signed-up students' },
+    { label: 'Activated Learners', value: userMetrics.activatedStudents, icon: UserCheck, color: 'text-indigo-500', desc: 'Students with an active plan' },
+    { label: 'Monthly Active (MAL)', value: userMetrics.malStudents, icon: CalendarDays, color: 'text-teal-500', desc: 'Active in last 30 days' },
+    { label: 'Weekly Active (WAL)', value: userMetrics.walStudents, icon: Activity, color: 'text-cyan-500', desc: 'Active in last 7 days' },
+  ];
+
+  const teacherMetricCards = [
+    { label: 'Registered Teachers', value: userMetrics.registeredTeachers, icon: Users, color: 'text-green-500', desc: 'Total signed-up teachers' },
+    { label: 'Activated Teachers', value: userMetrics.activatedTeachers, icon: UserCheck, color: 'text-emerald-500', desc: 'Teachers with an active plan' },
+    { label: 'Monthly Active (MAT)', value: userMetrics.matTeachers, icon: CalendarDays, color: 'text-lime-500', desc: 'Active in last 30 days' },
+    { label: 'Weekly Active (WAT)', value: userMetrics.watTeachers, icon: Activity, color: 'text-green-600', desc: 'Active in last 7 days' },
   ];
 
   return (
@@ -54,8 +120,9 @@ const SADashboard: React.FC = () => {
         <p className="text-muted-foreground mt-1">Platform overview at a glance</p>
       </div>
 
+      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cards.map((card) => (
+        {overviewCards.map((card) => (
           <Card
             key={card.label}
             className="cursor-pointer hover:shadow-md transition-shadow"
@@ -70,6 +137,50 @@ const SADashboard: React.FC = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <Separator />
+
+      {/* Student Metrics */}
+      <div>
+        <h2 className="text-xl font-semibold text-foreground mb-3 flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-purple-500" /> Student Metrics
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {studentMetricCards.map((card) => (
+            <Card key={card.label}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
+                <card.icon className={`w-5 h-5 ${card.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{card.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{card.desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Teacher Metrics */}
+      <div>
+        <h2 className="text-xl font-semibold text-foreground mb-3 flex items-center gap-2">
+          <GraduationCap className="w-5 h-5 text-green-500" /> Teacher Metrics
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {teacherMetricCards.map((card) => (
+            <Card key={card.label}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
+                <card.icon className={`w-5 h-5 ${card.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{card.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{card.desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );

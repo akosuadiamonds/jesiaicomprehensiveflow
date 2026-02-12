@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      cashout_requests: {
+        Row: {
+          account_details: Json | null
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          payment_method: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_details?: Json | null
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_method?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_details?: Json | null
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          payment_method?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       classroom_announcements: {
         Row: {
           classroom_id: string
