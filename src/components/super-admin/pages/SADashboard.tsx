@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { School, Users, GraduationCap, BookOpen, CreditCard, TrendingUp, UserCheck, Activity, CalendarDays, CalendarClock } from 'lucide-react';
+import { School, Users, GraduationCap, BookOpen, CreditCard, TrendingUp, UserCheck, Activity, CalendarDays, DollarSign, UserMinus, Globe } from 'lucide-react';
 import { useSuperAdmin } from '../SuperAdminApp';
 import { Separator } from '@/components/ui/separator';
 
@@ -14,6 +14,9 @@ const SADashboard: React.FC = () => {
     totalPlans: 0,
     activeSubscriptions: 0,
     pendingPayments: 0,
+    totalRevenue: 0,
+    churnRate: 0,
+    reach: 0,
   });
 
   const [userMetrics, setUserMetrics] = useState({
@@ -29,15 +32,33 @@ const SADashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [schools, teachers, students, plans, subs] = await Promise.all([
+      const [schools, teachers, students, plans, subs, transactions, allProfiles] = await Promise.all([
         supabase.from('institutions').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('user_role', 'teacher'),
         supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('user_role', 'learner'),
         supabase.from('subscription_plans').select('id', { count: 'exact', head: true }),
         supabase.from('school_subscriptions').select('id, status, payment_status'),
+        supabase.from('payment_transactions').select('amount, status'),
+        supabase.from('profiles').select('id, user_role, selected_plan, created_at'),
       ]);
 
       const subData = subs.data || [];
+      const txData = transactions.data || [];
+      const profileData = allProfiles.data || [];
+
+      // Total revenue from completed transactions
+      const totalRevenue = txData
+        .filter((t: any) => t.status === 'completed')
+        .reduce((sum: number, t: any) => sum + (t.amount || 0), 0);
+
+      // Reach = total unique users across all roles
+      const reach = profileData.length;
+
+      // Churn rate = inactive subs / total subs (percentage)
+      const totalSubs = subData.length;
+      const inactiveSubs = subData.filter((s: any) => s.status === 'cancelled' || s.status === 'expired').length;
+      const churnRate = totalSubs > 0 ? Math.round((inactiveSubs / totalSubs) * 100) : 0;
+
       setStats({
         totalSchools: schools.count || 0,
         totalTeachers: teachers.count || 0,
@@ -45,6 +66,9 @@ const SADashboard: React.FC = () => {
         totalPlans: plans.count || 0,
         activeSubscriptions: subData.filter((s: any) => s.status === 'active').length,
         pendingPayments: subData.filter((s: any) => s.payment_status === 'unpaid').length,
+        totalRevenue,
+        churnRate,
+        reach,
       });
     };
 
@@ -96,6 +120,9 @@ const SADashboard: React.FC = () => {
     { label: 'Students', value: stats.totalStudents, icon: BookOpen, color: 'text-purple-500', page: 'users' },
     { label: 'Plans', value: stats.totalPlans, icon: CreditCard, color: 'text-orange-500', page: 'plans' },
     { label: 'Active Subs', value: stats.activeSubscriptions, icon: TrendingUp, color: 'text-emerald-500', page: 'subscriptions' },
+    { label: 'Total Revenue', value: `GHS ${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-emerald-600', page: 'financials' },
+    { label: 'Churn Rate', value: `${stats.churnRate}%`, icon: UserMinus, color: 'text-red-500', page: 'subscriptions' },
+    { label: 'Reach (All Users)', value: stats.reach, icon: Globe, color: 'text-sky-500', page: 'users' },
     { label: 'Pending Payments', value: stats.pendingPayments, icon: CreditCard, color: 'text-red-500', page: 'subscriptions' },
   ];
 
