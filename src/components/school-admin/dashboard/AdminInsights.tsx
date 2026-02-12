@@ -498,23 +498,72 @@ const AdminInsights: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Teacher Insights</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {memberProfiles
-              .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
-              .map((t, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+          <div className="space-y-5 max-h-[60vh] overflow-y-auto">
+            {/* Top Performing */}
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1">⭐ Top Performing Teachers</p>
+              {topTeachers.length > 0 ? topTeachers.map((t, i) => {
+                const reasons = ['Strong class improvement', 'High student engagement'];
+                return (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-xs font-bold text-emerald-600">
+                        {t.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{t.name}</p>
+                        <p className="text-xs text-muted-foreground">{reasons[i % reasons.length]}</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-700">Top</Badge>
+                  </div>
+                );
+              }) : (
+                <p className="text-xs text-muted-foreground">No data yet</p>
+              )}
+            </div>
+
+            {/* Teachers Needing Support */}
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1">⚠ Teachers Needing Support</p>
+              {needSupportTeachers.length > 0 ? needSupportTeachers.map((t, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/10 mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                      {t.first_name?.[0]}{t.last_name?.[0]}
+                    <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
+                      {t.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{t.first_name} {t.last_name}</p>
-                      <p className="text-xs text-muted-foreground">{(t.subjects || []).join(', ') || 'No subjects'}</p>
+                      <p className="text-sm font-medium text-foreground">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{t.note}</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="text-xs">Active</Badge>
+                  <Badge variant="destructive" className="text-xs">Needs Support</Badge>
                 </div>
-              ))}
+              )) : (
+                <p className="text-xs text-muted-foreground">No teachers flagged</p>
+              )}
+            </div>
+
+            {/* All Teachers Summary */}
+            <div className="border-t border-border pt-3">
+              <p className="text-sm font-semibold text-foreground mb-2">👩🏽‍🏫 All Teachers Overview</p>
+              {memberProfiles
+                .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
+                .map((t, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                        {t.first_name?.[0]}{t.last_name?.[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{t.first_name} {t.last_name}</p>
+                        <p className="text-xs text-muted-foreground">{(t.subjects || []).join(', ') || 'No subjects'}</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Active</Badge>
+                  </div>
+                ))}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
