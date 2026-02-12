@@ -42,6 +42,7 @@ const InsightsPage: React.FC = () => {
   const [showStudentProfile, setShowStudentProfile] = useState<any>(null);
   const [detailSubjectFilter, setDetailSubjectFilter] = useState('all');
   const [detailTimeFilter, setDetailTimeFilter] = useState<'week' | 'month'>('week');
+  const [lessonEffFilter, setLessonEffFilter] = useState<'today' | 'week' | 'month'>('week');
 
   const totalLessonPlans = savedLessonPlans.length;
 
@@ -178,8 +179,19 @@ const InsightsPage: React.FC = () => {
           {/* 2. Key Learning Gaps */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">🔍 Key Learning Gaps (Top 3)</CardTitle>
-              <CardDescription>Topics students struggle with most</CardDescription>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="text-lg">🔍 Key Learning Gaps (Top 3)</CardTitle>
+                  <CardDescription>Topics students struggle with most</CardDescription>
+                </div>
+                <div className="flex gap-1">
+                  {(['week', 'month'] as const).map(f => (
+                    <button key={f} onClick={() => setGapsFilter(f)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${gapsFilter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      {f === 'week' ? 'This Week' : 'This Month'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {[
@@ -209,8 +221,19 @@ const InsightsPage: React.FC = () => {
           {/* 3. At-Risk Students */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">⚠️ At-Risk Students Alert</CardTitle>
-              <CardDescription>Students needing immediate support</CardDescription>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="text-lg">⚠️ At-Risk Students Alert</CardTitle>
+                  <CardDescription>Students needing immediate support</CardDescription>
+                </div>
+                <div className="flex gap-1">
+                  {(['week', 'month'] as const).map(f => (
+                    <button key={f} onClick={() => setAtRiskFilter(f)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${atRiskFilter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                      {f === 'week' ? 'This Week' : 'This Month'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
@@ -240,8 +263,19 @@ const InsightsPage: React.FC = () => {
         {/* 4. Lesson Effectiveness */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">📘 Lesson Effectiveness</CardTitle>
-            <CardDescription>How your last lesson performed</CardDescription>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <CardTitle className="text-lg">📘 Lesson Effectiveness</CardTitle>
+                <CardDescription>How your last lesson performed</CardDescription>
+              </div>
+              <div className="flex gap-1">
+                {(['today', 'week', 'month'] as const).map(f => (
+                  <button key={f} onClick={() => setLessonEffFilter(f)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${lessonEffFilter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    {f === 'today' ? 'Today' : f === 'week' ? 'This Week' : 'This Month'}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
