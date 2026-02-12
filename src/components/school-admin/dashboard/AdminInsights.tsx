@@ -99,15 +99,16 @@ const AdminInsights: React.FC = () => {
   const moderatelyActive = Math.round(activeTeachers.length * 0.33);
   const lowActivity = activeTeachers.length - highlyActive - moderatelyActive;
 
-  const topTeachers = memberProfiles
-    .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
-    .slice(0, 2)
-    .map(p => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: 'Strong class improvement' }));
+  const teacherProfiles = memberProfiles.filter(p => activeTeachers.some(t => t.user_id === p.user_id));
 
-  const needSupportTeachers = memberProfiles
-    .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
-    .slice(-1)
-    .map(p => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: 'Low platform usage' }));
+  const topReasons = ['Strong class improvement', 'High student engagement', 'Consistent lesson delivery'];
+  const topTeachers = teacherProfiles.length > 0
+    ? teacherProfiles.slice(0, 2).map((p, i) => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: topReasons[i % topReasons.length], subjects: p.subjects || [], classGrade: p.class_grade }))
+    : [{ name: 'Ama Mensah', note: 'Strong class improvement', subjects: ['Mathematics'], classGrade: 'JHS 2' }, { name: 'Kofi Asante', note: 'High student engagement', subjects: ['English'], classGrade: 'SHS 1' }];
+
+  const needSupportTeachers = teacherProfiles.length > 0
+    ? teacherProfiles.slice(-1).map(p => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: 'Low platform usage', subjects: p.subjects || [], classGrade: p.class_grade }))
+    : [{ name: 'Yaa Boateng', note: 'Low platform usage', subjects: ['Science'], classGrade: 'JHS 3' }];
 
   // Student engagement mock
   const activeThisWeek = Math.round(activeStudents.length * 0.78);
@@ -494,75 +495,78 @@ const AdminInsights: React.FC = () => {
 
       {/* Teacher Insights Dialog */}
       <Dialog open={showTeacherInsights} onOpenChange={setShowTeacherInsights}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Teacher Insights</DialogTitle>
+            <DialogTitle>Detailed Teacher Insights</DialogTitle>
           </DialogHeader>
-          <div className="space-y-5 max-h-[60vh] overflow-y-auto">
-            {/* Top Performing */}
+          <div className="space-y-5 max-h-[70vh] overflow-y-auto">
+            {/* Top Performing - Detailed */}
             <div>
-              <p className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1">⭐ Top Performing Teachers</p>
-              {topTeachers.length > 0 ? topTeachers.map((t, i) => {
-                const reasons = ['Strong class improvement', 'High student engagement'];
-                return (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-xs font-bold text-emerald-600">
-                        {t.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{reasons[i % reasons.length]}</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-700">Top</Badge>
-                  </div>
-                );
-              }) : (
-                <p className="text-xs text-muted-foreground">No data yet</p>
-              )}
-            </div>
-
-            {/* Teachers Needing Support */}
-            <div>
-              <p className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1">⚠ Teachers Needing Support</p>
-              {needSupportTeachers.length > 0 ? needSupportTeachers.map((t, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/10 mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
+              <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1">⭐ Top Performing Teachers</p>
+              {topTeachers.map((t, i) => (
+                <div key={i} className="p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/10 mb-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-sm font-bold text-emerald-600">
                       {t.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.note}</p>
+                      <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{(t.subjects || []).join(', ') || 'N/A'} • {t.classGrade || 'N/A'}</p>
+                    </div>
+                    <Badge variant="secondary" className="ml-auto text-xs bg-emerald-500/10 text-emerald-700">{t.note}</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-2 rounded-lg bg-background text-center">
+                      <p className="text-lg font-bold text-foreground">{12 + i * 3}</p>
+                      <p className="text-[10px] text-muted-foreground">Lesson Plans</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-background text-center">
+                      <p className="text-lg font-bold text-foreground">{8 + i * 2}</p>
+                      <p className="text-[10px] text-muted-foreground">Tests Created</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-background text-center">
+                      <p className="text-lg font-bold text-foreground">{78 + i * 5}%</p>
+                      <p className="text-[10px] text-muted-foreground">Avg Student Score</p>
                     </div>
                   </div>
-                  <Badge variant="destructive" className="text-xs">Needs Support</Badge>
                 </div>
-              )) : (
-                <p className="text-xs text-muted-foreground">No teachers flagged</p>
-              )}
+              ))}
             </div>
 
-            {/* All Teachers Summary */}
-            <div className="border-t border-border pt-3">
-              <p className="text-sm font-semibold text-foreground mb-2">👩🏽‍🏫 All Teachers Overview</p>
-              {memberProfiles
-                .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
-                .map((t, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                        {t.first_name?.[0]}{t.last_name?.[0]}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{t.first_name} {t.last_name}</p>
-                        <p className="text-xs text-muted-foreground">{(t.subjects || []).join(', ') || 'No subjects'}</p>
-                      </div>
+            {/* Needing Support - Detailed */}
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-1">⚠ Teachers Needing Support</p>
+              {needSupportTeachers.map((t, i) => (
+                <div key={i} className="p-4 rounded-lg bg-destructive/5 border border-destructive/10 mb-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-sm font-bold text-destructive">
+                      {t.name.split(' ').map(n => n[0]).join('')}
                     </div>
-                    <Badge variant="secondary" className="text-xs">Active</Badge>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{(t.subjects || []).join(', ') || 'N/A'} • {t.classGrade || 'N/A'}</p>
+                    </div>
+                    <Badge variant="destructive" className="ml-auto text-xs">{t.note}</Badge>
                   </div>
-                ))}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-2 rounded-lg bg-background text-center">
+                      <p className="text-lg font-bold text-foreground">2</p>
+                      <p className="text-[10px] text-muted-foreground">Lesson Plans</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-background text-center">
+                      <p className="text-lg font-bold text-foreground">1</p>
+                      <p className="text-[10px] text-muted-foreground">Tests Created</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-background text-center">
+                      <p className="text-lg font-bold text-foreground">52%</p>
+                      <p className="text-[10px] text-muted-foreground">Avg Student Score</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 p-2 rounded bg-muted/30">
+                    💡 Recommendation: Schedule a check-in and provide lesson planning resources.
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </DialogContent>
