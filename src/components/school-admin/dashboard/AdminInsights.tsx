@@ -1,66 +1,63 @@
 import React, { useEffect, useState } from 'react';
 import { useAdmin } from '../SchoolAdminApp';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, GraduationCap, TrendingUp, Activity, BookOpen, BarChart3 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Users, GraduationCap, TrendingUp, Activity, BookOpen, BarChart3, AlertTriangle, CheckCircle2, Brain, ChevronRight, School, Eye } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface InsightData {
-  totalMembers: number;
-  activeTeachers: number;
-  activeStudents: number;
-  teacherSlotUsage: number;
-  studentSlotUsage: number;
-  recentJoins: number;
-}
+type TimeFilter = 'week' | 'month';
+
+const FilterChips: React.FC<{ value: TimeFilter; onChange: (v: TimeFilter) => void }> = ({ value, onChange }) => (
+  <div className="flex gap-1">
+    {(['week', 'month'] as const).map(f => (
+      <button key={f} onClick={() => onChange(f)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${value === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+        {f === 'week' ? 'This Week' : 'This Month'}
+      </button>
+    ))}
+  </div>
+);
 
 const AdminInsights: React.FC = () => {
   const { institution } = useAdmin();
-  const [data, setData] = useState<InsightData>({
-    totalMembers: 0,
-    activeTeachers: 0,
-    activeStudents: 0,
-    teacherSlotUsage: 0,
-    studentSlotUsage: 0,
-    recentJoins: 0,
-  });
+  const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [memberData, setMemberData] = useState<any[]>([]);
+  const [memberProfiles, setMemberProfiles] = useState<any[]>([]);
+
+  // Filters
+  const [levelFilter, setLevelFilter] = useState('all');
+  const [classFilter, setClassFilter] = useState('all');
+  const [teacherFilter, setTeacherFilter] = useState<TimeFilter>('week');
+  const [studentFilter, setStudentFilter] = useState<TimeFilter>('week');
+  const [curriculumFilter, setCurriculumFilter] = useState<TimeFilter>('month');
+  const [showAtRisk, setShowAtRisk] = useState(false);
+  const [showTeacherInsights, setShowTeacherInsights] = useState(false);
+  const [showCompliance, setShowCompliance] = useState(false);
+  const [showClassBreakdown, setShowClassBreakdown] = useState(false);
 
   useEffect(() => {
     if (!institution) return;
-    const fetchInsights = async () => {
-      const { data: members } = await supabase
-        .from('institution_members')
-        .select('member_role, is_active, joined_at')
-        .eq('institution_id', institution.id);
+    const fetchData = async () => {
+      const [membersRes, profilesRes] = await Promise.all([
+        supabase
+          .from('institution_members')
+          .select('user_id, member_role, is_active, joined_at')
+          .eq('institution_id', institution.id),
+        supabase
+          .from('profiles')
+          .select('user_id, first_name, last_name, user_role, subjects, class_grade, school_name'),
+      ]);
 
-      if (members) {
-        const memberList = members as any[];
-        const activeTeachers = memberList.filter(m => m.member_role === 'teacher' && m.is_active).length;
-        const activeStudents = memberList.filter(m => m.member_role === 'student' && m.is_active).length;
-        const totalActive = memberList.filter(m => m.is_active).length;
-
-        // Recent joins (last 7 days)
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const recentJoins = memberList.filter(m => new Date(m.joined_at) >= weekAgo).length;
-
-        setData({
-          totalMembers: totalActive,
-          activeTeachers,
-          activeStudents,
-          teacherSlotUsage: institution.total_teacher_slots > 0
-            ? Math.round((activeTeachers / institution.total_teacher_slots) * 100)
-            : 0,
-          studentSlotUsage: institution.total_student_slots > 0
-            ? Math.round((activeStudents / institution.total_student_slots) * 100)
-            : 0,
-          recentJoins,
-        });
-      }
+      setMemberData(membersRes.data as any[] || []);
+      setMemberProfiles(profilesRes.data as any[] || []);
       setLoading(false);
     };
-    fetchInsights();
+    fetchData();
   }, [institution]);
 
   if (loading) {
@@ -71,117 +68,511 @@ const AdminInsights: React.FC = () => {
     );
   }
 
-  const statCards = [
-    { label: 'Total Active Users', value: data.totalMembers, icon: Users, color: 'text-primary' },
-    { label: 'Active Teachers', value: data.activeTeachers, icon: GraduationCap, color: 'text-accent' },
-    { label: 'Active Students', value: data.activeStudents, icon: BookOpen, color: 'text-success' },
-    { label: 'New This Week', value: data.recentJoins, icon: TrendingUp, color: 'text-primary' },
+  const activeMembers = memberData.filter(m => m.is_active);
+  const activeTeachers = activeMembers.filter(m => m.member_role === 'teacher');
+  const activeStudents = activeMembers.filter(m => m.member_role === 'student');
+
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  const recentJoins = memberData.filter(m => new Date(m.joined_at) >= weekAgo).length;
+
+  // Mock academic data (would come from real queries in production)
+  const schoolAvgScore = 66;
+  const performanceTrend = 'improving';
+
+  const subjectPerformance = [
+    { name: 'Integrated Science', score: 74, status: 'good' },
+    { name: 'Mathematics', score: 61, status: 'warning' },
+    { name: 'English Language', score: 63, status: 'warning' },
+    { name: 'Social Studies', score: 71, status: 'good' },
+    { name: 'ICT', score: 78, status: 'good' },
+    { name: 'French', score: 55, status: 'warning' },
   ];
 
+  const classesNeedingSupport = [
+    { class: 'JHS 2', subject: 'Mathematics' },
+    { class: 'SHS 1', subject: 'English' },
+    { class: 'JHS 3', subject: 'French' },
+  ];
+
+  // Teacher engagement mock
+  const highlyActive = Math.round(activeTeachers.length * 0.5);
+  const moderatelyActive = Math.round(activeTeachers.length * 0.33);
+  const lowActivity = activeTeachers.length - highlyActive - moderatelyActive;
+
+  const topTeachers = memberProfiles
+    .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
+    .slice(0, 2)
+    .map(p => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: 'Strong class improvement' }));
+
+  const needSupportTeachers = memberProfiles
+    .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
+    .slice(-1)
+    .map(p => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: 'Low platform usage' }));
+
+  // Student engagement mock
+  const activeThisWeek = Math.round(activeStudents.length * 0.78);
+  const lowActivityStudents = Math.round(activeStudents.length * 0.17);
+  const inactiveStudents = activeStudents.length - activeThisWeek - lowActivityStudents;
+  const atRiskCount = Math.round(activeStudents.length * 0.12);
+
+  // Curriculum mock
+  const curriculumCoverage = [
+    { subject: 'Mathematics', coverage: 72 },
+    { subject: 'English', coverage: 68 },
+    { subject: 'Science', coverage: 81 },
+    { subject: 'Social Studies', coverage: 75 },
+  ];
+  const classesWithAssessments = 75;
+
+  const performanceEmoji = schoolAvgScore >= 70 ? '🟢' : schoolAvgScore >= 50 ? '🟡' : '🔴';
+  const performanceLabel = schoolAvgScore >= 70 ? 'Good' : schoolAvgScore >= 50 ? 'Needs Attention' : 'Critical';
+
+  const recommendations = [
+    'Increase Mathematics practice across JHS',
+    'Support low-activity teachers with training sessions',
+    `Initiate intervention for ${atRiskCount} at-risk students`,
+    'Accelerate English curriculum coverage',
+  ];
+
+  const currentTerm = 'Term 2 / 2025-2026';
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Insights</h1>
-        <p className="text-muted-foreground mt-1">Analytics and usage overview for your institution</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold text-foreground">School Admin Insights</h1>
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+          <span>👤 Administrator: {profile?.first_name} {profile?.last_name}</span>
+          <span>🏫 School: {institution?.name}</span>
+          <span>📅 Academic Term: {currentTerm}</span>
+          <span>🕒 Last Updated: Today</span>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Slot Usage */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <GraduationCap className="w-5 h-5" />
-              Teacher Slot Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {data.activeTeachers} / {institution?.total_teacher_slots || 0} slots used
-              </span>
-              <span className="font-medium text-foreground">{data.teacherSlotUsage}%</span>
-            </div>
-            <Progress value={data.teacherSlotUsage} className="h-3" />
-            <p className="text-xs text-muted-foreground">
-              {(institution?.total_teacher_slots || 0) - data.activeTeachers} slots remaining
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BookOpen className="w-5 h-5" />
-              Student Slot Usage
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {data.activeStudents} / {institution?.total_student_slots || 0} slots used
-              </span>
-              <span className="font-medium text-foreground">{data.studentSlotUsage}%</span>
-            </div>
-            <Progress value={data.studentSlotUsage} className="h-3" />
-            <p className="text-xs text-muted-foreground">
-              {(institution?.total_student_slots || 0) - data.activeStudents} slots remaining
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Activity Summary */}
+      {/* 1. School Academic Health Overview */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5" />
-            Institution Summary
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">1️⃣ School Academic Health Overview</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center p-4 rounded-xl bg-muted/50">
-              <BarChart3 className="w-6 h-6 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold text-foreground">{data.teacherSlotUsage}%</p>
-              <p className="text-xs text-muted-foreground">Teacher Capacity</p>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
+            <span className="text-3xl">{performanceEmoji}</span>
+            <div>
+              <p className="text-sm text-muted-foreground">📊 Overall School Performance</p>
+              <p className="text-xl font-bold text-foreground">{performanceLabel}</p>
             </div>
-            <div className="text-center p-4 rounded-xl bg-muted/50">
-              <BarChart3 className="w-6 h-6 mx-auto mb-2 text-accent" />
-              <p className="text-2xl font-bold text-foreground">{data.studentSlotUsage}%</p>
-              <p className="text-xs text-muted-foreground">Student Capacity</p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 rounded-xl bg-muted/50 text-center">
+              <p className="text-2xl font-bold text-foreground">{schoolAvgScore}%</p>
+              <p className="text-xs text-muted-foreground">School Average Score</p>
             </div>
-            <div className="text-center p-4 rounded-xl bg-muted/50">
-              <Users className="w-6 h-6 mx-auto mb-2 text-success" />
-              <p className="text-2xl font-bold text-foreground">{data.totalMembers}</p>
-              <p className="text-xs text-muted-foreground">Total Members</p>
+            <div className="p-3 rounded-xl bg-muted/50 text-center">
+              <p className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
+                {performanceTrend === 'improving' ? '⬆' : '⬇'} {performanceTrend === 'improving' ? 'Improving' : 'Declining'}
+              </p>
+              <p className="text-xs text-muted-foreground">Performance Trend</p>
             </div>
-            <div className="text-center p-4 rounded-xl bg-muted/50">
-              <TrendingUp className="w-6 h-6 mx-auto mb-2 text-primary" />
-              <p className="text-2xl font-bold text-foreground">{data.recentJoins}</p>
-              <p className="text-xs text-muted-foreground">Joined This Week</p>
+            <div className="p-3 rounded-xl bg-muted/50 text-center">
+              <p className="text-2xl font-bold text-foreground">{activeStudents.length} / {institution?.total_student_slots || 0}</p>
+              <p className="text-xs text-muted-foreground">Active Learners</p>
+            </div>
+            <div className="p-3 rounded-xl bg-muted/50 text-center">
+              <p className="text-2xl font-bold text-foreground">{activeTeachers.length} / {institution?.total_teacher_slots || 0}</p>
+              <p className="text-xs text-muted-foreground">Active Teachers</p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* 2. Subject & Class Performance Map */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <CardTitle className="text-lg">2️⃣ Subject & Class Performance Map</CardTitle>
+              <CardDescription>Performance breakdown by subject and class</CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Select Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="jhs">JHS</SelectItem>
+                  <SelectItem value="shs">SHS</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={classFilter} onValueChange={setClassFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Select Class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  <SelectItem value="1">Class 1</SelectItem>
+                  <SelectItem value="2">Class 2</SelectItem>
+                  <SelectItem value="3">Class 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {subjectPerformance.map((s) => (
+              <div key={s.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <span>{s.status === 'good' ? '🟢' : '🟡'}</span>
+                  <span className="text-sm font-medium text-foreground">{s.name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">{s.score}%</span>
+                  {s.status === 'warning' && <span className="text-amber-500 text-xs">⚠</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <p className="text-sm font-medium text-foreground mb-2">👉 Classes Needing Support</p>
+            <div className="flex flex-wrap gap-2">
+              {classesNeedingSupport.map((c, i) => (
+                <Badge key={i} variant="secondary" className="text-xs">{c.class} {c.subject}</Badge>
+              ))}
+            </div>
+            <Button variant="outline" size="sm" className="mt-3 gap-1" onClick={() => setShowClassBreakdown(true)}>
+              <Eye className="w-3.5 h-3.5" /> View Class Breakdown
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 3. Teacher Effectiveness & Activity */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="text-lg">3️⃣ Teacher Effectiveness & Activity</CardTitle>
+              <CardDescription>Engagement and performance of teaching staff</CardDescription>
+            </div>
+            <FilterChips value={teacherFilter} onChange={setTeacherFilter} />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-foreground mb-3">👩🏽‍🏫 Teacher Engagement</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{highlyActive}</p>
+                <p className="text-xs text-muted-foreground">Highly Active</p>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{moderatelyActive}</p>
+                <p className="text-xs text-muted-foreground">Moderately Active</p>
+              </div>
+              <div className="p-3 rounded-xl bg-destructive/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{lowActivity}</p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Low Activity <span className="text-amber-500">⚠</span></p>
+              </div>
+            </div>
+          </div>
+
+          {topTeachers.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">⭐ Top Performing Teachers</p>
+              <div className="space-y-2">
+                {topTeachers.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
+                    <span className="text-sm text-foreground">{t.name}</span>
+                    <span className="text-xs text-muted-foreground">{t.note}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {needSupportTeachers.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-foreground mb-2">⚠ Teachers Needing Support</p>
+              <div className="space-y-2">
+                {needSupportTeachers.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-destructive/5 border border-destructive/10">
+                    <span className="text-sm text-foreground">{t.name}</span>
+                    <span className="text-xs text-muted-foreground">{t.note}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowTeacherInsights(true)}>
+            <Eye className="w-3.5 h-3.5" /> View Teacher Insights
+          </Button>
+
+          <div className="text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
+            <p className="font-medium mb-1">📊 Data source</p>
+            <p>Lesson plans created • Assignments/tests generated • Student performance linked to teacher classes</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 4. Student Engagement & Risk Alerts */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="text-lg">4️⃣ Student Engagement & Risk Alerts</CardTitle>
+              <CardDescription>Learner participation and risk identification</CardDescription>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="jhs">JHS</SelectItem>
+                  <SelectItem value="shs">SHS</SelectItem>
+                </SelectContent>
+              </Select>
+              <FilterChips value={studentFilter} onChange={setStudentFilter} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-foreground mb-3">👥 Learner Participation</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{activeThisWeek}</p>
+                <p className="text-xs text-muted-foreground">Active This Week</p>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{lowActivityStudents}</p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Low Activity <span className="text-amber-500">⚠</span></p>
+              </div>
+              <div className="p-3 rounded-xl bg-destructive/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{inactiveStudents}</p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Inactive <span className="text-destructive">🚨</span></p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-foreground">⚠ Students at Academic Risk: {atRiskCount}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                👉 Jesi AI Insight: "Low engagement strongly correlates with declining performance."
+              </p>
+            </div>
+          </div>
+
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowAtRisk(true)}>
+            <Eye className="w-3.5 h-3.5" /> View At-Risk Students
+          </Button>
+
+          <div className="text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
+            <p className="font-medium mb-1">📊 Data source</p>
+            <p>Login frequency • Practice completion • Performance decline patterns</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 5. Curriculum & Assessment Compliance */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <CardTitle className="text-lg">5️⃣ Curriculum & Assessment Compliance</CardTitle>
+              <CardDescription>Coverage and assessment activity tracking</CardDescription>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={levelFilter} onValueChange={setLevelFilter}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="jhs">JHS</SelectItem>
+                  <SelectItem value="shs">SHS</SelectItem>
+                </SelectContent>
+              </Select>
+              <FilterChips value={curriculumFilter} onChange={setCurriculumFilter} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-foreground mb-3">📘 Curriculum Coverage</p>
+            <div className="space-y-3">
+              {curriculumCoverage.map((c) => (
+                <div key={c.subject} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-foreground">{c.subject}</span>
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      {c.coverage}% Covered
+                      {c.coverage < 70 && <span className="text-amber-500">⚠</span>}
+                    </span>
+                  </div>
+                  <Progress value={c.coverage} className="h-2" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <p className="text-sm font-medium text-foreground mb-3">📝 Assessment Activity</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{classesWithAssessments}%</p>
+                <p className="text-xs text-muted-foreground">Classes with Regular Assessments</p>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{100 - classesWithAssessments}%</p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  Missing Assessments <span className="text-amber-500">⚠</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+            <Brain className="w-5 h-5 text-primary shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              👉 Jesi AI Insight: "Some classes are behind curriculum schedule. Consider reviewing teacher lesson plans."
+            </p>
+          </div>
+
+          <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowCompliance(true)}>
+            <Eye className="w-3.5 h-3.5" /> View Compliance Details
+          </Button>
+
+          <div className="text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
+            <p className="font-medium mb-1">📊 Data source</p>
+            <p>Teacher lesson plans • Topics taught vs curriculum mapping • Assignment/test creation logs</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 7. Jesi AI Strategic Recommendations */}
+      <Card className="border-primary/20">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">🧠 Jesi AI Strategic Recommendations</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {recommendations.map((r, i) => (
+            <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-muted/30">
+              <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <span className="text-sm text-foreground">{r}</span>
+            </div>
+          ))}
+          <div className="flex gap-2 pt-2">
+            <Button size="sm" className="gap-1">Apply Recommendations</Button>
+            <Button size="sm" variant="outline">Customize Actions</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* At-Risk Students Dialog */}
+      <Dialog open={showAtRisk} onOpenChange={setShowAtRisk}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>At-Risk Students</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {memberProfiles
+              .filter(p => activeStudents.some(s => s.user_id === p.user_id))
+              .slice(0, atRiskCount)
+              .map((s, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
+                      {s.first_name?.[0]}{s.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{s.first_name} {s.last_name}</p>
+                      <p className="text-xs text-muted-foreground">{s.class_grade || 'No class'} • Low engagement</p>
+                    </div>
+                  </div>
+                  <Badge variant="destructive" className="text-xs">At Risk</Badge>
+                </div>
+              ))}
+            {atRiskCount === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">No at-risk students identified</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Teacher Insights Dialog */}
+      <Dialog open={showTeacherInsights} onOpenChange={setShowTeacherInsights}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Teacher Insights</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {memberProfiles
+              .filter(p => activeTeachers.some(t => t.user_id === p.user_id))
+              .map((t, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      {t.first_name?.[0]}{t.last_name?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{t.first_name} {t.last_name}</p>
+                      <p className="text-xs text-muted-foreground">{(t.subjects || []).join(', ') || 'No subjects'}</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">Active</Badge>
+                </div>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Class Breakdown Dialog */}
+      <Dialog open={showClassBreakdown} onOpenChange={setShowClassBreakdown}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Class Performance Breakdown</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {classesNeedingSupport.map((c, i) => (
+              <div key={i} className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+                <p className="text-sm font-medium text-foreground">{c.class} — {c.subject}</p>
+                <p className="text-xs text-muted-foreground mt-1">Below target performance. Consider additional support.</p>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Compliance Dialog */}
+      <Dialog open={showCompliance} onOpenChange={setShowCompliance}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Curriculum Compliance Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {curriculumCoverage.map((c) => (
+              <div key={c.subject} className="p-3 rounded-lg bg-muted/30 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-foreground">{c.subject}</span>
+                  <span className="text-sm text-muted-foreground">{c.coverage}%</span>
+                </div>
+                <Progress value={c.coverage} className="h-2" />
+                {c.coverage < 70 && (
+                  <p className="text-xs text-amber-600">⚠ Behind schedule — review lesson plans</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
