@@ -9,23 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, Search, MoreHorizontal, Trash2, ArrowUpCircle, Shield } from 'lucide-react';
+import { Loader2, Search, MoreHorizontal, Trash2, ArrowUpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserRow {
@@ -44,6 +35,10 @@ const SAUsers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
+  const [filterRegion, setFilterRegion] = useState('all');
+
+  // Regions from institutions
+  const [regions, setRegions] = useState<string[]>([]);
 
   // Plan change
   const [planDialogUser, setPlanDialogUser] = useState<UserRow | null>(null);
@@ -55,19 +50,27 @@ const SAUsers: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = async () => {
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    setUsers((data as any[]) || []);
+    const [usersRes, instRes] = await Promise.all([
+      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+      supabase.from('institutions').select('region').not('region', 'is', null),
+    ]);
+    setUsers((usersRes.data as any[]) || []);
+    const uniqueRegions = Array.from(new Set((instRes.data || []).map((i: any) => i.region).filter(Boolean))) as string[];
+    setRegions(uniqueRegions);
     setLoading(false);
   };
 
   useEffect(() => { fetchUsers(); }, []);
 
   const filtered = users.filter((u) => {
-    const matchesSearch = !search || 
+    const matchesSearch = !search ||
       `${u.first_name} ${u.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
       (u.school_name || '').toLowerCase().includes(search.toLowerCase());
     const matchesTab = tab === 'all' || u.user_role === tab;
-    return matchesSearch && matchesTab;
+    // Region filter: match school_name against region (best effort since profiles store school_name not region)
+    // For a more accurate filter we'd need a join, but we filter by school_name containing region text
+    const matchesRegion = filterRegion === 'all' || (u.school_name || '').toLowerCase().includes(filterRegion.toLowerCase());
+    return matchesSearch && matchesTab && matchesRegion;
   });
 
   const roleBadge = (role: string | null) => {
@@ -101,7 +104,6 @@ const SAUsers: React.FC = () => {
     if (!deleteUser) return;
     setDeleting(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
       const res = await supabase.functions.invoke('delete-user', {
         body: { user_id: deleteUser.user_id },
       });
@@ -112,7 +114,7 @@ const SAUsers: React.FC = () => {
         setDeleteUser(null);
         fetchUsers();
       }
-    } catch (err: any) {
+    } catch {
       toast.error('Failed to delete user');
     }
     setDeleting(false);
@@ -130,11 +132,20 @@ const SAUsers: React.FC = () => {
         <p className="text-muted-foreground mt-1">Manage all platform users</p>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Select value={filterRegion} onValueChange={setFilterRegion}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Regions" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Regions</SelectItem>
+            {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
@@ -252,8 +263,8 @@ const SAUsers: React.FC = () => {
               Delete User Account
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete <strong>{deleteUser?.first_name} {deleteUser?.last_name}</strong>'s account? 
-              This action cannot be undone. All their data including lesson plans, quizzes, and classroom data will be removed.
+              Are you sure you want to permanently delete <strong>{deleteUser?.first_name} {deleteUser?.last_name}</strong>'s account?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
