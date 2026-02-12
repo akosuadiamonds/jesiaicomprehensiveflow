@@ -310,11 +310,6 @@ const AdminInsights: React.FC = () => {
           <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowTeacherInsights(true)}>
             <Eye className="w-3.5 h-3.5" /> View Teacher Insights
           </Button>
-
-          <div className="text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
-            <p className="font-medium mb-1">📊 Data source</p>
-            <p>Lesson plans created • Assignments/tests generated • Student performance linked to teacher classes</p>
-          </div>
         </CardContent>
       </Card>
 
@@ -373,11 +368,6 @@ const AdminInsights: React.FC = () => {
           <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowAtRisk(true)}>
             <Eye className="w-3.5 h-3.5" /> View At-Risk Students
           </Button>
-
-          <div className="text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
-            <p className="font-medium mb-1">📊 Data source</p>
-            <p>Login frequency • Practice completion • Performance decline patterns</p>
-          </div>
         </CardContent>
       </Card>
 
@@ -449,11 +439,6 @@ const AdminInsights: React.FC = () => {
           <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowCompliance(true)}>
             <Eye className="w-3.5 h-3.5" /> View Compliance Details
           </Button>
-
-          <div className="text-xs text-muted-foreground p-2 rounded-lg bg-muted/30">
-            <p className="font-medium mb-1">📊 Data source</p>
-            <p>Teacher lesson plans • Topics taught vs curriculum mapping • Assignment/test creation logs</p>
-          </div>
         </CardContent>
       </Card>
 
