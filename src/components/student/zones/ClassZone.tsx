@@ -141,8 +141,8 @@ const ClassZone: React.FC = () => {
   const [usingSamples, setUsingSamples] = useState(false);
   const [browseSelectedClass, setBrowseSelectedClass] = useState<ClassroomData | null>(null);
 
-  // Check-in state
-  const [showCheckIn, setShowCheckIn] = useState(true);
+  // Per-class check-in state
+  const [classCheckInPending, setClassCheckInPending] = useState<string | null>(null);
   const [showSupportDialog, setShowSupportDialog] = useState(false);
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
 
@@ -155,11 +155,7 @@ const ClassZone: React.FC = () => {
       // Load read notes from localStorage
       const saved = localStorage.getItem(`jesi_read_notes_${user.id}`);
       if (saved) setReadNotes(JSON.parse(saved));
-      // Check if already checked in today
-      const lastCheckIn = localStorage.getItem(`jesi_checkin_${user.id}`);
-      if (lastCheckIn === new Date().toDateString()) {
-        setShowCheckIn(false);
-      }
+      // no global check-in needed anymore
     }
   }, [user]);
 
@@ -190,23 +186,42 @@ const ClassZone: React.FC = () => {
     return lessonNotes.every(n => read.includes(n.id));
   };
 
+  const hasCheckedInForClass = (classId: string) => {
+    if (!user) return true;
+    const key = `jesi_class_checkin_${user.id}_${classId}`;
+    return localStorage.getItem(key) === new Date().toDateString();
+  };
+
+  const handleClassSelect = (cls: ClassroomData) => {
+    if (!cls.id.startsWith('sample-') && !hasCheckedInForClass(cls.id)) {
+      setClassCheckInPending(cls.id);
+      setSelectedMood(null);
+    } else {
+      setSelectedClass(cls);
+    }
+  };
+
   const handleMoodSelect = (mood: typeof MOOD_OPTIONS[0]) => {
     setSelectedMood(mood.label);
-    if (!user) return;
-    localStorage.setItem(`jesi_checkin_${user.id}`, new Date().toDateString());
+    if (!user || !classCheckInPending) return;
+    localStorage.setItem(`jesi_class_checkin_${user.id}_${classCheckInPending}`, new Date().toDateString());
 
     if (mood.type === 'negative') {
       setShowSupportDialog(true);
     } else {
       toast.success(`Thanks for sharing! Let's keep going 💪`);
-      setShowCheckIn(false);
+      const cls = myClasses.find(c => c.id === classCheckInPending);
+      setClassCheckInPending(null);
+      if (cls) setSelectedClass(cls);
     }
   };
 
   const handleSupportSelect = (option: typeof SUPPORT_OPTIONS[0]) => {
     setShowSupportDialog(false);
-    setShowCheckIn(false);
     toast.success(`${option.emoji} ${option.label} — you've got this! 💙`);
+    const cls = myClasses.find(c => c.id === classCheckInPending);
+    setClassCheckInPending(null);
+    if (cls) setSelectedClass(cls);
   };
 
   const fetchClassrooms = async () => {
@@ -359,12 +374,13 @@ const ClassZone: React.FC = () => {
     );
   }
 
-  // ─── Check-in Screen ───
-  if (showCheckIn) {
+  // ─── Per-Class Check-in Screen ───
+  if (classCheckInPending) {
+    const pendingClass = myClasses.find(c => c.id === classCheckInPending);
     return (
       <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-2">How was class today? 🎒</h2>
+          <h2 className="text-2xl font-bold mb-2">How was {pendingClass?.subject || 'class'} today? 🎒</h2>
           <p className="text-muted-foreground">Let us know how you're feeling</p>
         </div>
 
@@ -389,8 +405,12 @@ const ClassZone: React.FC = () => {
           variant="ghost"
           className="text-muted-foreground"
           onClick={() => {
-            setShowCheckIn(false);
-            if (user) localStorage.setItem(`jesi_checkin_${user.id}`, new Date().toDateString());
+            if (user && classCheckInPending) {
+              localStorage.setItem(`jesi_class_checkin_${user.id}_${classCheckInPending}`, new Date().toDateString());
+            }
+            const cls = myClasses.find(c => c.id === classCheckInPending);
+            setClassCheckInPending(null);
+            if (cls) setSelectedClass(cls);
           }}
         >
           Skip for now
@@ -401,7 +421,7 @@ const ClassZone: React.FC = () => {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Heart className="w-5 h-5 text-red-500" />
+                <Heart className="w-5 h-5 text-destructive" />
                 We're here for you 💙
               </DialogTitle>
               <DialogDescription>
@@ -436,11 +456,12 @@ const ClassZone: React.FC = () => {
                 variant="ghost"
                 onClick={() => {
                   setShowSupportDialog(false);
-                  setShowCheckIn(false);
-                  if (user) localStorage.setItem(`jesi_checkin_${user.id}`, new Date().toDateString());
+                  const cls = myClasses.find(c => c.id === classCheckInPending);
+                  setClassCheckInPending(null);
+                  if (cls) setSelectedClass(cls);
                 }}
               >
-                I'm okay, continue to classes
+                I'm okay, continue to class
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -862,7 +883,7 @@ const ClassZone: React.FC = () => {
                 <Card
                   key={cls.id}
                   className="hover:shadow-lg transition-all cursor-pointer group"
-                  onClick={() => setSelectedClass(cls)}
+                  onClick={() => handleClassSelect(cls)}
                 >
                   <CardContent className="p-5">
                     <div className="flex justify-between items-start mb-3">
