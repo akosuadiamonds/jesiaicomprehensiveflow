@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -23,8 +23,6 @@ import {
   LogOut,
   Lock,
   DollarSign,
-  ChevronDown,
-  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -34,7 +32,6 @@ const AppSidebar: React.FC = () => {
   const { signOut, profile } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const [classroomExpanded, setClassroomExpanded] = useState(false);
 
   const isPremium = profile?.selected_plan === 'premium';
 
@@ -43,6 +40,9 @@ const AppSidebar: React.FC = () => {
     { id: 'planner' as const, label: 'Planner', icon: BookOpen },
     { id: 'test' as const, label: 'Test', icon: FileQuestion },
   ];
+
+  const classroomItem = { id: 'classroom' as const, label: 'Classroom', icon: Users };
+  const monetizationItem = { id: 'monetization' as const, label: 'Monetization', icon: DollarSign };
 
   const bottomItems = [
     { id: 'insights' as const, label: 'Insights', icon: BarChart3 },
@@ -102,51 +102,8 @@ const AppSidebar: React.FC = () => {
             <SidebarMenu>
               {topItems.map(renderMenuItem)}
 
-              {/* Classroom with expandable submenu */}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={() => {
-                    if (collapsed) {
-                      setCurrentPage('classroom');
-                    } else {
-                      setClassroomExpanded(!classroomExpanded);
-                      setCurrentPage('classroom');
-                    }
-                  }}
-                  className={cn(
-                    "w-full justify-start gap-3 h-11 px-3 rounded-lg transition-all",
-                    currentPage === 'classroom'
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                  )}
-                  tooltip="Classroom"
-                >
-                  <Users className="w-5 h-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="font-medium flex-1 flex items-center justify-between">
-                      Classroom
-                      {classroomExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                    </span>
-                  )}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              {/* Monetization sub-item */}
-              {!collapsed && classroomExpanded && isPremium && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={() => setCurrentPage('classroom')}
-                    className={cn(
-                      "w-full justify-start gap-3 h-9 pl-10 pr-3 rounded-lg transition-all text-sm",
-                      "hover:bg-muted text-muted-foreground hover:text-foreground"
-                    )}
-                    tooltip="Monetization"
-                  >
-                    <DollarSign className="w-4 h-4 shrink-0" />
-                    <span className="font-medium">Monetization</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              {renderMenuItem(classroomItem)}
+              {isPremium && renderMenuItem(monetizationItem)}
 
               {bottomItems.map(renderMenuItem)}
             </SidebarMenu>

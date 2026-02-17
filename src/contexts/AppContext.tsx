@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useFreePlanLock } from '@/hooks/useFreePlanLock';
 
-type AppPage = 'dashboard' | 'planner' | 'test' | 'classroom' | 'insights' | 'profile';
+type AppPage = 'dashboard' | 'planner' | 'test' | 'classroom' | 'insights' | 'profile' | 'monetization';
 
 interface AppContextType {
   currentPage: AppPage;
