@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Users, Brain, Target, Search, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Brain, Target, AlertTriangle, TrendingUp } from 'lucide-react';
+import AnalyticsFilters, { FilterType } from './AnalyticsFilters';
 
 const LearnerAnalytics: React.FC = () => {
-  const [engagementFilter, setEngagementFilter] = useState('all');
+  const [engagementFilters, setEngagementFilters] = useState<Record<string, string>>({});
   const [engagementSearch, setEngagementSearch] = useState('');
-  const [outcomesFilter, setOutcomesFilter] = useState('all');
+  const [outcomesFilters, setOutcomesFilters] = useState<Record<string, string>>({});
 
   const [stats, setStats] = useState({ totalLearners: 0, mal: 0, wal: 0, totalSessions: 0 });
 
@@ -41,19 +40,8 @@ const LearnerAnalytics: React.FC = () => {
     { subject: 'ICT', score: 78 },
   ];
 
-  const regionFilters = [
-    { value: 'all', label: 'All' }, { value: 'school', label: 'School' },
-    { value: 'district', label: 'District' }, { value: 'region', label: 'Region' },
-  ];
-
-  const filterSelect = (value: string, onChange: (v: string) => void, options: { value: string; label: string }[]) => (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-      <SelectContent>
-        {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-      </SelectContent>
-    </Select>
-  );
+  const engagementFilterTypes: FilterType[] = ['school', 'district', 'region'];
+  const outcomesFilterTypes: FilterType[] = ['region', 'district', 'school', 'academic_year', 'class'];
 
   return (
     <div className="space-y-6">
@@ -61,13 +49,14 @@ const LearnerAnalytics: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-lg font-semibold text-foreground">Learning Engagement</h3>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." value={engagementSearch} onChange={e => setEngagementSearch(e.target.value)} className="pl-8 w-[180px]" />
-            </div>
-            {filterSelect(engagementFilter, setEngagementFilter, regionFilters)}
-          </div>
+          <AnalyticsFilters
+            filters={engagementFilterTypes}
+            values={engagementFilters}
+            onChange={(t, v) => setEngagementFilters(p => ({ ...p, [t]: v }))}
+            showSearch
+            searchValue={engagementSearch}
+            onSearchChange={setEngagementSearch}
+          />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Avg Session (mins)</CardTitle></CardHeader>
@@ -118,13 +107,11 @@ const LearnerAnalytics: React.FC = () => {
             <Target className="w-5 h-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground">Learning Outcomes Metrics</h3>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {filterSelect(outcomesFilter, setOutcomesFilter, [
-              ...regionFilters,
-              { value: 'year', label: 'Academic Year' },
-              { value: 'class', label: 'Class (1-9)' },
-            ])}
-          </div>
+          <AnalyticsFilters
+            filters={outcomesFilterTypes}
+            values={outcomesFilters}
+            onChange={(t, v) => setOutcomesFilters(p => ({ ...p, [t]: v }))}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
