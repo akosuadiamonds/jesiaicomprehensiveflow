@@ -3,16 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Loader2, DollarSign, TrendingUp, TrendingDown, CreditCard, Pencil, Trash2, CheckCircle, XCircle, Download, FileText } from 'lucide-react';
+import { Loader2, DollarSign, TrendingUp, CreditCard, Coins, Users, GraduationCap, School, BookOpen, CheckCircle, XCircle, Download, FileText, Clock, ArrowDownLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Transaction {
@@ -27,16 +25,6 @@ interface Transaction {
   notes: string | null;
   transaction_date: string;
   institution_name?: string;
-}
-
-interface PlatformPaymentMethod {
-  id: string;
-  method_type: string;
-  provider: string | null;
-  account_number: string | null;
-  account_name: string | null;
-  is_default: boolean;
-  is_active: boolean;
 }
 
 interface CashoutRequest {
@@ -55,14 +43,8 @@ interface CashoutRequest {
 const SAFinancials: React.FC = () => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PlatformPaymentMethod[]>([]);
-  const [schools, setSchools] = useState<{ id: string; name: string }[]>([]);
   const [cashoutRequests, setCashoutRequests] = useState<CashoutRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addTxOpen, setAddTxOpen] = useState(false);
-  const [pmDialogOpen, setPmDialogOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [editingPm, setEditingPm] = useState<PlatformPaymentMethod | null>(null);
 
   // Cashout review
   const [reviewingCashout, setReviewingCashout] = useState<CashoutRequest | null>(null);
@@ -70,42 +52,35 @@ const SAFinancials: React.FC = () => {
   const [cashoutNotes, setCashoutNotes] = useState('');
   const [processingCashout, setProcessingCashout] = useState(false);
 
-  // Transaction form
-  const [txSchoolId, setTxSchoolId] = useState('');
-  const [txAmount, setTxAmount] = useState('');
-  const [txMethod, setTxMethod] = useState('mobile_money');
-  const [txReference, setTxReference] = useState('');
-  const [txStatus, setTxStatus] = useState('completed');
-  const [txType, setTxType] = useState('payment');
-  const [txNotes, setTxNotes] = useState('');
-
-  // Payment method form
-  const [pmType, setPmType] = useState('mobile_money');
-  const [pmProvider, setPmProvider] = useState('');
-  const [pmAccountNumber, setPmAccountNumber] = useState('');
-  const [pmAccountName, setPmAccountName] = useState('');
-  const [pmIsDefault, setPmIsDefault] = useState(false);
-  const [pmIsActive, setPmIsActive] = useState(true);
+  // User counts for revenue by user
+  const [learnerCount, setLearnerCount] = useState(0);
+  const [schoolCount, setSchoolCount] = useState(0);
+  const [teacherCount, setTeacherCount] = useState(0);
 
   const fetchData = async () => {
-    const [txRes, pmRes, schoolsRes, cashoutRes, profilesRes] = await Promise.all([
+    const [txRes, cashoutRes, profilesRes, institutionsRes] = await Promise.all([
       supabase.from('payment_transactions').select('*').order('transaction_date', { ascending: false }),
-      supabase.from('payment_methods').select('*').is('institution_id', null).order('created_at', { ascending: false }),
-      supabase.from('institutions').select('id, name'),
       supabase.from('cashout_requests').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, first_name, last_name').eq('user_role', 'teacher'),
+      supabase.from('profiles').select('user_id, first_name, last_name, user_role'),
+      supabase.from('institutions').select('id, name'),
     ]);
 
-    const schoolMap = new Map((schoolsRes.data as any[] || []).map((s: any) => [s.id, s.name]));
-    const teacherMap = new Map((profilesRes.data as any[] || []).map((p: any) => [p.user_id, `${p.first_name || ''} ${p.last_name || ''}`.trim()]));
+    const profiles = (profilesRes.data as any[]) || [];
+    const institutions = (institutionsRes.data as any[]) || [];
+    const schoolMap = new Map(institutions.map((s: any) => [s.id, s.name]));
+    const teacherMap = new Map(
+      profiles.filter(p => p.user_role === 'teacher').map((p: any) => [p.user_id, `${p.first_name || ''} ${p.last_name || ''}`.trim()])
+    );
+
+    setLearnerCount(profiles.filter(p => p.user_role === 'learner').length);
+    setTeacherCount(profiles.filter(p => p.user_role === 'teacher').length);
+    setSchoolCount(institutions.length);
 
     setTransactions(((txRes.data as any[]) || []).map((t: any) => ({
       ...t,
       institution_name: schoolMap.get(t.institution_id) || 'Unknown',
     })));
 
-    setPaymentMethods((pmRes.data as any[]) || []);
-    setSchools((schoolsRes.data as any[]) || []);
     setCashoutRequests(((cashoutRes.data as any[]) || []).map((c: any) => ({
       ...c,
       teacher_name: teacherMap.get(c.teacher_id) || 'Unknown Teacher',
@@ -114,71 +89,6 @@ const SAFinancials: React.FC = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
-
-  const handleAddTransaction = async () => {
-    if (!txSchoolId || !txAmount) { toast.error('School and amount are required'); return; }
-    setSaving(true);
-    const { error } = await supabase.from('payment_transactions').insert({
-      institution_id: txSchoolId,
-      amount: parseFloat(txAmount) || 0,
-      payment_method: txMethod,
-      reference_number: txReference || null,
-      status: txStatus,
-      transaction_type: txType,
-      notes: txNotes || null,
-      recorded_by: user?.id,
-    } as any);
-    if (error) toast.error('Failed to record transaction');
-    else { toast.success('Transaction recorded'); setAddTxOpen(false); resetTxForm(); fetchData(); }
-    setSaving(false);
-  };
-
-  const resetTxForm = () => {
-    setTxSchoolId(''); setTxAmount(''); setTxMethod('mobile_money');
-    setTxReference(''); setTxStatus('completed'); setTxType('payment'); setTxNotes('');
-  };
-
-  const openCreatePm = () => {
-    setEditingPm(null);
-    setPmType('mobile_money'); setPmProvider(''); setPmAccountNumber('');
-    setPmAccountName(''); setPmIsDefault(false); setPmIsActive(true);
-    setPmDialogOpen(true);
-  };
-
-  const openEditPm = (pm: PlatformPaymentMethod) => {
-    setEditingPm(pm);
-    setPmType(pm.method_type); setPmProvider(pm.provider || '');
-    setPmAccountNumber(pm.account_number || ''); setPmAccountName(pm.account_name || '');
-    setPmIsDefault(pm.is_default); setPmIsActive(pm.is_active);
-    setPmDialogOpen(true);
-  };
-
-  const handleSavePaymentMethod = async () => {
-    if (!pmProvider.trim()) { toast.error('Provider is required'); return; }
-    setSaving(true);
-    const payload: any = {
-      method_type: pmType, provider: pmProvider.trim(),
-      account_number: pmAccountNumber || null, account_name: pmAccountName || null,
-      is_default: pmIsDefault, is_active: pmIsActive, institution_id: null,
-    };
-    if (editingPm) {
-      const { error } = await supabase.from('payment_methods').update(payload).eq('id', editingPm.id);
-      if (error) toast.error('Failed to update payment method');
-      else toast.success('Payment method updated');
-    } else {
-      payload.created_by = user?.id;
-      const { error } = await supabase.from('payment_methods').insert(payload);
-      if (error) toast.error('Failed to add payment method');
-      else toast.success('Payment method added');
-    }
-    setSaving(false); setPmDialogOpen(false); fetchData();
-  };
-
-  const handleDeletePm = async (id: string) => {
-    const { error } = await supabase.from('payment_methods').delete().eq('id', id);
-    if (error) toast.error('Failed to delete');
-    else { toast.success('Payment method removed'); fetchData(); }
-  };
 
   // Cashout approval
   const handleCashoutReview = async () => {
@@ -225,12 +135,16 @@ const SAFinancials: React.FC = () => {
     toast.success('Report downloaded');
   };
 
-  // Financial summary
-  const totalRevenue = transactions.filter(t => t.status === 'completed' && t.transaction_type === 'payment').reduce((sum, t) => sum + t.amount, 0);
-  const totalRenewals = transactions.filter(t => t.status === 'completed' && t.transaction_type === 'renewal').reduce((sum, t) => sum + t.amount, 0);
-  const pendingPayments = transactions.filter(t => t.status === 'pending').reduce((sum, t) => sum + t.amount, 0);
-  const totalRefunds = transactions.filter(t => t.transaction_type === 'refund').reduce((sum, t) => sum + t.amount, 0);
+  // Financial calculations
+  const completedTx = transactions.filter(t => t.status === 'completed');
+  const subscriptionRevenue = completedTx.filter(t => t.transaction_type === 'payment' || t.transaction_type === 'renewal').reduce((s, t) => s + t.amount, 0);
+  const tokenRevenue = completedTx.filter(t => t.transaction_type === 'token_purchase').reduce((s, t) => s + t.amount, 0);
+  const feeRevenue = completedTx.filter(t => t.transaction_type === 'fee').reduce((s, t) => s + t.amount, 0);
+
+  const pendingPayments = transactions.filter(t => t.status === 'pending').reduce((s, t) => s + t.amount, 0);
   const pendingCashouts = cashoutRequests.filter(c => c.status === 'pending');
+  const pendingCashoutTotal = pendingCashouts.reduce((s, c) => s + c.amount, 0);
+  const totalRefunds = transactions.filter(t => t.transaction_type === 'refund').reduce((s, t) => s + t.amount, 0);
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -241,66 +155,115 @@ const SAFinancials: React.FC = () => {
     return <Badge className={`${map[status] || ''} border-0`}>{status}</Badge>;
   };
 
-  const methodTypeLabel = (type: string) => {
-    switch (type) {
-      case 'mobile_money': return 'Mobile Money';
-      case 'bank_transfer': return 'Bank Transfer';
-      case 'card': return 'Card';
-      default: return type;
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Financial Reports</h1>
-          <p className="text-muted-foreground mt-1">Track payments, revenue, and manage cashout requests</p>
+          <p className="text-muted-foreground mt-1">Track revenue, payments, and manage cashout requests</p>
         </div>
         <Button variant="outline" className="gap-2" onClick={downloadReport}>
           <Download className="w-4 h-4" /> Download Report
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-            <DollarSign className="w-5 h-5 text-green-500" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">GHS {totalRevenue.toFixed(2)}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Renewal Revenue</CardTitle>
-            <TrendingUp className="w-5 h-5 text-blue-500" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">GHS {totalRenewals.toFixed(2)}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
-            <CreditCard className="w-5 h-5 text-yellow-500" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">GHS {pendingPayments.toFixed(2)}</div></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Refunds</CardTitle>
-            <TrendingDown className="w-5 h-5 text-red-500" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">GHS {totalRefunds.toFixed(2)}</div></CardContent>
-        </Card>
-        <Card className={pendingCashouts.length > 0 ? 'border-orange-300' : ''}>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending Cashouts</CardTitle>
-            <FileText className="w-5 h-5 text-orange-500" />
-          </CardHeader>
-          <CardContent><div className="text-2xl font-bold">{pendingCashouts.length}</div></CardContent>
-        </Card>
+      {/* Revenue by Type */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-3">Revenue by Type</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Subscriptions</CardTitle>
+              <CreditCard className="w-5 h-5 text-primary" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">GHS {subscriptionRevenue.toFixed(2)}</div></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Tokens</CardTitle>
+              <Coins className="w-5 h-5 text-amber-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">GHS {tokenRevenue.toFixed(2)}</div></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Fees</CardTitle>
+              <DollarSign className="w-5 h-5 text-green-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">GHS {feeRevenue.toFixed(2)}</div></CardContent>
+          </Card>
+        </div>
       </div>
 
+      {/* Revenue by User */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-3">Revenue by User</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Learners</CardTitle>
+              <GraduationCap className="w-5 h-5 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{learnerCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">registered learners</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Schools</CardTitle>
+              <School className="w-5 h-5 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{schoolCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">registered schools</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Teachers</CardTitle>
+              <BookOpen className="w-5 h-5 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{teacherCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">registered teachers</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Payments Section */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-3">Payments</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payments</CardTitle>
+              <Clock className="w-5 h-5 text-yellow-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">GHS {pendingPayments.toFixed(2)}</div></CardContent>
+          </Card>
+          <Card className={pendingCashouts.length > 0 ? 'border-orange-300' : ''}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending Cashouts</CardTitle>
+              <FileText className="w-5 h-5 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">GHS {pendingCashoutTotal.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">{pendingCashouts.length} request{pendingCashouts.length !== 1 ? 's' : ''}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Refunds</CardTitle>
+              <ArrowDownLeft className="w-5 h-5 text-red-500" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">GHS {totalRefunds.toFixed(2)}</div></CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Tabs: Transactions & Cashout Requests */}
       <Tabs defaultValue="transactions">
         <TabsList>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
@@ -312,16 +275,9 @@ const SAFinancials: React.FC = () => {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="payment-methods">Accepted Payment Methods</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions" className="space-y-4">
-          <div className="flex justify-end">
-            <Button variant="hero" className="gap-2" onClick={() => setAddTxOpen(true)}>
-              <Plus className="w-4 h-4" /> Record Transaction
-            </Button>
-          </div>
-
           <Card>
             <CardContent className="p-0">
               {loading ? (
@@ -405,175 +361,7 @@ const SAFinancials: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="payment-methods" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">These are the payment methods accepted by the platform.</p>
-            <Button variant="hero" className="gap-2" onClick={openCreatePm}>
-              <Plus className="w-4 h-4" /> Add Method
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loading ? (
-              <div className="col-span-full flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-            ) : paymentMethods.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-muted-foreground">No payment methods added yet.</div>
-            ) : (
-              paymentMethods.map((pm) => (
-                <Card key={pm.id} className={`relative ${!pm.is_active ? 'opacity-60' : ''}`}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-semibold">{pm.provider}</CardTitle>
-                      <div className="flex items-center gap-1">
-                        {pm.is_default && <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">Default</Badge>}
-                        {!pm.is_active && <Badge variant="secondary" className="text-xs">Inactive</Badge>}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-sm text-muted-foreground">
-                      <span className="font-medium text-foreground">{methodTypeLabel(pm.method_type)}</span>
-                    </div>
-                    {pm.account_name && <p className="text-sm text-muted-foreground">Name: <span className="text-foreground">{pm.account_name}</span></p>}
-                    {pm.account_number && <p className="text-sm text-muted-foreground">Number: <span className="text-foreground font-mono">{pm.account_number}</span></p>}
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="gap-1" onClick={() => openEditPm(pm)}>
-                        <Pencil className="w-3 h-3" /> Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" className="gap-1 text-destructive hover:text-destructive" onClick={() => handleDeletePm(pm.id)}>
-                        <Trash2 className="w-3 h-3" /> Remove
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
       </Tabs>
-
-      {/* Add Transaction Dialog */}
-      <Dialog open={addTxOpen} onOpenChange={setAddTxOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Record Transaction</DialogTitle></DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label>School *</Label>
-              <Select value={txSchoolId} onValueChange={setTxSchoolId}>
-                <SelectTrigger><SelectValue placeholder="Select school" /></SelectTrigger>
-                <SelectContent>
-                  {schools.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Amount (GHS) *</Label>
-                <Input type="number" value={txAmount} onChange={(e) => setTxAmount(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Type</Label>
-                <Select value={txType} onValueChange={setTxType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="payment">Payment</SelectItem>
-                    <SelectItem value="renewal">Renewal</SelectItem>
-                    <SelectItem value="refund">Refund</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <Select value={txMethod} onValueChange={setTxMethod}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                    <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={txStatus} onValueChange={setTxStatus}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Reference Number</Label>
-              <Input value={txReference} onChange={(e) => setTxReference(e.target.value)} placeholder="e.g. TXN-123456" />
-            </div>
-            <div className="space-y-2">
-              <Label>Notes</Label>
-              <Input value={txNotes} onChange={(e) => setTxNotes(e.target.value)} placeholder="Optional note" />
-            </div>
-            <Button onClick={handleAddTransaction} disabled={saving} variant="hero" className="w-full gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
-              Record Transaction
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add/Edit Payment Method Dialog */}
-      <Dialog open={pmDialogOpen} onOpenChange={setPmDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingPm ? 'Edit Payment Method' : 'Add Accepted Payment Method'}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <p className="text-sm text-muted-foreground">Configure a payment method that the platform accepts from schools.</p>
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select value={pmType} onValueChange={setPmType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mobile_money">Mobile Money (MoMo)</SelectItem>
-                  <SelectItem value="card">Card</SelectItem>
-                  <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Provider / Network *</Label>
-              <Input value={pmProvider} onChange={(e) => setPmProvider(e.target.value)} placeholder="e.g. MTN MoMo, Vodafone Cash" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Account Name</Label>
-                <Input value={pmAccountName} onChange={(e) => setPmAccountName(e.target.value)} placeholder="e.g. Jesi AI Ltd" />
-              </div>
-              <div className="space-y-2">
-                <Label>Account / Phone Number</Label>
-                <Input value={pmAccountNumber} onChange={(e) => setPmAccountNumber(e.target.value)} placeholder="e.g. 024XXXXXXX" />
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Switch checked={pmIsDefault} onCheckedChange={setPmIsDefault} />
-                <Label>Set as default</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={pmIsActive} onCheckedChange={setPmIsActive} />
-                <Label>Active</Label>
-              </div>
-            </div>
-            <Button onClick={handleSavePaymentMethod} disabled={saving} variant="hero" className="w-full gap-2">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-              {editingPm ? 'Update Method' : 'Add Method'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Cashout Review Dialog */}
       <Dialog open={!!reviewingCashout} onOpenChange={(o) => !o && setReviewingCashout(null)}>
