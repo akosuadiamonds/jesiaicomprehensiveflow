@@ -52,29 +52,43 @@ const SAFinancials: React.FC = () => {
   const [cashoutNotes, setCashoutNotes] = useState('');
   const [processingCashout, setProcessingCashout] = useState(false);
 
-  // User counts for revenue by user
-  const [learnerCount, setLearnerCount] = useState(0);
-  const [schoolCount, setSchoolCount] = useState(0);
-  const [teacherCount, setTeacherCount] = useState(0);
+  // Revenue by user type
+  const [learnerRevenue, setLearnerRevenue] = useState(0);
+  const [schoolRevenue, setSchoolRevenue] = useState(0);
+  const [teacherRevenue, setTeacherRevenue] = useState(0);
 
   const fetchData = async () => {
-    const [txRes, cashoutRes, profilesRes, institutionsRes] = await Promise.all([
+    const [txRes, cashoutRes, profilesRes, institutionsRes, plansRes] = await Promise.all([
       supabase.from('payment_transactions').select('*').order('transaction_date', { ascending: false }),
       supabase.from('cashout_requests').select('*').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('user_id, first_name, last_name, user_role'),
+      supabase.from('profiles').select('user_id, first_name, last_name, user_role, selected_plan'),
       supabase.from('institutions').select('id, name'),
+      supabase.from('subscription_plans').select('id, name, price, plan_type'),
     ]);
 
     const profiles = (profilesRes.data as any[]) || [];
     const institutions = (institutionsRes.data as any[]) || [];
+    const plans = (plansRes.data as any[]) || [];
     const schoolMap = new Map(institutions.map((s: any) => [s.id, s.name]));
     const teacherMap = new Map(
       profiles.filter(p => p.user_role === 'teacher').map((p: any) => [p.user_id, `${p.first_name || ''} ${p.last_name || ''}`.trim()])
     );
+    const planPriceMap = new Map(plans.map((p: any) => [p.name?.toLowerCase(), p.price || 0]));
 
-    setLearnerCount(profiles.filter(p => p.user_role === 'learner').length);
-    setTeacherCount(profiles.filter(p => p.user_role === 'teacher').length);
-    setSchoolCount(institutions.length);
+    // Calculate revenue by user type from profiles + plan prices
+    let lRev = 0, tRev = 0, sRev = 0;
+    profiles.forEach(p => {
+      const planPrice = planPriceMap.get(p.selected_plan?.toLowerCase()) || 0;
+      if (p.user_role === 'learner') lRev += planPrice;
+      else if (p.user_role === 'teacher') tRev += planPrice;
+    });
+    // School revenue from completed institution transactions
+    const completedInstitutionTx = ((txRes.data as any[]) || []).filter(t => t.status === 'completed');
+    sRev = completedInstitutionTx.reduce((s, t) => s + t.amount, 0);
+
+    setLearnerRevenue(lRev);
+    setTeacherRevenue(tRev);
+    setSchoolRevenue(sRev);
 
     setTransactions(((txRes.data as any[]) || []).map((t: any) => ({
       ...t,
@@ -202,32 +216,23 @@ const SAFinancials: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Learners</CardTitle>
-              <GraduationCap className="w-5 h-5 text-blue-500" />
+              <GraduationCap className="w-5 h-5 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{learnerCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">registered learners</p>
-            </CardContent>
+            <CardContent><div className="text-2xl font-bold">GHS {learnerRevenue.toFixed(2)}</div></CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Schools</CardTitle>
-              <School className="w-5 h-5 text-purple-500" />
+              <School className="w-5 h-5 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{schoolCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">registered schools</p>
-            </CardContent>
+            <CardContent><div className="text-2xl font-bold">GHS {schoolRevenue.toFixed(2)}</div></CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Teachers</CardTitle>
-              <BookOpen className="w-5 h-5 text-emerald-500" />
+              <BookOpen className="w-5 h-5 text-primary" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{teacherCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">registered teachers</p>
-            </CardContent>
+            <CardContent><div className="text-2xl font-bold">GHS {teacherRevenue.toFixed(2)}</div></CardContent>
           </Card>
         </div>
       </div>
