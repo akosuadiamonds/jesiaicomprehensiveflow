@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'recharts';
 import { Users, TrendingDown, ThumbsUp, Clock, Monitor } from 'lucide-react';
+import AnalyticsFilters, { FilterType } from './AnalyticsFilters';
 
 const PlatformAnalytics: React.FC = () => {
-  const [demoFilter, setDemoFilter] = useState('all');
-  const [peakFilter, setPeakFilter] = useState('all');
-  const [deviceFilter, setDeviceFilter] = useState('all');
+  const [demoFilters, setDemoFilters] = useState<Record<string, string>>({});
+  const [peakFilters, setPeakFilters] = useState<Record<string, string>>({});
+  const [deviceFilters, setDeviceFilters] = useState<Record<string, string>>({});
 
-  // Mock data
+  const handleDemoChange = (type: string, value: string) => setDemoFilters(p => ({ ...p, [type]: value }));
+  const handlePeakChange = (type: string, value: string) => setPeakFilters(p => ({ ...p, [type]: value }));
+  const handleDeviceChange = (type: string, value: string) => setDeviceFilters(p => ({ ...p, [type]: value }));
+
   const growthData = [
     { month: 'Jan', users: 120 }, { month: 'Feb', users: 180 },
     { month: 'Mar', users: 250 }, { month: 'Apr', users: 310 },
@@ -30,29 +33,16 @@ const PlatformAnalytics: React.FC = () => {
     { device: 'Tablet', students: 10, teachers: 10, admins: 10 },
   ];
 
-  const demoFilters = [
-    { value: 'all', label: 'All' },
-    { value: 'region', label: 'Region' },
-    { value: 'age', label: 'Age' },
-    { value: 'gender', label: 'Gender' },
-    { value: 'disability', label: 'Disability' },
-    { value: 'rural_urban', label: 'Rural/Urban' },
-  ];
+  const demoFilterTypes: FilterType[] = ['region', 'age', 'gender', 'disability', 'rural_urban'];
+  const userTypeFilterTypes: FilterType[] = ['school', 'district', 'region'];
 
   return (
     <div className="space-y-6">
       {/* User Demographics & Reach */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-lg font-semibold text-foreground">User Demographics & Reach</h3>
-          <Select value={demoFilter} onValueChange={setDemoFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {demoFilters.map(f => (
-                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <AnalyticsFilters filters={demoFilterTypes} values={demoFilters} onChange={handleDemoChange} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
@@ -88,9 +78,7 @@ const PlatformAnalytics: React.FC = () => {
         <h3 className="text-lg font-semibold text-foreground mb-4">User Growth & Retention Metrics</h3>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Weekly Active Users</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Weekly Active Users</CardTitle></CardHeader>
             <CardContent>
               <div className="text-2xl font-bold mb-3">342</div>
               <div className="space-y-2">
@@ -152,20 +140,12 @@ const PlatformAnalytics: React.FC = () => {
 
       {/* Peak Usage Times */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground">Peak Usage Times</h3>
           </div>
-          <Select value={peakFilter} onValueChange={setPeakFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
-              <SelectItem value="students">Students</SelectItem>
-              <SelectItem value="teachers">Teachers</SelectItem>
-              <SelectItem value="admins">Admins</SelectItem>
-            </SelectContent>
-          </Select>
+          <AnalyticsFilters filters={userTypeFilterTypes} values={peakFilters} onChange={handlePeakChange} />
         </div>
         <Card>
           <CardContent className="pt-6">
@@ -184,20 +164,12 @@ const PlatformAnalytics: React.FC = () => {
 
       {/* Device Usage */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Monitor className="w-5 h-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground">Device Usage</h3>
           </div>
-          <Select value={deviceFilter} onValueChange={setDeviceFilter}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
-              <SelectItem value="students">Students</SelectItem>
-              <SelectItem value="teachers">Teachers</SelectItem>
-              <SelectItem value="admins">Admins</SelectItem>
-            </SelectContent>
-          </Select>
+          <AnalyticsFilters filters={userTypeFilterTypes} values={deviceFilters} onChange={handleDeviceChange} />
         </div>
         <Card>
           <CardContent className="pt-6">

@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Users, Clock, BookOpen, FileText, Star, Search } from 'lucide-react';
+import { Clock, BookOpen, FileText, Star } from 'lucide-react';
+import AnalyticsFilters, { FilterType } from './AnalyticsFilters';
 
 const TeacherAnalytics: React.FC = () => {
-  const [usageFilter, setUsageFilter] = useState('all');
-  const [efficiencyFilter, setEfficiencyFilter] = useState('all');
-  const [engagementFilter, setEngagementFilter] = useState('all');
-  const [impactFilter, setImpactFilter] = useState('all');
-  const [gainsSubject, setGainsSubject] = useState('all');
-  const [satisfactionFilter, setSatisfactionFilter] = useState('all');
+  const [usageFilters, setUsageFilters] = useState<Record<string, string>>({});
   const [usageSearch, setUsageSearch] = useState('');
+  const [efficiencyFilters, setEfficiencyFilters] = useState<Record<string, string>>({});
   const [efficiencySearch, setEfficiencySearch] = useState('');
+  const [engagementFilters, setEngagementFilters] = useState<Record<string, string>>({});
   const [engagementSearch, setEngagementSearch] = useState('');
+  const [impactFilters, setImpactFilters] = useState<Record<string, string>>({});
+  const [gainsFilters, setGainsFilters] = useState<Record<string, string>>({});
+  const [satisfactionFilters, setSatisfactionFilters] = useState<Record<string, string>>({});
 
   const [stats, setStats] = useState({
     registered: 0, active: 0, mat: 0, wat: 0,
@@ -53,19 +52,11 @@ const TeacherAnalytics: React.FC = () => {
     { subject: 'ICT', progress: 75 },
   ];
 
-  const filterSelect = (value: string, onChange: (v: string) => void, options: { value: string; label: string }[]) => (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-      <SelectContent>
-        {options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-      </SelectContent>
-    </Select>
-  );
-
-  const regionFilters = [
-    { value: 'all', label: 'All' }, { value: 'school', label: 'School' },
-    { value: 'district', label: 'District' }, { value: 'region', label: 'Region' },
-  ];
+  const locationFilters: FilterType[] = ['school', 'district', 'region'];
+  const engagementFilterTypes: FilterType[] = ['school', 'class', 'subject', 'week'];
+  const impactFilterTypes: FilterType[] = ['school', 'class', 'month', 'subject'];
+  const gainsFilterTypes: FilterType[] = ['subject', 'school'];
+  const satisfactionFilterTypes: FilterType[] = ['region', 'district', 'school'];
 
   return (
     <div className="space-y-6">
@@ -73,13 +64,14 @@ const TeacherAnalytics: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-lg font-semibold text-foreground">Teacher Usage & Adoption</h3>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." value={usageSearch} onChange={e => setUsageSearch(e.target.value)} className="pl-8 w-[180px]" />
-            </div>
-            {filterSelect(usageFilter, setUsageFilter, regionFilters)}
-          </div>
+          <AnalyticsFilters
+            filters={locationFilters}
+            values={usageFilters}
+            onChange={(t, v) => setUsageFilters(p => ({ ...p, [t]: v }))}
+            showSearch
+            searchValue={usageSearch}
+            onSearchChange={setUsageSearch}
+          />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Registered Teachers</CardTitle></CardHeader>
@@ -97,13 +89,14 @@ const TeacherAnalytics: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-lg font-semibold text-foreground">Teacher Efficiency</h3>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." value={efficiencySearch} onChange={e => setEfficiencySearch(e.target.value)} className="pl-8 w-[180px]" />
-            </div>
-            {filterSelect(efficiencyFilter, setEfficiencyFilter, regionFilters)}
-          </div>
+          <AnalyticsFilters
+            filters={locationFilters}
+            values={efficiencyFilters}
+            onChange={(t, v) => setEfficiencyFilters(p => ({ ...p, [t]: v }))}
+            showSearch
+            searchValue={efficiencySearch}
+            onSearchChange={setEfficiencySearch}
+          />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardHeader className="pb-2"><div className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /><CardTitle className="text-sm font-medium text-muted-foreground">Hours Saved</CardTitle></div></CardHeader>
@@ -119,17 +112,14 @@ const TeacherAnalytics: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-lg font-semibold text-foreground">Learner Engagement</h3>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search..." value={engagementSearch} onChange={e => setEngagementSearch(e.target.value)} className="pl-8 w-[180px]" />
-            </div>
-            {filterSelect(engagementFilter, setEngagementFilter, [
-              { value: 'all', label: 'All' }, { value: 'school', label: 'School' },
-              { value: 'class', label: 'Class' }, { value: 'subject', label: 'Subject' },
-              { value: 'week', label: 'Week' },
-            ])}
-          </div>
+          <AnalyticsFilters
+            filters={engagementFilterTypes}
+            values={engagementFilters}
+            onChange={(t, v) => setEngagementFilters(p => ({ ...p, [t]: v }))}
+            showSearch
+            searchValue={engagementSearch}
+            onSearchChange={setEngagementSearch}
+          />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Engagement Score</CardTitle></CardHeader>
@@ -145,11 +135,11 @@ const TeacherAnalytics: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-lg font-semibold text-foreground">Learner Impact</h3>
-          {filterSelect(impactFilter, setImpactFilter, [
-            { value: 'all', label: 'All' }, { value: 'school', label: 'School' },
-            { value: 'class', label: 'Class' }, { value: 'month', label: 'Month' },
-            { value: 'subject', label: 'Subject' },
-          ])}
+          <AnalyticsFilters
+            filters={impactFilterTypes}
+            values={impactFilters}
+            onChange={(t, v) => setImpactFilters(p => ({ ...p, [t]: v }))}
+          />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Average Score</CardTitle></CardHeader>
@@ -165,10 +155,11 @@ const TeacherAnalytics: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="text-lg font-semibold text-foreground">Learning Gains</h3>
-          {filterSelect(gainsSubject, setGainsSubject, [
-            { value: 'all', label: 'All Subjects' }, { value: 'math', label: 'Math' },
-            { value: 'english', label: 'English' }, { value: 'science', label: 'Science' },
-          ])}
+          <AnalyticsFilters
+            filters={gainsFilterTypes}
+            values={gainsFilters}
+            onChange={(t, v) => setGainsFilters(p => ({ ...p, [t]: v }))}
+          />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2">
@@ -201,10 +192,11 @@ const TeacherAnalytics: React.FC = () => {
             <Star className="w-5 h-5 text-accent" />
             <h3 className="text-lg font-semibold text-foreground">Teacher Satisfaction</h3>
           </div>
-          {filterSelect(satisfactionFilter, setSatisfactionFilter, [
-            { value: 'all', label: 'All' }, { value: 'region', label: 'Region' },
-            { value: 'district', label: 'District' }, { value: 'school', label: 'School' },
-          ])}
+          <AnalyticsFilters
+            filters={satisfactionFilterTypes}
+            values={satisfactionFilters}
+            onChange={(t, v) => setSatisfactionFilters(p => ({ ...p, [t]: v }))}
+          />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Average Rating</CardTitle></CardHeader>
