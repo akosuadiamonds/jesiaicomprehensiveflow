@@ -124,6 +124,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .from('profiles')
         .update(profileUpdate)
         .eq('user_id', data.user.id);
+
+      // Sign out immediately so user stays on the verify step
+      // They'll sign back in after OTP verification
+      await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
+      setProfile(null);
     }
 
     return { error: null };
