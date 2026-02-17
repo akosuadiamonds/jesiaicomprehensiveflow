@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'schools', label: 'Schools', icon: School },
   { id: 'users', label: 'Users', icon: Users },
+  { id: 'schools', label: 'Schools', icon: School },
   { id: 'plans', label: 'Plans', icon: Package },
   { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
   { id: 'financials', label: 'Financials', icon: DollarSign },
