@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload, Clock } from 'lucide-react';
+import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload, Clock, MoreVertical, Pencil, Ban } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import AdminBulkUploadModal from './AdminBulkUploadModal';
 
@@ -51,6 +53,13 @@ const AdminManageUsers: React.FC = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [bulkUploadType, setBulkUploadType] = useState<'teacher' | 'student'>('teacher');
+  const [editMember, setEditMember] = useState<Member | null>(null);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: 'member' | 'invite' } | null>(null);
+  const [suspendTarget, setSuspendTarget] = useState<{ id: string; name: string } | null>(null);
 
   const fetchMembers = async () => {
     if (!institution) return;
@@ -230,20 +239,63 @@ const AdminManageUsers: React.FC = () => {
   const handleRemoveMember = async (memberId: string) => {
     await supabase.from('institution_members').update({ is_active: false } as any).eq('id', memberId);
     toast.success('User removed');
+    setDeleteTarget(null);
     fetchMembers();
   };
 
   const handleRemoveInvite = async (inviteId: string) => {
     await supabase.from('pending_institution_invites' as any).delete().eq('id', inviteId);
     toast.success('Pending invite removed');
+    setDeleteTarget(null);
     fetchMembers();
+  };
+
+  const handleSuspendMember = async (memberId: string) => {
+    await supabase.from('institution_members').update({ is_active: false } as any).eq('id', memberId);
+    toast.success('User suspended');
+    setSuspendTarget(null);
+    fetchMembers();
+  };
+
+  const handleEditMember = async () => {
+    if (!editMember || !editFirstName.trim() || !editLastName.trim()) return;
+    setIsEditing(true);
+    try {
+      // Update profile
+      if (editMember.profile) {
+        await supabase
+          .from('profiles')
+          .update({ first_name: editFirstName.trim(), last_name: editLastName.trim() })
+          .eq('user_id', editMember.user_id);
+      }
+      // Update role if changed
+      if (editRole !== editMember.member_role) {
+        await supabase
+          .from('institution_members')
+          .update({ member_role: editRole } as any)
+          .eq('id', editMember.id);
+      }
+      toast.success('User updated');
+      setEditMember(null);
+      fetchMembers();
+    } catch {
+      toast.error('Failed to update user');
+    }
+    setIsEditing(false);
+  };
+
+  const openEditDialog = (member: Member) => {
+    setEditMember(member);
+    setEditFirstName(member.profile?.first_name || '');
+    setEditLastName(member.profile?.last_name || '');
+    setEditRole(member.member_role);
   };
 
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'admin': return <Badge className="bg-primary/10 text-primary border-primary/20">Admin</Badge>;
       case 'teacher': return <Badge className="bg-accent/10 text-accent border-accent/20">Teacher</Badge>;
-      case 'student': return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Student</Badge>;
+      case 'student': return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">Student</Badge>;
       default: return <Badge variant="secondary">{role}</Badge>;
     }
   };
@@ -260,33 +312,49 @@ const AdminManageUsers: React.FC = () => {
         <p className="text-center py-8 text-muted-foreground">No users in this category yet</p>
       ) : (
         <>
-          {list.map((member) => (
-            <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {member.profile?.first_name?.[0]}{member.profile?.last_name?.[0]}
-                  </span>
+          {list.map((member) => {
+            const memberName = `${member.profile?.first_name || 'Unknown'} ${member.profile?.last_name || ''}`.trim();
+            return (
+              <div key={member.id} className="flex items-center justify-between p-4 rounded-xl border border-border hover:bg-muted/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {member.profile?.first_name?.[0]}{member.profile?.last_name?.[0]}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{memberName}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Joined {new Date(member.joined_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">
-                    {member.profile?.first_name || 'Unknown'} {member.profile?.last_name || ''}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Joined {new Date(member.joined_at).toLocaleDateString()}
-                  </p>
+                <div className="flex items-center gap-3">
+                  {getRoleBadge(member.member_role)}
+                  {member.user_id !== user?.id && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEditDialog(member)}>
+                          <Pencil className="w-4 h-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSuspendTarget({ id: member.id, name: memberName })}>
+                          <Ban className="w-4 h-4 mr-2" /> Suspend
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget({ id: member.id, name: memberName, type: 'member' })}>
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                {getRoleBadge(member.member_role)}
-                {member.user_id !== user?.id && (
-                  <Button variant="ghost" size="sm" onClick={() => handleRemoveMember(member.id)} className="text-destructive hover:text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {pendingList.map((invite) => (
             <div key={invite.id} className="flex items-center justify-between p-4 rounded-xl border border-dashed border-yellow-500/40 bg-yellow-50/30 dark:bg-yellow-900/10 hover:bg-yellow-50/50 transition-colors">
               <div className="flex items-center gap-3">
@@ -303,10 +371,8 @@ const AdminManageUsers: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
-                  Pending
-                </Badge>
-                <Button variant="ghost" size="sm" onClick={() => handleRemoveInvite(invite.id)} className="text-destructive hover:text-destructive">
+                <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Pending</Badge>
+                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: invite.id, name: `${invite.first_name} ${invite.last_name}`, type: 'invite' })}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -424,6 +490,85 @@ const AdminManageUsers: React.FC = () => {
         uploadType={bulkUploadType}
         onConfirm={handleBulkConfirm}
       />
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editMember} onOpenChange={(open) => !open && setEditMember(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name</Label>
+                <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name</Label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['teacher', 'student', 'admin'] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setEditRole(r)}
+                    className={`p-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                      editRole === r ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'
+                    }`}
+                  >
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Button onClick={handleEditMember} disabled={isEditing} className="w-full" variant="hero">
+              {isEditing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the user from your institution. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget?.type === 'invite' ? handleRemoveInvite(deleteTarget.id) : handleRemoveMember(deleteTarget!.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Suspend Confirmation */}
+      <AlertDialog open={!!suspendTarget} onOpenChange={(open) => !open && setSuspendTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Suspend {suspendTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will deactivate the user's access to your institution. You can re-add them later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => suspendTarget && handleSuspendMember(suspendTarget.id)}>
+              Suspend
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
