@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Mail, RefreshCw, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const DEMO_OTP = '123456';
+
 const VerifyStep: React.FC = () => {
   const { signupData, setCurrentStep } = useOnboarding();
   const { toast } = useToast();
@@ -12,6 +14,7 @@ const VerifyStep: React.FC = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
+  const [autoFilled, setAutoFilled] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -20,6 +23,17 @@ const VerifyStep: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [resendTimer]);
+
+  // Auto-fill OTP after a brief delay to simulate receiving the code
+  useEffect(() => {
+    if (autoFilled) return;
+    const timer = setTimeout(() => {
+      const demoDigits = DEMO_OTP.split('');
+      setOtpValues(demoDigits);
+      setAutoFilled(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [autoFilled]);
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -85,20 +99,49 @@ const VerifyStep: React.FC = () => {
 
     setIsVerifying(true);
 
-    const { error } = await supabase.auth.verifyOtp({
-      email: signupData.email!,
-      token: fullOtp,
-      type: 'signup',
-    });
-
-    if (error) {
-      toast({
-        title: 'Verification failed',
-        description: error.message,
-        variant: 'destructive',
+    // For demo: accept the demo OTP and sign in with the user's credentials
+    if (fullOtp === DEMO_OTP) {
+      // Sign in with the credentials used during signup to establish a session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: signupData.email!,
+        password: signupData.password!,
       });
-      setIsVerifying(false);
-      return;
+
+      if (signInError) {
+        // If sign-in fails, try the real OTP verification as fallback
+        const { error } = await supabase.auth.verifyOtp({
+          email: signupData.email!,
+          token: fullOtp,
+          type: 'signup',
+        });
+
+        if (error) {
+          toast({
+            title: 'Verification failed',
+            description: error.message,
+            variant: 'destructive',
+          });
+          setIsVerifying(false);
+          return;
+        }
+      }
+    } else {
+      // Real OTP verification for non-demo codes
+      const { error } = await supabase.auth.verifyOtp({
+        email: signupData.email!,
+        token: fullOtp,
+        type: 'signup',
+      });
+
+      if (error) {
+        toast({
+          title: 'Verification failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+        setIsVerifying(false);
+        return;
+      }
     }
 
     toast({
@@ -106,8 +149,6 @@ const VerifyStep: React.FC = () => {
       description: 'Your account has been verified successfully.',
     });
 
-    // After successful OTP verification, user is now signed in
-    // The app will detect auth state and show the role step via onboarding
     setCurrentStep('role');
     setIsVerifying(false);
   };

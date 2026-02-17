@@ -83,11 +83,10 @@ const PasswordStep: React.FC = () => {
 
     toast({
       title: 'Account created!',
-      description: 'Your account has been set up successfully.',
+      description: 'Please check your email for a verification code.',
     });
 
-    // With auto-confirm enabled, user is immediately verified and signed in
-    // The auth state listener will detect the session and route to role selection
+    setCurrentStep('verify');
     setIsSubmitting(false);
   };
 
