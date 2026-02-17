@@ -30,7 +30,7 @@ const AdminInsights: React.FC = () => {
   const [memberProfiles, setMemberProfiles] = useState<any[]>([]);
 
   // Filters
-  const [levelFilter, setLevelFilter] = useState('all');
+  
   const [classFilter, setClassFilter] = useState('all');
   const [teacherFilter, setTeacherFilter] = useState<TimeFilter>('week');
   const [studentFilter, setStudentFilter] = useState<TimeFilter>('week');
@@ -195,29 +195,23 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">2️⃣ Subject & Class Performance Map</CardTitle>
               <CardDescription>Performance breakdown by subject and class</CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue placeholder="Select Level" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="jhs">JHS</SelectItem>
-                  <SelectItem value="shs">SHS</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={classFilter} onValueChange={setClassFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="1">Class 1</SelectItem>
-                  <SelectItem value="2">Class 2</SelectItem>
-                  <SelectItem value="3">Class 3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Select Class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                <SelectItem value="basic1">Basic 1</SelectItem>
+                <SelectItem value="basic2">Basic 2</SelectItem>
+                <SelectItem value="basic3">Basic 3</SelectItem>
+                <SelectItem value="basic4">Basic 4</SelectItem>
+                <SelectItem value="basic5">Basic 5</SelectItem>
+                <SelectItem value="basic6">Basic 6</SelectItem>
+                <SelectItem value="jhs1">JHS 1</SelectItem>
+                <SelectItem value="jhs2">JHS 2</SelectItem>
+                <SelectItem value="jhs3">JHS 3</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -323,14 +317,21 @@ const AdminInsights: React.FC = () => {
               <CardDescription>Learner participation and risk identification</CardDescription>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-[110px] h-8 text-xs">
-                  <SelectValue placeholder="Level" />
+              <Select value={classFilter} onValueChange={setClassFilter}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue placeholder="Select Class" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="jhs">JHS</SelectItem>
-                  <SelectItem value="shs">SHS</SelectItem>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  <SelectItem value="basic1">Basic 1</SelectItem>
+                  <SelectItem value="basic2">Basic 2</SelectItem>
+                  <SelectItem value="basic3">Basic 3</SelectItem>
+                  <SelectItem value="basic4">Basic 4</SelectItem>
+                  <SelectItem value="basic5">Basic 5</SelectItem>
+                  <SelectItem value="basic6">Basic 6</SelectItem>
+                  <SelectItem value="jhs1">JHS 1</SelectItem>
+                  <SelectItem value="jhs2">JHS 2</SelectItem>
+                  <SelectItem value="jhs3">JHS 3</SelectItem>
                 </SelectContent>
               </Select>
               <FilterChips value={studentFilter} onChange={setStudentFilter} />
