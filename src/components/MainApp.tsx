@@ -22,6 +22,8 @@ const MainAppContent: React.FC = () => {
         return <TestPage />;
       case 'classroom':
         return <ClassroomPage />;
+      case 'monetization':
+        return <ClassroomPage initialTab="monetization" />;
       case 'insights':
         return <InsightsPage />;
       case 'profile':

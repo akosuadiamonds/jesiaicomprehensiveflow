@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,11 +26,21 @@ import {
 
 type ClassroomTab = 'school' | 'private' | 'monetization';
 
-const ClassroomPage: React.FC = () => {
+interface ClassroomPageProps {
+  initialTab?: ClassroomTab;
+}
+
+const ClassroomPage: React.FC<ClassroomPageProps> = ({ initialTab }) => {
   const { schoolClassrooms, privateClassrooms, loading, createClassroom, deleteClassroom } = useClassrooms();
   const { profile } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<ClassroomTab>('school');
+  const [activeTab, setActiveTab] = useState<ClassroomTab>(initialTab || 'school');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClassroom, setSelectedClassroom] = useState<Classroom | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
