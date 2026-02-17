@@ -332,13 +332,13 @@ const AdminManageUsers: React.FC = () => {
                 <div className="flex items-center gap-3">
                   {getRoleBadge(member.member_role)}
                   {member.user_id !== user?.id && (
-                    <DropdownMenu>
+                    <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreVertical className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="z-[100] bg-popover border shadow-md">
                         <DropdownMenuItem onClick={() => openEditDialog(member)}>
                           <Pencil className="w-4 h-4 mr-2" /> Edit
                         </DropdownMenuItem>
