@@ -380,15 +380,22 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">5️⃣ Curriculum & Assessment Compliance</CardTitle>
               <CardDescription>Coverage and assessment activity tracking</CardDescription>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Select value={levelFilter} onValueChange={setLevelFilter}>
-                <SelectTrigger className="w-[110px] h-8 text-xs">
-                  <SelectValue placeholder="Level" />
+             <div className="flex gap-2 flex-wrap">
+              <Select value={classFilter} onValueChange={setClassFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Select Class" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Levels</SelectItem>
-                  <SelectItem value="jhs">JHS</SelectItem>
-                  <SelectItem value="shs">SHS</SelectItem>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  <SelectItem value="Basic 1">Basic 1</SelectItem>
+                  <SelectItem value="Basic 2">Basic 2</SelectItem>
+                  <SelectItem value="Basic 3">Basic 3</SelectItem>
+                  <SelectItem value="Basic 4">Basic 4</SelectItem>
+                  <SelectItem value="Basic 5">Basic 5</SelectItem>
+                  <SelectItem value="Basic 6">Basic 6</SelectItem>
+                  <SelectItem value="JHS 1">JHS 1</SelectItem>
+                  <SelectItem value="JHS 2">JHS 2</SelectItem>
+                  <SelectItem value="JHS 3">JHS 3</SelectItem>
                 </SelectContent>
               </Select>
               <FilterChips value={curriculumFilter} onChange={setCurriculumFilter} />
