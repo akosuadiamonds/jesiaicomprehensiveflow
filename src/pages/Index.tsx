@@ -54,7 +54,7 @@ const postAuthStepConfig: Record<string, { step: number; showProgress: boolean; 
 };
 
 // Component that syncs onboarding state with profile from database
-const OnboardingStepSync: React.FC = () => {
+const OnboardingStepSync: React.FC<{ onSynced?: () => void }> = ({ onSynced }) => {
   const { profile } = useAuth();
   const { setCurrentStep, setUserRole, setTeacherProfile, currentStep } = useOnboarding();
   const hasSynced = useRef(false);
@@ -111,6 +111,8 @@ const OnboardingStepSync: React.FC = () => {
         setCurrentStep('plans');
       }
     }
+    
+    onSynced?.();
   }, [profile?.user_id]);
 
   return null;
@@ -152,7 +154,20 @@ const PreAuthContent: React.FC = () => {
 // Post-auth onboarding (role/profile/subjects/plans etc.)
 const PostAuthContent: React.FC = () => {
   const { currentStep } = useOnboarding();
+  const [synced, setSynced] = useState(false);
   
+  const handleSynced = () => setSynced(true);
+
+  // Show loader until profile sync determines the correct step
+  if (!synced) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <OnboardingStepSync onSynced={handleSynced} />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   const config = postAuthStepConfig[currentStep] || { step: 1, showProgress: true };
 
   // Dashboard has its own layout with sidebar
@@ -164,7 +179,6 @@ const PostAuthContent: React.FC = () => {
   if (currentStep === 'student-plans') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <OnboardingStepSync />
         <StudentPlansStep />
       </div>
     );
@@ -174,7 +188,6 @@ const PostAuthContent: React.FC = () => {
   if (currentStep === 'plans') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <OnboardingStepSync />
         <PlansStep />
       </div>
     );
@@ -184,7 +197,6 @@ const PostAuthContent: React.FC = () => {
   if (currentStep === 'admin-select-package') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
-        <OnboardingStepSync />
         <AdminSelectPackageStep />
       </div>
     );
@@ -194,7 +206,6 @@ const PostAuthContent: React.FC = () => {
   if (currentStep === 'payment' || currentStep === 'student-payment') {
     return (
       <OnboardingLayout showProgress={true} currentStep={4} totalSteps={4}>
-        <OnboardingStepSync />
         <PaymentStep />
       </OnboardingLayout>
     );
@@ -203,7 +214,6 @@ const PostAuthContent: React.FC = () => {
   if (currentStep === 'admin-payment') {
     return (
       <OnboardingLayout showProgress={true} currentStep={4} totalSteps={4}>
-        <OnboardingStepSync />
         <AdminPaymentStep />
       </OnboardingLayout>
     );
@@ -235,7 +245,7 @@ const PostAuthContent: React.FC = () => {
 
   return (
     <>
-      <OnboardingStepSync />
+      
       <OnboardingLayout
         showProgress={config.showProgress}
         currentStep={config.step}
