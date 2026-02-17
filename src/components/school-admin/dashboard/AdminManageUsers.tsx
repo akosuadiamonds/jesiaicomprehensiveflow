@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload, Clock, MoreVertical, Pencil, Ban } from 'lucide-react';
@@ -391,78 +391,77 @@ const AdminManageUsers: React.FC = () => {
           <p className="text-muted-foreground mt-1">Add and manage your institution's users</p>
         </div>
 
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2" onClick={() => handleBulkUpload('teacher')}>
-              <Upload className="w-4 h-4" />
-              Bulk Teachers
-            </Button>
-            <Button variant="outline" className="gap-2" onClick={() => handleBulkUpload('student')}>
-              <Upload className="w-4 h-4" />
-              Bulk Students
-            </Button>
-            <DialogTrigger asChild>
-              <Button variant="hero" className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                Add User
-              </Button>
-            </DialogTrigger>
-          </div>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { id: 'teacher' as const, label: 'Teacher', icon: GraduationCap },
-                    { id: 'student' as const, label: 'Student', icon: Users },
-                    { id: 'admin' as const, label: 'Admin', icon: Shield },
-                  ]).map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => setAddRole(r.id)}
-                      className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1 text-sm transition-all ${
-                        addRole === r.id ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'
-                      }`}
-                    >
-                      <r.icon className="w-5 h-5" />
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>First Name</Label>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Last Name</Label>
-                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@school.edu.gh" />
-              </div>
-
-              <Button
-                onClick={handleAddUser}
-                disabled={isAdding || !email.trim() || !firstName.trim() || !lastName.trim()}
-                className="w-full"
-                variant="hero"
-              >
-                {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add User'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => handleBulkUpload('teacher')}>
+            <Upload className="w-4 h-4" />
+            Bulk Teachers
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => handleBulkUpload('student')}>
+            <Upload className="w-4 h-4" />
+            Bulk Students
+          </Button>
+          <Button variant="hero" className="gap-2" onClick={() => setAddDialogOpen(true)}>
+            <UserPlus className="w-4 h-4" />
+            Add User
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { id: 'teacher' as const, label: 'Teacher', icon: GraduationCap },
+                  { id: 'student' as const, label: 'Student', icon: Users },
+                  { id: 'admin' as const, label: 'Admin', icon: Shield },
+                ]).map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => setAddRole(r.id)}
+                    className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1 text-sm transition-all ${
+                      addRole === r.id ? 'border-primary bg-primary/5 text-primary' : 'border-border text-muted-foreground'
+                    }`}
+                  >
+                    <r.icon className="w-5 h-5" />
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name</Label>
+                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name</Label>
+                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@school.edu.gh" />
+            </div>
+
+            <Button
+              onClick={handleAddUser}
+              disabled={isAdding || !email.trim() || !firstName.trim() || !lastName.trim()}
+              className="w-full"
+              variant="hero"
+            >
+              {isAdding ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add User'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Tabs defaultValue="teachers">
         <TabsList>
