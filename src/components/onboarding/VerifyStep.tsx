@@ -14,7 +14,7 @@ const VerifyStep: React.FC = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendTimer, setResendTimer] = useState(60);
-  const [autoFilled, setAutoFilled] = useState(false);
+  
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -24,16 +24,6 @@ const VerifyStep: React.FC = () => {
     }
   }, [resendTimer]);
 
-  // Auto-fill OTP after a brief delay to simulate receiving the code
-  useEffect(() => {
-    if (autoFilled) return;
-    const timer = setTimeout(() => {
-      const demoDigits = DEMO_OTP.split('');
-      setOtpValues(demoDigits);
-      setAutoFilled(true);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [autoFilled]);
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
