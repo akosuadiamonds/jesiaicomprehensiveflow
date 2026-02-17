@@ -16,7 +16,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, Search, MoreHorizontal, Trash2, ArrowUpCircle } from 'lucide-react';
+import { Loader2, Search, MoreHorizontal, Trash2, ArrowUpCircle, Eye, Pencil, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface UserRow {
@@ -28,6 +28,9 @@ interface UserRow {
   school_name: string | null;
   selected_plan: string | null;
   created_at: string;
+  phone_number: string | null;
+  class_grade: string | null;
+  gender: string | null;
 }
 
 const SAUsers: React.FC = () => {
@@ -35,10 +38,19 @@ const SAUsers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState('all');
-  const [filterRegion, setFilterRegion] = useState('all');
+  const [filterDistrict, setFilterDistrict] = useState('all');
+  const [filterType, setFilterType] = useState('all');
 
-  // Regions from institutions
-  const [regions, setRegions] = useState<string[]>([]);
+  // View details
+  const [viewUser, setViewUser] = useState<UserRow | null>(null);
+
+  // Edit
+  const [editUser, setEditUser] = useState<UserRow | null>(null);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editPlan, setEditPlan] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
 
   // Plan change
   const [planDialogUser, setPlanDialogUser] = useState<UserRow | null>(null);
@@ -49,28 +61,30 @@ const SAUsers: React.FC = () => {
   const [deleteUser, setDeleteUser] = useState<UserRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Suspend
+  const [suspendUser, setSuspendUser] = useState<UserRow | null>(null);
+  const [suspendingUser, setSuspendingUser] = useState(false);
+
   const fetchUsers = async () => {
-    const [usersRes, instRes] = await Promise.all([
-      supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-      supabase.from('institutions').select('region').not('region', 'is', null),
-    ]);
-    setUsers((usersRes.data as any[]) || []);
-    const uniqueRegions = Array.from(new Set((instRes.data || []).map((i: any) => i.region).filter(Boolean))) as string[];
-    setRegions(uniqueRegions);
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    setUsers((data as any[]) || []);
     setLoading(false);
   };
 
   useEffect(() => { fetchUsers(); }, []);
+
+  const districts = Array.from(new Set(users.map(u => u.school_name).filter(Boolean))) as string[];
 
   const filtered = users.filter((u) => {
     const matchesSearch = !search ||
       `${u.first_name} ${u.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
       (u.school_name || '').toLowerCase().includes(search.toLowerCase());
     const matchesTab = tab === 'all' || u.user_role === tab;
-    // Region filter: match school_name against region (best effort since profiles store school_name not region)
-    // For a more accurate filter we'd need a join, but we filter by school_name containing region text
-    const matchesRegion = filterRegion === 'all' || (u.school_name || '').toLowerCase().includes(filterRegion.toLowerCase());
-    return matchesSearch && matchesTab && matchesRegion;
+    const matchesDistrict = filterDistrict === 'all' || u.school_name === filterDistrict;
+    const matchesType = filterType === 'all' ||
+      (filterType === 'private' && (u.school_name || '').toLowerCase().includes('private')) ||
+      (filterType === 'public' && !(u.school_name || '').toLowerCase().includes('private'));
+    return matchesSearch && matchesTab && matchesDistrict && matchesType;
   });
 
   const roleBadge = (role: string | null) => {
@@ -86,17 +100,9 @@ const SAUsers: React.FC = () => {
   const handleChangePlan = async () => {
     if (!planDialogUser || !selectedPlan) return;
     setSavingPlan(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ selected_plan: selectedPlan })
-      .eq('user_id', planDialogUser.user_id);
-    if (error) {
-      toast.error('Failed to update plan');
-    } else {
-      toast.success(`Plan updated to ${selectedPlan} for ${planDialogUser.first_name}`);
-      setPlanDialogUser(null);
-      fetchUsers();
-    }
+    const { error } = await supabase.from('profiles').update({ selected_plan: selectedPlan }).eq('user_id', planDialogUser.user_id);
+    if (error) toast.error('Failed to update plan');
+    else { toast.success(`Plan updated to ${selectedPlan} for ${planDialogUser.first_name}`); setPlanDialogUser(null); fetchUsers(); }
     setSavingPlan(false);
   };
 
@@ -104,20 +110,38 @@ const SAUsers: React.FC = () => {
     if (!deleteUser) return;
     setDeleting(true);
     try {
-      const res = await supabase.functions.invoke('delete-user', {
-        body: { user_id: deleteUser.user_id },
-      });
-      if (res.error) {
-        toast.error('Failed to delete user: ' + (res.error.message || 'Unknown error'));
-      } else {
-        toast.success(`User ${deleteUser.first_name} ${deleteUser.last_name} deleted`);
-        setDeleteUser(null);
-        fetchUsers();
-      }
-    } catch {
-      toast.error('Failed to delete user');
-    }
+      const res = await supabase.functions.invoke('delete-user', { body: { user_id: deleteUser.user_id } });
+      if (res.error) toast.error('Failed to delete user: ' + (res.error.message || 'Unknown error'));
+      else { toast.success(`User ${deleteUser.first_name} ${deleteUser.last_name} deleted`); setDeleteUser(null); fetchUsers(); }
+    } catch { toast.error('Failed to delete user'); }
     setDeleting(false);
+  };
+
+  const handleEditUser = async () => {
+    if (!editUser) return;
+    setEditSaving(true);
+    const { error } = await supabase.from('profiles').update({
+      first_name: editFirstName, last_name: editLastName,
+      selected_plan: editPlan, user_role: editRole,
+    }).eq('user_id', editUser.user_id);
+    if (error) toast.error('Failed to update user');
+    else { toast.success('User updated'); setEditUser(null); fetchUsers(); }
+    setEditSaving(false);
+  };
+
+  const handleSuspendUser = async () => {
+    if (!suspendUser) return;
+    setSuspendingUser(true);
+    const { error } = await supabase.from('profiles').update({ selected_plan: 'suspended' }).eq('user_id', suspendUser.user_id);
+    if (error) toast.error('Failed to suspend user');
+    else { toast.success(`${suspendUser.first_name} ${suspendUser.last_name} has been suspended`); setSuspendUser(null); fetchUsers(); }
+    setSuspendingUser(false);
+  };
+
+  const openEdit = (user: UserRow) => {
+    setEditFirstName(user.first_name || ''); setEditLastName(user.last_name || '');
+    setEditPlan(user.selected_plan || 'free'); setEditRole(user.user_role || 'teacher');
+    setEditUser(user);
   };
 
   const openPlanDialog = (user: UserRow) => {
@@ -137,13 +161,19 @@ const SAUsers: React.FC = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search users..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={filterRegion} onValueChange={setFilterRegion}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="All Regions" />
-          </SelectTrigger>
+        <Select value={filterDistrict} onValueChange={setFilterDistrict}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Districts" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Regions</SelectItem>
-            {regions.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            <SelectItem value="all">All Districts</SelectItem>
+            {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterType} onValueChange={setFilterType}>
+          <SelectTrigger className="w-[150px]"><SelectValue placeholder="All Types" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="private">Private</SelectItem>
+            <SelectItem value="public">Public</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -181,32 +211,30 @@ const SAUsers: React.FC = () => {
                     <TableCell className="font-medium">{u.first_name} {u.last_name}</TableCell>
                     <TableCell>{roleBadge(u.user_role)}</TableCell>
                     <TableCell className="text-muted-foreground">{u.school_name || '—'}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize">{u.selected_plan || 'none'}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(u.created_at).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell><Badge variant="outline" className="capitalize">{u.selected_plan || 'none'}</Badge></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</TableCell>
                     <TableCell>
                       {u.user_role !== 'super_admin' && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setViewUser(u)} className="gap-2">
+                              <Eye className="w-4 h-4" /> View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEdit(u)} className="gap-2">
+                              <Pencil className="w-4 h-4" /> Edit
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openPlanDialog(u)} className="gap-2">
-                              <ArrowUpCircle className="w-4 h-4" />
-                              Change Plan
+                              <ArrowUpCircle className="w-4 h-4" /> Change Plan
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => setDeleteUser(u)}
-                              className="gap-2 text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete Account
+                            <DropdownMenuItem onClick={() => setSuspendUser(u)} className="gap-2 text-orange-600 focus:text-orange-600">
+                              <Ban className="w-4 h-4" /> Suspend
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setDeleteUser(u)} className="gap-2 text-destructive focus:text-destructive">
+                              <Trash2 className="w-4 h-4" /> Delete Account
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -220,19 +248,74 @@ const SAUsers: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* View User Details Dialog */}
+      <Dialog open={!!viewUser} onOpenChange={(o) => !o && setViewUser(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>User Details</DialogTitle></DialogHeader>
+          {viewUser && (
+            <div className="space-y-3 mt-2">
+              <div><p className="text-xs text-muted-foreground">Name</p><p className="text-sm font-medium">{viewUser.first_name} {viewUser.last_name}</p></div>
+              <div><p className="text-xs text-muted-foreground">Role</p><div className="mt-1">{roleBadge(viewUser.user_role)}</div></div>
+              <div><p className="text-xs text-muted-foreground">School</p><p className="text-sm font-medium">{viewUser.school_name || '—'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Plan</p><Badge variant="outline" className="capitalize mt-1">{viewUser.selected_plan || 'none'}</Badge></div>
+              <div><p className="text-xs text-muted-foreground">Phone</p><p className="text-sm font-medium">{viewUser.phone_number || '—'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Class/Grade</p><p className="text-sm font-medium">{viewUser.class_grade || '—'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Gender</p><p className="text-sm font-medium capitalize">{viewUser.gender || '—'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Joined</p><p className="text-sm font-medium">{new Date(viewUser.created_at).toLocaleDateString()}</p></div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Edit User</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">First Name</label>
+              <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Last Name</label>
+              <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Role</label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="learner">Student</SelectItem>
+                  <SelectItem value="school_admin">School Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Plan</label>
+              <Select value={editPlan} onValueChange={setEditPlan}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="free">Free Trial</SelectItem>
+                  <SelectItem value="pro">Pro</SelectItem>
+                  <SelectItem value="premium">Premium</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleEditUser} disabled={editSaving} variant="hero" className="w-full gap-2">
+              {editSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pencil className="w-4 h-4" />} Update User
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Change Plan Dialog */}
       <Dialog open={!!planDialogUser} onOpenChange={(o) => !o && setPlanDialogUser(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Change Plan</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Change Plan</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-2">
-            <p className="text-sm text-muted-foreground">
-              Changing plan for <strong>{planDialogUser?.first_name} {planDialogUser?.last_name}</strong>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Current plan: <Badge variant="outline" className="capitalize ml-1">{planDialogUser?.selected_plan || 'none'}</Badge>
-            </p>
+            <p className="text-sm text-muted-foreground">Changing plan for <strong>{planDialogUser?.first_name} {planDialogUser?.last_name}</strong></p>
+            <p className="text-sm text-muted-foreground">Current plan: <Badge variant="outline" className="capitalize ml-1">{planDialogUser?.selected_plan || 'none'}</Badge></p>
             <Select value={selectedPlan} onValueChange={setSelectedPlan}>
               <SelectTrigger><SelectValue placeholder="Select plan" /></SelectTrigger>
               <SelectContent>
@@ -241,14 +324,8 @@ const SAUsers: React.FC = () => {
                 <SelectItem value="premium">Premium</SelectItem>
               </SelectContent>
             </Select>
-            <Button
-              onClick={handleChangePlan}
-              disabled={savingPlan || selectedPlan === (planDialogUser?.selected_plan || 'free')}
-              variant="hero"
-              className="w-full gap-2"
-            >
-              {savingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />}
-              Update Plan
+            <Button onClick={handleChangePlan} disabled={savingPlan || selectedPlan === (planDialogUser?.selected_plan || 'free')} variant="hero" className="w-full gap-2">
+              {savingPlan ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUpCircle className="w-4 h-4" />} Update Plan
             </Button>
           </div>
         </DialogContent>
@@ -258,23 +335,29 @@ const SAUsers: React.FC = () => {
       <AlertDialog open={!!deleteUser} onOpenChange={(o) => !o && setDeleteUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-destructive" />
-              Delete User Account
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to permanently delete <strong>{deleteUser?.first_name} {deleteUser?.last_name}</strong>'s account?
-              This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="flex items-center gap-2"><Trash2 className="w-5 h-5 text-destructive" />Delete User Account</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to permanently delete <strong>{deleteUser?.first_name} {deleteUser?.last_name}</strong>'s account? This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteUser}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleting}
-            >
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deleting}>
               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Delete Permanently'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Suspend Confirmation */}
+      <AlertDialog open={!!suspendUser} onOpenChange={(o) => !o && setSuspendUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2"><Ban className="w-5 h-5 text-orange-600" />Suspend User</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to suspend <strong>{suspendUser?.first_name} {suspendUser?.last_name}</strong>? Their plan will be set to suspended.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={suspendingUser}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSuspendUser} className="bg-orange-600 text-white hover:bg-orange-700" disabled={suspendingUser}>
+              {suspendingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend User'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
