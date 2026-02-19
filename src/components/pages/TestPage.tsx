@@ -47,7 +47,7 @@ const TestPage: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-foreground mb-2">Test & Exam Generator</h1>
-        <p className="text-muted-foreground">Create AI-powered quizzes, tests, and end-of-term exams for your students</p>
+        <p className="text-muted-foreground">Create quizzes, tests, and end-of-term exams for your students</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
