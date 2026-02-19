@@ -1,5 +1,6 @@
 import React from 'react';
-import { GraduationCap, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
@@ -25,12 +26,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
         
         <div className="relative z-10 flex flex-col justify-between p-12 w-full">
           <div>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center">
-                <GraduationCap className="w-7 h-7 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-bold text-primary-foreground">Jesi AI</span>
-            </div>
+            <img src={logo} alt="Jesi AI" className="h-10 object-contain brightness-0 invert" />
           </div>
           
           <div className="space-y-6">
@@ -71,10 +67,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
         {/* Mobile Header */}
         <div className="lg:hidden p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">Jesi AI</span>
+            <img src={logo} alt="Jesi AI" className="h-8 object-contain" />
           </div>
         </div>
         

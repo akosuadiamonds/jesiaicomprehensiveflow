@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/contexts/AuthContext';
+import logo from '@/assets/logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +20,6 @@ import {
   FileQuestion, 
   Users, 
   BarChart3,
-  GraduationCap,
   LogOut,
   Lock,
   DollarSign,
@@ -87,11 +87,11 @@ const AppSidebar: React.FC = () => {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center shrink-0">
-            <GraduationCap className="w-5 h-5 text-primary-foreground" />
+          <div className="shrink-0 flex items-center justify-center">
+            <img src={logo} alt="Jesi AI" className="w-8 h-8 object-contain" />
           </div>
           {!collapsed && (
-            <span className="text-xl font-bold text-foreground">Jesi AI</span>
+            <img src={logo} alt="Jesi AI" className="h-7 object-contain" />
           )}
         </div>
       </SidebarHeader>
