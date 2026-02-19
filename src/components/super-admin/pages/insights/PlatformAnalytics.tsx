@@ -33,7 +33,7 @@ const PlatformAnalytics: React.FC = () => {
     { device: 'Tablet', students: 10, teachers: 10, admins: 10 },
   ];
 
-  const demoFilterTypes: FilterType[] = ['region', 'age', 'gender', 'disability', 'rural_urban'];
+  const demoFilterTypes: FilterType[] = ['school', 'district', 'region', 'age', 'gender', 'disability', 'rural_urban'];
   const userTypeFilterTypes: FilterType[] = ['school', 'district', 'region'];
 
   return (
@@ -44,7 +44,7 @@ const PlatformAnalytics: React.FC = () => {
           <h3 className="text-lg font-semibold text-foreground">User Demographics & Reach</h3>
           <AnalyticsFilters filters={demoFilterTypes} values={demoFilters} onChange={handleDemoChange} />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Reach</CardTitle>
@@ -69,6 +69,21 @@ const PlatformAnalytics: React.FC = () => {
               <CardTitle className="text-sm font-medium text-muted-foreground">Rural / Urban</CardTitle>
             </CardHeader>
             <CardContent><div className="text-2xl font-bold">38% / 62%</div><Progress value={62} className="h-2 mt-2" /></CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">With Disability</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">8%</div>
+              <Progress value={8} className="h-2 mt-2" />
+              <div className="mt-3 space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground"><span>Visual</span><span>3%</span></div>
+                <div className="flex justify-between text-xs text-muted-foreground"><span>Hearing</span><span>2%</span></div>
+                <div className="flex justify-between text-xs text-muted-foreground"><span>Physical</span><span>2%</span></div>
+                <div className="flex justify-between text-xs text-muted-foreground"><span>Learning</span><span>1%</span></div>
+              </div>
+            </CardContent>
           </Card>
         </div>
       </div>
