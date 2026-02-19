@@ -50,8 +50,9 @@ const StudentSidebar: React.FC = () => {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Jesi AI" className="w-8 h-8 object-contain shrink-0" />
-          {!collapsed && (
+          {collapsed ? (
+            <img src={logo} alt="Jesi AI" className="w-8 h-8 object-contain shrink-0" />
+          ) : (
             <img src={logo} alt="Jesi AI" className="h-7 object-contain" />
           )}
         </div>
