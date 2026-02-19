@@ -86,11 +86,10 @@ const AppSidebar: React.FC = () => {
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 flex items-center justify-center">
-            <img src={logo} alt="Jesi AI" className="w-8 h-8 object-contain" />
-          </div>
-          {!collapsed && (
+        <div className="flex items-center">
+          {collapsed ? (
+            <img src={logo} alt="Jesi AI" className="w-8 h-8 object-contain shrink-0" />
+          ) : (
             <img src={logo} alt="Jesi AI" className="h-7 object-contain" />
           )}
         </div>
