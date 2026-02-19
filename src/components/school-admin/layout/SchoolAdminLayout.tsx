@@ -1,8 +1,9 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '../SchoolAdminApp';
-import { Building2, LayoutDashboard, Users, Settings, LogOut, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.png';
 
 interface SchoolAdminLayoutProps {
   children: React.ReactNode;
@@ -25,15 +26,13 @@ const SchoolAdminLayout: React.FC<SchoolAdminLayoutProps> = ({ children }) => {
       <aside className="w-64 border-r border-border bg-card flex flex-col">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-hero flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-semibold text-foreground text-sm truncate">
-                {institution?.name || 'School Admin'}
-              </p>
-              <p className="text-xs text-muted-foreground">Admin Portal</p>
-            </div>
+            <img src={logo} alt="Jesi AI" className="h-8 object-contain" />
+          </div>
+          <div className="mt-2">
+            <p className="font-semibold text-foreground text-sm truncate">
+              {institution?.name || 'School Admin'}
+            </p>
+            <p className="text-xs text-muted-foreground">Admin Portal</p>
           </div>
         </div>
 

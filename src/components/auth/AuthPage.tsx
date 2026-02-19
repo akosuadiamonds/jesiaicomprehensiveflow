@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 const AuthPage: React.FC = () => {
   const { signIn, signUp } = useAuth();
@@ -108,13 +109,8 @@ const AuthPage: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 gradient-hero rounded-xl flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Jesi AI
-            </span>
+          <div className="inline-flex items-center justify-center mb-4">
+            <img src={logo} alt="Jesi AI" className="h-12 object-contain" />
           </div>
           <p className="text-muted-foreground">AI-Powered Teaching Assistant</p>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStudent } from '@/contexts/StudentContext';
 import { useAuth } from '@/contexts/AuthContext';
+import logo from '@/assets/logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -19,7 +20,6 @@ import {
   Users, 
   Flame,
   BarChart3,
-  GraduationCap,
   LogOut,
   Coins
 } from 'lucide-react';
@@ -28,7 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
 const menuItems = [
-  { id: 'dashboard' as const, label: 'Dashboard', icon: GraduationCap, emoji: '🏠' },
+  { id: 'dashboard' as const, label: 'Dashboard', icon: BookOpen, emoji: '🏠' },
   { id: 'learn' as const, label: 'Learn Zone', icon: BookOpen, emoji: '📚' },
   { id: 'practice' as const, label: 'Practice Zone', icon: Dumbbell, emoji: '💪' },
   { id: 'class' as const, label: 'Class Zone', icon: Users, emoji: '🏫' },
@@ -50,14 +50,9 @@ const StudentSidebar: React.FC = () => {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0 shadow-lg">
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
+          <img src={logo} alt="Jesi AI" className="w-8 h-8 object-contain shrink-0" />
           {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-foreground">Jesi AI</span>
-              <span className="text-xs text-muted-foreground">Student Portal</span>
-            </div>
+            <img src={logo} alt="Jesi AI" className="h-7 object-contain" />
           )}
         </div>
       </SidebarHeader>
@@ -73,7 +68,7 @@ const StudentSidebar: React.FC = () => {
                     className={cn(
                       "w-full justify-start gap-3 h-12 px-3 rounded-xl transition-all",
                       currentPage === item.id
-                        ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md hover:opacity-90"
+                        ? "bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
                         : "hover:bg-muted text-muted-foreground hover:text-foreground"
                     )}
                     tooltip={item.label}
@@ -95,7 +90,7 @@ const StudentSidebar: React.FC = () => {
             <span className="text-sm text-muted-foreground">
               {profile.first_name} {profile.last_name}
             </span>
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+            <Badge variant="secondary" className="bg-accent/20 text-accent-foreground">
               <Coins className="w-3 h-3 mr-1" />
               0
             </Badge>
