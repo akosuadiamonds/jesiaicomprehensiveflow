@@ -33,7 +33,7 @@ const PlatformAnalytics: React.FC = () => {
     { device: 'Tablet', students: 10, teachers: 10, admins: 10 },
   ];
 
-  const demoFilterTypes: FilterType[] = ['school', 'district', 'region', 'age', 'gender', 'disability', 'rural_urban'];
+  const demoFilterTypes: FilterType[] = ['school', 'district', 'region'];
   const userTypeFilterTypes: FilterType[] = ['school', 'district', 'region'];
 
   return (
