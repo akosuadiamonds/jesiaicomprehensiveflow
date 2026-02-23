@@ -1,0 +1,1 @@
+UPDATE profiles SET user_role = NULL WHERE user_role = 'teacher' AND phone_number IS NULL AND school_name IS NULL AND selected_plan IS NULL AND (subjects IS NULL OR subjects = '{}');
