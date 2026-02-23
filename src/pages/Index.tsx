@@ -300,15 +300,16 @@ const AuthenticatedApp: React.FC = () => {
   }
 
   // Authenticated but profile setup not complete
+  const hasRole = !!profile?.user_role;
   const hasSubjects = profile?.subjects && profile.subjects.length > 0;
   const hasSelectedPlan = profile?.selected_plan !== null && profile?.selected_plan !== undefined;
   const isSchoolAdminRole = profile?.user_role === 'school_admin';
 
   // Show post-auth onboarding if user hasn't completed all required steps
-  // School admins don't need subjects — they just need a plan
-  const needsOnboarding = isSchoolAdminRole
+  // Must have a role selected first, then role-specific checks
+  const needsOnboarding = !hasRole || (isSchoolAdminRole
     ? !hasSelectedPlan
-    : (!hasSubjects || !hasSelectedPlan);
+    : (!hasSubjects || !hasSelectedPlan));
 
   if (needsOnboarding) {
     return (
