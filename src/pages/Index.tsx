@@ -158,6 +158,16 @@ const PostAuthContent: React.FC = () => {
   
   const handleSynced = () => setSynced(true);
 
+  // Clear stale localStorage onboarding state on first mount
+  // so old step values don't flash before sync corrects them
+  useEffect(() => {
+    try {
+      localStorage.removeItem('jesi_onboarding_state');
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
   // Show loader until profile sync determines the correct step
   if (!synced) {
     return (

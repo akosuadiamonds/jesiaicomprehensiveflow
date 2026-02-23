@@ -1,0 +1,1 @@
+UPDATE profiles SET user_role = NULL WHERE selected_plan IS NULL AND user_role = 'teacher';
