@@ -59,13 +59,11 @@ const LearnerAnalytics: React.FC = () => {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Avg Session (mins)</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Avg Learning Session (mins)</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">24</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Sessions (hrs)</CardTitle></CardHeader>
-            <CardContent><div className="text-2xl font-bold">{Math.round(stats.totalSessions * 0.4)}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Monthly Active (MAL)</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Monthly Active Learners (MAL)</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.mal}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Weekly Active (WAL)</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Weekly Active Learners (WAL)</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.wal}</div></CardContent></Card>
         </div>
       </div>

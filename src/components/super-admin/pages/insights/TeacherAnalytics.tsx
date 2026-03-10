@@ -122,11 +122,11 @@ const TeacherAnalytics: React.FC = () => {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Engagement Score</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Learners Engagement Score</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">76%</div><Progress value={76} className="h-2 mt-2" /></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Assignments Completed</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">328</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Self Learning Sessions</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Self Learning Inspired</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">152</div></CardContent></Card>
         </div>
       </div>

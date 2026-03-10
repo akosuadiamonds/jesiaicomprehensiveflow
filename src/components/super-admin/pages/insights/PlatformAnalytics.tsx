@@ -143,13 +143,19 @@ const PlatformAnalytics: React.FC = () => {
         <Card>
           <CardHeader><CardTitle className="text-sm font-medium">Growth Trend</CardTitle></CardHeader>
           <CardContent>
-            <ChartContainer config={{ users: { label: 'Users', color: 'hsl(var(--primary))' } }} className="h-[250px] w-full">
+            <ChartContainer config={{
+              learners: { label: 'Learners', color: 'hsl(var(--primary))' },
+              teachers: { label: 'Teachers', color: 'hsl(var(--accent))' },
+              schools: { label: 'Schools', color: 'hsl(var(--muted-foreground))' },
+            }} className="h-[250px] w-full">
               <LineChart data={growthData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="users" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="learners" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="teachers" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="schools" stroke="hsl(var(--muted-foreground))" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
             </ChartContainer>
           </CardContent>
