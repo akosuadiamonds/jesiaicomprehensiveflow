@@ -16,9 +16,12 @@ const PlatformAnalytics: React.FC = () => {
   const handleDeviceChange = (type: string, value: string) => setDeviceFilters(p => ({ ...p, [type]: value }));
 
   const growthData = [
-    { month: 'Jan', users: 120 }, { month: 'Feb', users: 180 },
-    { month: 'Mar', users: 250 }, { month: 'Apr', users: 310 },
-    { month: 'May', users: 400 }, { month: 'Jun', users: 480 },
+    { month: 'Jan', learners: 80, teachers: 30, schools: 10 },
+    { month: 'Feb', learners: 120, teachers: 45, schools: 15 },
+    { month: 'Mar', learners: 170, teachers: 55, schools: 25 },
+    { month: 'Apr', learners: 210, teachers: 65, schools: 35 },
+    { month: 'May', learners: 280, teachers: 80, schools: 40 },
+    { month: 'Jun', learners: 340, teachers: 95, schools: 45 },
   ];
 
   const peakData = [
