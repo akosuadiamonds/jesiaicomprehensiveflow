@@ -151,39 +151,6 @@ const TeacherAnalytics: React.FC = () => {
         </div>
       </div>
 
-      {/* Learning Gains */}
-      <div>
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h3 className="text-lg font-semibold text-foreground">Learning Gains</h3>
-          <AnalyticsFilters
-            filters={gainsFilterTypes}
-            values={gainsFilters}
-            onChange={(t, v) => setGainsFilters(p => ({ ...p, [t]: v }))}
-          />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="lg:col-span-2">
-            <CardHeader><CardTitle className="text-sm font-medium">Learning Progress per Subject (out of 100)</CardTitle></CardHeader>
-            <CardContent>
-              <ChartContainer config={{ progress: { label: 'Progress', color: 'hsl(var(--primary))' } }} className="h-[250px] w-full">
-                <BarChart data={learningGainsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="subject" />
-                  <YAxis domain={[0, 100]} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="progress" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-          <div className="space-y-4">
-            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Avg Score Improvement</CardTitle></CardHeader>
-              <CardContent><div className="text-2xl font-bold text-primary">+12%</div></CardContent></Card>
-            <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Students Improving ≥ 10%</CardTitle></CardHeader>
-              <CardContent><div className="text-2xl font-bold">64%</div><Progress value={64} className="h-2 mt-2" /></CardContent></Card>
-          </div>
-        </div>
-      </div>
 
       {/* Teacher Satisfaction */}
       <div>

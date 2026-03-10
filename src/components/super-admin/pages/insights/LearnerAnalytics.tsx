@@ -75,14 +75,6 @@ const LearnerAnalytics: React.FC = () => {
         <h3 className="text-lg font-semibold text-foreground mb-4">Self-Learning Behaviour</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <CardHeader className="pb-2"><div className="flex items-center gap-2"><Brain className="w-4 h-4 text-primary" /><CardTitle className="text-sm font-medium text-muted-foreground">Self-Initiated Rate</CardTitle></div></CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">42%</div>
-              <p className="text-xs text-muted-foreground">(self-initiated / total) × 100</p>
-              <Progress value={42} className="h-2 mt-2" />
-            </CardContent>
-          </Card>
-          <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Independent Learners</CardTitle></CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">38%</div>
