@@ -76,11 +76,11 @@ const TeacherAnalytics: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Registered Teachers</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.registered}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Active Teachers</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Total Active Teachers</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.active}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Monthly Active (MAT)</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Monthly Active Teachers (MAT)</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.mat}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Weekly Active (WAT)</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Weekly Active Teachers (WAT)</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.wat}</div></CardContent></Card>
         </div>
       </div>
@@ -122,11 +122,11 @@ const TeacherAnalytics: React.FC = () => {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Engagement Score</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Learners Engagement Score</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">76%</div><Progress value={76} className="h-2 mt-2" /></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Assignments Completed</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">328</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Self Learning Sessions</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Self Learning Inspired</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">152</div></CardContent></Card>
         </div>
       </div>
