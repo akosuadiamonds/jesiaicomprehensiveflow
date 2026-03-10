@@ -140,26 +140,50 @@ const PlatformAnalytics: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Growth Trend</CardTitle></CardHeader>
-          <CardContent>
-            <ChartContainer config={{
-              learners: { label: 'Learners', color: 'hsl(var(--primary))' },
-              teachers: { label: 'Teachers', color: 'hsl(var(--accent))' },
-              schools: { label: 'Schools', color: 'hsl(var(--muted-foreground))' },
-            }} className="h-[250px] w-full">
-              <LineChart data={growthData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="learners" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="teachers" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="schools" stroke="hsl(var(--muted-foreground))" strokeWidth={2} dot={{ r: 4 }} />
-              </LineChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader><CardTitle className="text-sm font-medium">Learner Growth</CardTitle></CardHeader>
+            <CardContent>
+              <ChartContainer config={{ learners: { label: 'Learners', color: 'hsl(var(--primary))' } }} className="h-[200px] w-full">
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line type="monotone" dataKey="learners" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4 }} />
+                </LineChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle className="text-sm font-medium">Teacher Growth</CardTitle></CardHeader>
+            <CardContent>
+              <ChartContainer config={{ teachers: { label: 'Teachers', color: 'hsl(var(--accent))' } }} className="h-[200px] w-full">
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line type="monotone" dataKey="teachers" stroke="hsl(var(--accent))" strokeWidth={2} dot={{ r: 4 }} />
+                </LineChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader><CardTitle className="text-sm font-medium">School Growth</CardTitle></CardHeader>
+            <CardContent>
+              <ChartContainer config={{ schools: { label: 'Schools', color: 'hsl(var(--muted-foreground))' } }} className="h-[200px] w-full">
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Line type="monotone" dataKey="schools" stroke="hsl(var(--muted-foreground))" strokeWidth={2} dot={{ r: 4 }} />
+                </LineChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Peak Usage Times */}
