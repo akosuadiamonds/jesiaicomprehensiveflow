@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Upload, FileSpreadsheet, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import readXlsxFile from 'read-excel-file';
+import ExcelJS from 'exceljs';
 
 interface ParsedStudent {
   firstName: string;
