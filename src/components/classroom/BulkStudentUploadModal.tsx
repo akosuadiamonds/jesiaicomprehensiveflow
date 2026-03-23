@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Upload, FileSpreadsheet, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
-import readXlsxFile from 'read-excel-file';
+import ExcelJS from 'exceljs';
 
 interface ParsedStudent {
   firstName: string;
@@ -54,16 +54,21 @@ const BulkStudentUploadModal: React.FC<BulkStudentUploadModalProps> = ({
         setParsedStudents(students);
         setBulkText(students.map(s => `${s.firstName}, ${s.lastName}`).join('\n'));
       } else if (ext === 'xlsx' || ext === 'xls') {
-        const rows = await readXlsxFile(file);
+        const buffer = await file.arrayBuffer();
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const sheet = workbook.worksheets[0];
+        const rows: any[][] = [];
+        sheet.eachRow((row) => { rows.push(row.values as any[]); });
 
-        const startIdx = rows.length > 0 && typeof rows[0][0] === 'string' &&
-          (rows[0][0] as string).toLowerCase().includes('name') ? 1 : 0;
+        const startIdx = rows.length > 0 && typeof rows[0]?.[1] === 'string' &&
+          (rows[0][1] as string).toLowerCase().includes('name') ? 1 : 0;
 
         const students = rows.slice(startIdx)
-          .filter(row => row.length > 0 && row[0])
+          .filter(row => row.length > 1 && row[1])
           .map(row => ({
-            firstName: String(row[0] || '').trim(),
-            lastName: String(row[1] || '').trim(),
+            firstName: String(row[1] || '').trim(),
+            lastName: String(row[2] || '').trim(),
           }));
 
         setParsedStudents(students);
