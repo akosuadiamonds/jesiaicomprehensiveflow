@@ -106,7 +106,7 @@ const ExamDisplay: React.FC<ExamDisplayProps> = ({ exam, onRegenerate, onBack, i
     if (!contentRef.current) return;
     setIsDownloading(true);
     try {
-      const opt = {
+      const opt: any = {
         margin: [10, 10, 10, 10],
         filename: `${exam.examName}-${activeTab === 'exam' ? 'questions' : 'marking-scheme'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },

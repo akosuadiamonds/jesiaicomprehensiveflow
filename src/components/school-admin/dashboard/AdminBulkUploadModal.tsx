@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Upload, FileSpreadsheet, Loader2, X, Download } from 'lucide-react';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+import readXlsxFile from 'read-excel-file';
 
 interface ParsedTeacher {
   name: string;
@@ -96,13 +96,10 @@ const AdminBulkUploadModal: React.FC<AdminBulkUploadModalProps> = ({
           : `${(d as ParsedStudent).name}, ${(d as ParsedStudent).dateOfBirth}, ${(d as ParsedStudent).level}`
         ).join('\n'));
       } else if (ext === 'xlsx' || ext === 'xls') {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const rows = await readXlsxFile(file);
 
         const startIdx = rows.length > 0 && typeof rows[0][0] === 'string' &&
-          rows[0][0].toLowerCase().includes('name') ? 1 : 0;
+          (rows[0][0] as string).toLowerCase().includes('name') ? 1 : 0;
 
         const data = rows.slice(startIdx)
           .filter(row => row.length > 0 && row[0])

@@ -78,12 +78,12 @@ const QuizTestDisplay: React.FC<Props> = ({ quiz, onRegenerate, onBack, isRegene
     if (!contentRef.current) return;
     setIsDownloading(true);
     try {
-      const opt = {
+      const opt: any = {
         margin: [10, 10, 10, 10],
         filename: `${quiz.title}-${activeTab}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       };
       await html2pdf().set(opt).from(contentRef.current).save();
     } catch (error) {

@@ -47,7 +47,7 @@ const LessonPlanDisplay: React.FC<LessonPlanDisplayProps> = ({
     
     try {
       const element = contentRef.current;
-      const opt = {
+      const opt: any = {
         margin: [10, 10, 10, 10],
         filename: `${plan.subject}-${plan.class}-lesson-plan.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
