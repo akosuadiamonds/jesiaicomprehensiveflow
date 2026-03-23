@@ -96,16 +96,21 @@ const AdminBulkUploadModal: React.FC<AdminBulkUploadModalProps> = ({
           : `${(d as ParsedStudent).name}, ${(d as ParsedStudent).dateOfBirth}, ${(d as ParsedStudent).level}`
         ).join('\n'));
       } else if (ext === 'xlsx' || ext === 'xls') {
-        const rows = await readXlsxFile(file);
+        const buffer = await file.arrayBuffer();
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const sheet = workbook.worksheets[0];
+        const rows: any[][] = [];
+        sheet.eachRow((row) => { rows.push(row.values as any[]); });
 
-        const startIdx = rows.length > 0 && typeof rows[0][0] === 'string' &&
-          (rows[0][0] as string).toLowerCase().includes('name') ? 1 : 0;
+        const startIdx = rows.length > 0 && typeof rows[0]?.[1] === 'string' &&
+          (rows[0][1] as string).toLowerCase().includes('name') ? 1 : 0;
 
         const data = rows.slice(startIdx)
-          .filter(row => row.length > 0 && row[0])
+          .filter(row => row.length > 1 && row[1])
           .map(row => isTeacher
-            ? { name: String(row[0] || '').trim(), subject: String(row[1] || '').trim(), email: String(row[2] || '').trim() }
-            : { name: String(row[0] || '').trim(), dateOfBirth: String(row[1] || '').trim(), level: String(row[2] || '').trim() }
+            ? { name: String(row[1] || '').trim(), subject: String(row[2] || '').trim(), email: String(row[3] || '').trim() }
+            : { name: String(row[1] || '').trim(), dateOfBirth: String(row[2] || '').trim(), level: String(row[3] || '').trim() }
           );
 
         setParsedData(data);
