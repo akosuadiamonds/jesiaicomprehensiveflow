@@ -37,11 +37,30 @@ Deno.serve(async (req) => {
 
     const { messages, subject, strand, subStrand, classGrade } = await req.json();
 
+    // Validate and sanitize inputs
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "Invalid messages" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Limit message count and content length to prevent token abuse
+    const sanitizedMessages = messages.slice(-20).map((m: { role: string; content: string }) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content || "").slice(0, 2000),
+    }));
+
+    // Sanitize string fields
+    const safeSubject = String(subject || "a subject").slice(0, 100);
+    const safeStrand = strand ? String(strand).slice(0, 100) : "";
+    const safeSubStrand = subStrand ? String(subStrand).slice(0, 100) : "";
+    const safeClassGrade = String(classGrade || "JHS").slice(0, 20);
+
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY not configured");
 
-    const systemPrompt = `You are Jesi AI, a friendly and knowledgeable tutor for ${classGrade || 'JHS'} students in Ghana following the GES curriculum. 
-You are currently helping a student study ${subject || 'a subject'}${strand ? ` > ${strand}` : ''}${subStrand ? ` > ${subStrand}` : ''}.
+    const systemPrompt = `You are Jesi AI, a friendly and knowledgeable tutor for ${safeClassGrade} students in Ghana following the GES curriculum. 
+You are currently helping a student study ${safeSubject}${safeStrand ? ` > ${safeStrand}` : ''}${safeSubStrand ? ` > ${safeSubStrand}` : ''}.
 
 Guidelines:
 - Be encouraging, patient, and use simple language appropriate for the student's level
@@ -61,7 +80,7 @@ Guidelines:
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages,
+          ...sanitizedMessages,
         ],
         stream: true,
       }),
