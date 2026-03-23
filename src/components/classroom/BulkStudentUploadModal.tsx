@@ -54,14 +54,10 @@ const BulkStudentUploadModal: React.FC<BulkStudentUploadModalProps> = ({
         setParsedStudents(students);
         setBulkText(students.map(s => `${s.firstName}, ${s.lastName}`).join('\n'));
       } else if (ext === 'xlsx' || ext === 'xls') {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const rows = await readXlsxFile(file);
 
-        // Skip header row if it looks like a header
         const startIdx = rows.length > 0 && typeof rows[0][0] === 'string' &&
-          rows[0][0].toLowerCase().includes('name') ? 1 : 0;
+          (rows[0][0] as string).toLowerCase().includes('name') ? 1 : 0;
 
         const students = rows.slice(startIdx)
           .filter(row => row.length > 0 && row[0])
