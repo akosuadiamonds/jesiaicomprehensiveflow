@@ -33,7 +33,9 @@ const AdminInsights: React.FC = () => {
   
   const [classFilter, setClassFilter] = useState('all');
   const [teacherFilter, setTeacherFilter] = useState<TimeFilter>('week');
-  const [studentFilter, setStudentFilter] = useState<TimeFilter>('week');
+  const [engWeekFilter, setEngWeekFilter] = useState('week');
+  const [engTermFilter, setEngTermFilter] = useState('all');
+  const [engYearFilter, setEngYearFilter] = useState('all');
   const [curriculumFilter, setCurriculumFilter] = useState<TimeFilter>('month');
   const [showAtRisk, setShowAtRisk] = useState(false);
   const [showTeacherInsights, setShowTeacherInsights] = useState(false);
