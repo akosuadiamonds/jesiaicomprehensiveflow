@@ -373,19 +373,92 @@ const AdminInsights: React.FC = () => {
           </div>
 
           <div className="border-t border-border pt-4">
-            <p className="text-sm font-medium text-foreground mb-3">📝 Assessment Activity</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{classesWithAssessments}%</p>
-                <p className="text-xs text-muted-foreground">Classes with Regular Assessments</p>
-              </div>
-              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{100 - classesWithAssessments}%</p>
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                  Missing Assessments <span className="text-amber-500">⚠</span>
-                </p>
-              </div>
-            </div>
+            <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-primary" /> Assessment Activity
+            </p>
+            {(() => {
+              const totalExpected = 48;
+              const totalGiven = 36;
+              const totalMissed = totalExpected - totalGiven;
+              const givenPercent = Math.round((totalGiven / totalExpected) * 100);
+              const teacherAssessments = [
+                { name: 'Ama Mensah', given: 8, expected: 8 },
+                { name: 'Kofi Asante', given: 7, expected: 8 },
+                { name: 'Akua Boateng', given: 8, expected: 8 },
+                { name: 'Kwame Adjei', given: 6, expected: 8 },
+                { name: 'Yaa Boateng', given: 4, expected: 8 },
+                { name: 'Kwesi Owusu', given: 3, expected: 8 },
+              ];
+              return (
+                <div className="space-y-4">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-4 rounded-xl bg-muted/40 border border-border text-center space-y-1">
+                      <p className="text-2xl font-bold text-foreground">{totalExpected}</p>
+                      <p className="text-xs text-muted-foreground">Total Expected</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/15 text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <p className="text-2xl font-bold text-foreground">{totalGiven}</p>
+                      </div>
+                      <p className="text-xs font-medium text-emerald-700">Given</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/15 text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1">
+                        <AlertTriangle className="w-4 h-4 text-destructive" />
+                        <p className="text-2xl font-bold text-foreground">{totalMissed}</p>
+                      </div>
+                      <p className="text-xs font-medium text-destructive">Missed</p>
+                    </div>
+                  </div>
+
+                  {/* Overall Progress Bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Overall Compliance</span>
+                      <span className="font-medium text-foreground">{givenPercent}%</span>
+                    </div>
+                    <div className="h-3 rounded-full bg-muted overflow-hidden flex">
+                      <div className="h-full bg-emerald-500 rounded-l-full transition-all" style={{ width: `${givenPercent}%` }} />
+                      <div className="h-full bg-destructive/60 rounded-r-full transition-all" style={{ width: `${100 - givenPercent}%` }} />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> Given ({totalGiven})</span>
+                      <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-destructive/60 inline-block" /> Missed ({totalMissed})</span>
+                    </div>
+                  </div>
+
+                  {/* Per-Teacher Breakdown */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Per Teacher Breakdown</p>
+                    {teacherAssessments.map((t) => {
+                      const pct = Math.round((t.given / t.expected) * 100);
+                      const missed = t.expected - t.given;
+                      return (
+                        <div key={t.name} className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">
+                            {t.name.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-center mb-1">
+                              <p className="text-xs font-medium text-foreground truncate">{t.name}</p>
+                              <span className="text-[10px] text-muted-foreground shrink-0">{t.given}/{t.expected}</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+                              <div className="h-full bg-emerald-500 rounded-l-full" style={{ width: `${pct}%` }} />
+                              {missed > 0 && <div className="h-full bg-destructive/50 rounded-r-full" style={{ width: `${100 - pct}%` }} />}
+                            </div>
+                          </div>
+                          {missed > 0 && <Badge variant="destructive" className="text-[9px] shrink-0">{missed} missed</Badge>}
+                          {missed === 0 && <Badge variant="secondary" className="text-[9px] bg-emerald-500/15 text-emerald-700 shrink-0">Complete</Badge>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
         </CardContent>
