@@ -269,12 +269,15 @@ const AdminInsights: React.FC = () => {
 
           {topTeachers.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-foreground mb-2">⭐ Top Performing Teachers</p>
+              <p className="text-sm font-medium text-foreground mb-2">⭐ Top 5 Performing Teachers</p>
               <div className="space-y-2">
                 {topTeachers.map((t, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30">
-                    <span className="text-sm text-foreground">{t.name}</span>
-                    <span className="text-xs text-muted-foreground">{t.note}</span>
+                  <div key={i} className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">{t.name}</span>
+                      <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-700">{t.note}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">💡 {t.insight}</p>
                   </div>
                 ))}
               </div>
@@ -283,12 +286,15 @@ const AdminInsights: React.FC = () => {
 
           {needSupportTeachers.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-foreground mb-2">⚠ Teachers Needing Support</p>
+              <p className="text-sm font-medium text-foreground mb-2">⚠ 5 Teachers Needing Support</p>
               <div className="space-y-2">
                 {needSupportTeachers.map((t, i) => (
-                  <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-destructive/5 border border-destructive/10">
-                    <span className="text-sm text-foreground">{t.name}</span>
-                    <span className="text-xs text-muted-foreground">{t.note}</span>
+                  <div key={i} className="p-2.5 rounded-lg bg-destructive/5 border border-destructive/10">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">{t.name}</span>
+                      <Badge variant="destructive" className="text-[10px]">{t.note}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">💡 {t.insight}</p>
                   </div>
                 ))}
               </div>
