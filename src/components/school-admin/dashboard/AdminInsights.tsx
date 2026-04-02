@@ -353,9 +353,6 @@ const AdminInsights: React.FC = () => {
             </div>
           </div>
 
-          <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowCompliance(true)}>
-            <Eye className="w-3.5 h-3.5" /> View Compliance Details
-          </Button>
         </CardContent>
       </Card>
 
