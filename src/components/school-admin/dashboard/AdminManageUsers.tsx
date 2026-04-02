@@ -310,11 +310,26 @@ const AdminManageUsers: React.FC = () => {
     }
   };
 
-  const teachers = members.filter(m => m.member_role === 'teacher');
-  const students = members.filter(m => m.member_role === 'student');
-  const admins = members.filter(m => m.member_role === 'admin');
-  const pendingTeachers = pendingInvites.filter(i => i.invited_role === 'teacher');
-  const pendingStudents = pendingInvites.filter(i => i.invited_role === 'student');
+  const filterBySearch = (list: Member[]) => {
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(m => {
+      const name = `${m.profile?.first_name || ''} ${m.profile?.last_name || ''}`.toLowerCase();
+      return name.includes(q);
+    });
+  };
+
+  const filterInvitesBySearch = (list: PendingInvite[]) => {
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(i => `${i.first_name} ${i.last_name}`.toLowerCase().includes(q) || i.email.toLowerCase().includes(q));
+  };
+
+  const teachers = filterBySearch(members.filter(m => m.member_role === 'teacher'));
+  const students = filterBySearch(members.filter(m => m.member_role === 'student'));
+  const admins = filterBySearch(members.filter(m => m.member_role === 'admin'));
+  const pendingTeachers = filterInvitesBySearch(pendingInvites.filter(i => i.invited_role === 'teacher'));
+  const pendingStudents = filterInvitesBySearch(pendingInvites.filter(i => i.invited_role === 'student'));
 
   const renderMemberList = (list: Member[], pendingList: PendingInvite[]) => (
     <div className="space-y-2">
