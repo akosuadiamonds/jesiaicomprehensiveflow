@@ -10,15 +10,55 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-type TimeFilter = 'week' | 'month';
-
-const FilterChips: React.FC<{ value: TimeFilter; onChange: (v: TimeFilter) => void }> = ({ value, onChange }) => (
-  <div className="flex gap-1">
-    {(['week', 'month'] as const).map(f => (
-      <button key={f} onClick={() => onChange(f)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${value === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-        {f === 'week' ? 'This Week' : 'This Month'}
-      </button>
-    ))}
+const SectionFilters: React.FC<{
+  classFilter: string; onClassChange: (v: string) => void;
+  weekFilter: string; onWeekChange: (v: string) => void;
+  termFilter: string; onTermChange: (v: string) => void;
+  yearFilter: string; onYearChange: (v: string) => void;
+}> = ({ classFilter, onClassChange, weekFilter, onWeekChange, termFilter, onTermChange, yearFilter, onYearChange }) => (
+  <div className="flex gap-2 flex-wrap">
+    <Select value={classFilter} onValueChange={onClassChange}>
+      <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue placeholder="Select Class" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Classes</SelectItem>
+        <SelectItem value="basic1">Basic 1</SelectItem>
+        <SelectItem value="basic2">Basic 2</SelectItem>
+        <SelectItem value="basic3">Basic 3</SelectItem>
+        <SelectItem value="basic4">Basic 4</SelectItem>
+        <SelectItem value="basic5">Basic 5</SelectItem>
+        <SelectItem value="basic6">Basic 6</SelectItem>
+        <SelectItem value="jhs1">JHS 1</SelectItem>
+        <SelectItem value="jhs2">JHS 2</SelectItem>
+        <SelectItem value="jhs3">JHS 3</SelectItem>
+      </SelectContent>
+    </Select>
+    <Select value={weekFilter} onValueChange={onWeekChange}>
+      <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue placeholder="Week" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="week">This Week</SelectItem>
+        <SelectItem value="last_week">Last Week</SelectItem>
+        <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
+        <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
+      </SelectContent>
+    </Select>
+    <Select value={termFilter} onValueChange={onTermChange}>
+      <SelectTrigger className="w-[110px] h-8 text-xs"><SelectValue placeholder="Term" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Terms</SelectItem>
+        <SelectItem value="term1">Term 1</SelectItem>
+        <SelectItem value="term2">Term 2</SelectItem>
+        <SelectItem value="term3">Term 3</SelectItem>
+      </SelectContent>
+    </Select>
+    <Select value={yearFilter} onValueChange={onYearChange}>
+      <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue placeholder="Academic Year" /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Years</SelectItem>
+        <SelectItem value="2025-2026">2025/2026</SelectItem>
+        <SelectItem value="2024-2025">2024/2025</SelectItem>
+        <SelectItem value="2023-2024">2023/2024</SelectItem>
+      </SelectContent>
+    </Select>
   </div>
 );
 
@@ -32,11 +72,17 @@ const AdminInsights: React.FC = () => {
   // Filters
   
   const [classFilter, setClassFilter] = useState('all');
-  const [teacherFilter, setTeacherFilter] = useState<TimeFilter>('week');
+  const [tchWeek, setTchWeek] = useState('week');
+  const [tchTerm, setTchTerm] = useState('all');
+  const [tchYear, setTchYear] = useState('all');
+  const [tchClass, setTchClass] = useState('all');
+  const [curWeek, setCurWeek] = useState('week');
+  const [curTerm, setCurTerm] = useState('all');
+  const [curYear, setCurYear] = useState('all');
+  const [curClass, setCurClass] = useState('all');
   const [engWeekFilter, setEngWeekFilter] = useState('week');
   const [engTermFilter, setEngTermFilter] = useState('all');
   const [engYearFilter, setEngYearFilter] = useState('all');
-  const [curriculumFilter, setCurriculumFilter] = useState<TimeFilter>('month');
   const [showAtRisk, setShowAtRisk] = useState(false);
   const [showTeacherInsights, setShowTeacherInsights] = useState(false);
   const [showCompliance, setShowCompliance] = useState(false);
@@ -172,7 +218,7 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">Teacher Effectiveness & Activity</CardTitle>
               <CardDescription>Engagement and performance of teaching staff</CardDescription>
             </div>
-            <FilterChips value={teacherFilter} onChange={setTeacherFilter} />
+            <SectionFilters classFilter={tchClass} onClassChange={setTchClass} weekFilter={tchWeek} onWeekChange={setTchWeek} termFilter={tchTerm} onTermChange={setTchTerm} yearFilter={tchYear} onYearChange={setTchYear} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -236,26 +282,7 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">Curriculum & Assessment Compliance</CardTitle>
               <CardDescription>Coverage and assessment activity tracking</CardDescription>
             </div>
-             <div className="flex gap-2 flex-wrap">
-              <Select value={classFilter} onValueChange={setClassFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="Basic 1">Basic 1</SelectItem>
-                  <SelectItem value="Basic 2">Basic 2</SelectItem>
-                  <SelectItem value="Basic 3">Basic 3</SelectItem>
-                  <SelectItem value="Basic 4">Basic 4</SelectItem>
-                  <SelectItem value="Basic 5">Basic 5</SelectItem>
-                  <SelectItem value="Basic 6">Basic 6</SelectItem>
-                  <SelectItem value="JHS 1">JHS 1</SelectItem>
-                  <SelectItem value="JHS 2">JHS 2</SelectItem>
-                  <SelectItem value="JHS 3">JHS 3</SelectItem>
-                </SelectContent>
-              </Select>
-              <FilterChips value={curriculumFilter} onChange={setCurriculumFilter} />
-            </div>
+              <SectionFilters classFilter={curClass} onClassChange={setCurClass} weekFilter={curWeek} onWeekChange={setCurWeek} termFilter={curTerm} onTermChange={setCurTerm} yearFilter={curYear} onYearChange={setCurYear} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -307,58 +334,7 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">Subject & Class Performance Map</CardTitle>
               <CardDescription>Performance breakdown by subject and class</CardDescription>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Select value={classFilter} onValueChange={setClassFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="basic1">Basic 1</SelectItem>
-                  <SelectItem value="basic2">Basic 2</SelectItem>
-                  <SelectItem value="basic3">Basic 3</SelectItem>
-                  <SelectItem value="basic4">Basic 4</SelectItem>
-                  <SelectItem value="basic5">Basic 5</SelectItem>
-                  <SelectItem value="basic6">Basic 6</SelectItem>
-                  <SelectItem value="jhs1">JHS 1</SelectItem>
-                  <SelectItem value="jhs2">JHS 2</SelectItem>
-                  <SelectItem value="jhs3">JHS 3</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={perfTimeFilter} onValueChange={setPerfTimeFilter}>
-                <SelectTrigger className="w-[120px] h-8 text-xs">
-                  <SelectValue placeholder="Week" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="last_week">Last Week</SelectItem>
-                  <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
-                  <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={perfTermFilter} onValueChange={setPerfTermFilter}>
-                <SelectTrigger className="w-[110px] h-8 text-xs">
-                  <SelectValue placeholder="Term" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Terms</SelectItem>
-                  <SelectItem value="term1">Term 1</SelectItem>
-                  <SelectItem value="term2">Term 2</SelectItem>
-                  <SelectItem value="term3">Term 3</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={perfYearFilter} onValueChange={setPerfYearFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue placeholder="Academic Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  <SelectItem value="2025-2026">2025/2026</SelectItem>
-                  <SelectItem value="2024-2025">2024/2025</SelectItem>
-                  <SelectItem value="2023-2024">2023/2024</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <SectionFilters classFilter={classFilter} onClassChange={setClassFilter} weekFilter={perfTimeFilter} onWeekChange={setPerfTimeFilter} termFilter={perfTermFilter} onTermChange={setPerfTermFilter} yearFilter={perfYearFilter} onYearChange={setPerfYearFilter} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -397,58 +373,7 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">Student Engagement & Risk Alerts</CardTitle>
               <CardDescription>Self learning and risk identification</CardDescription>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Select value={classFilter} onValueChange={setClassFilter}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="basic1">Basic 1</SelectItem>
-                  <SelectItem value="basic2">Basic 2</SelectItem>
-                  <SelectItem value="basic3">Basic 3</SelectItem>
-                  <SelectItem value="basic4">Basic 4</SelectItem>
-                  <SelectItem value="basic5">Basic 5</SelectItem>
-                  <SelectItem value="basic6">Basic 6</SelectItem>
-                  <SelectItem value="jhs1">JHS 1</SelectItem>
-                  <SelectItem value="jhs2">JHS 2</SelectItem>
-                  <SelectItem value="jhs3">JHS 3</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={engWeekFilter} onValueChange={setEngWeekFilter}>
-                <SelectTrigger className="w-[120px] h-8 text-xs">
-                  <SelectValue placeholder="Week" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="last_week">Last Week</SelectItem>
-                  <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
-                  <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={engTermFilter} onValueChange={setEngTermFilter}>
-                <SelectTrigger className="w-[110px] h-8 text-xs">
-                  <SelectValue placeholder="Term" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Terms</SelectItem>
-                  <SelectItem value="term1">Term 1</SelectItem>
-                  <SelectItem value="term2">Term 2</SelectItem>
-                  <SelectItem value="term3">Term 3</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={engYearFilter} onValueChange={setEngYearFilter}>
-                <SelectTrigger className="w-[130px] h-8 text-xs">
-                  <SelectValue placeholder="Academic Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  <SelectItem value="2025-2026">2025/2026</SelectItem>
-                  <SelectItem value="2024-2025">2024/2025</SelectItem>
-                  <SelectItem value="2023-2024">2023/2024</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <SectionFilters classFilter={classFilter} onClassChange={setClassFilter} weekFilter={engWeekFilter} onWeekChange={setEngWeekFilter} termFilter={engTermFilter} onTermChange={setEngTermFilter} yearFilter={engYearFilter} onYearChange={setEngYearFilter} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
