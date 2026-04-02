@@ -308,23 +308,58 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">Subject & Class Performance Map</CardTitle>
               <CardDescription>Performance breakdown by subject and class</CardDescription>
             </div>
-            <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
-                <SelectValue placeholder="Select Class" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                <SelectItem value="basic1">Basic 1</SelectItem>
-                <SelectItem value="basic2">Basic 2</SelectItem>
-                <SelectItem value="basic3">Basic 3</SelectItem>
-                <SelectItem value="basic4">Basic 4</SelectItem>
-                <SelectItem value="basic5">Basic 5</SelectItem>
-                <SelectItem value="basic6">Basic 6</SelectItem>
-                <SelectItem value="jhs1">JHS 1</SelectItem>
-                <SelectItem value="jhs2">JHS 2</SelectItem>
-                <SelectItem value="jhs3">JHS 3</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={classFilter} onValueChange={setClassFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Select Class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  <SelectItem value="basic1">Basic 1</SelectItem>
+                  <SelectItem value="basic2">Basic 2</SelectItem>
+                  <SelectItem value="basic3">Basic 3</SelectItem>
+                  <SelectItem value="basic4">Basic 4</SelectItem>
+                  <SelectItem value="basic5">Basic 5</SelectItem>
+                  <SelectItem value="basic6">Basic 6</SelectItem>
+                  <SelectItem value="jhs1">JHS 1</SelectItem>
+                  <SelectItem value="jhs2">JHS 2</SelectItem>
+                  <SelectItem value="jhs3">JHS 3</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={perfTimeFilter} onValueChange={setPerfTimeFilter}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue placeholder="Week" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="last_week">Last Week</SelectItem>
+                  <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
+                  <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={perfTermFilter} onValueChange={setPerfTermFilter}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <SelectValue placeholder="Term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Terms</SelectItem>
+                  <SelectItem value="term1">Term 1</SelectItem>
+                  <SelectItem value="term2">Term 2</SelectItem>
+                  <SelectItem value="term3">Term 3</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={perfYearFilter} onValueChange={setPerfYearFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Academic Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Years</SelectItem>
+                  <SelectItem value="2025-2026">2025/2026</SelectItem>
+                  <SelectItem value="2024-2025">2024/2025</SelectItem>
+                  <SelectItem value="2023-2024">2023/2024</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
