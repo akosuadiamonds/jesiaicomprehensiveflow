@@ -385,9 +385,7 @@ const AdminInsights: React.FC = () => {
                 <Badge key={i} variant="secondary" className="text-xs">{c.class} {c.subject}</Badge>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="mt-3 gap-1" onClick={() => setShowClassBreakdown(true)}>
-              <Eye className="w-3.5 h-3.5" /> View Class Breakdown
-            </Button>
+            
           </div>
         </CardContent>
       </Card>
