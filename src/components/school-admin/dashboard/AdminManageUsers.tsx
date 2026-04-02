@@ -8,11 +8,22 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload, Clock, MoreVertical, Pencil, Ban } from 'lucide-react';
+import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload, Clock, MoreVertical, Pencil, Ban, Search, Eye } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import AdminBulkUploadModal from './AdminBulkUploadModal';
+
+interface MemberProfile {
+  first_name: string | null;
+  last_name: string | null;
+  phone_number: string | null;
+  gender: string | null;
+  school_name: string | null;
+  class_grade: string | null;
+  subjects: string[] | null;
+  created_at: string;
+}
 
 interface Member {
   id: string;
@@ -20,10 +31,7 @@ interface Member {
   member_role: string;
   is_active: boolean;
   joined_at: string;
-  profile?: {
-    first_name: string | null;
-    last_name: string | null;
-  };
+  profile?: MemberProfile;
 }
 
 interface PendingInvite {
@@ -60,6 +68,8 @@ const AdminManageUsers: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: 'member' | 'invite' } | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<{ id: string; name: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMember, setViewMember] = useState<Member | null>(null);
 
   const fetchMembers = async () => {
     if (!institution) return;
@@ -79,7 +89,7 @@ const AdminManageUsers: React.FC = () => {
       if (userIds.length > 0) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('user_id, first_name, last_name')
+          .select('user_id, first_name, last_name, phone_number, gender, school_name, class_grade, subjects, created_at')
           .in('user_id', userIds);
         profiles = (profileData as any[]) || [];
       }
@@ -300,11 +310,26 @@ const AdminManageUsers: React.FC = () => {
     }
   };
 
-  const teachers = members.filter(m => m.member_role === 'teacher');
-  const students = members.filter(m => m.member_role === 'student');
-  const admins = members.filter(m => m.member_role === 'admin');
-  const pendingTeachers = pendingInvites.filter(i => i.invited_role === 'teacher');
-  const pendingStudents = pendingInvites.filter(i => i.invited_role === 'student');
+  const filterBySearch = (list: Member[]) => {
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(m => {
+      const name = `${m.profile?.first_name || ''} ${m.profile?.last_name || ''}`.toLowerCase();
+      return name.includes(q);
+    });
+  };
+
+  const filterInvitesBySearch = (list: PendingInvite[]) => {
+    if (!searchQuery.trim()) return list;
+    const q = searchQuery.toLowerCase();
+    return list.filter(i => `${i.first_name} ${i.last_name}`.toLowerCase().includes(q) || i.email.toLowerCase().includes(q));
+  };
+
+  const teachers = filterBySearch(members.filter(m => m.member_role === 'teacher'));
+  const students = filterBySearch(members.filter(m => m.member_role === 'student'));
+  const admins = filterBySearch(members.filter(m => m.member_role === 'admin'));
+  const pendingTeachers = filterInvitesBySearch(pendingInvites.filter(i => i.invited_role === 'teacher'));
+  const pendingStudents = filterInvitesBySearch(pendingInvites.filter(i => i.invited_role === 'student'));
 
   const renderMemberList = (list: Member[], pendingList: PendingInvite[]) => (
     <div className="space-y-2">
@@ -339,6 +364,9 @@ const AdminManageUsers: React.FC = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="z-[100] bg-popover border shadow-md">
+                        <DropdownMenuItem onClick={() => setViewMember(member)}>
+                          <Eye className="w-4 h-4 mr-2" /> View
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openEditDialog(member)}>
                           <Pencil className="w-4 h-4 mr-2" /> Edit
                         </DropdownMenuItem>
@@ -463,6 +491,17 @@ const AdminManageUsers: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search users by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <Tabs defaultValue="teachers">
         <TabsList>
           <TabsTrigger value="teachers" className="gap-2">
@@ -568,6 +607,69 @@ const AdminManageUsers: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View User Details Modal */}
+      <Dialog open={!!viewMember} onOpenChange={(open) => !open && setViewMember(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {viewMember && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-lg font-bold text-primary">
+                    {viewMember.profile?.first_name?.[0]}{viewMember.profile?.last_name?.[0]}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-foreground">
+                    {viewMember.profile?.first_name || 'Unknown'} {viewMember.profile?.last_name || ''}
+                  </p>
+                  {getRoleBadge(viewMember.member_role)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Gender</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.gender || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Phone</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.phone_number || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">School</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.school_name || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Class / Grade</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.class_grade || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 col-span-2">
+                  <p className="text-muted-foreground mb-0.5">Subjects</p>
+                  <p className="font-medium text-foreground">
+                    {viewMember.profile?.subjects && viewMember.profile.subjects.length > 0
+                      ? viewMember.profile.subjects.join(', ')
+                      : '—'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Joined Institution</p>
+                  <p className="font-medium text-foreground">{new Date(viewMember.joined_at).toLocaleDateString()}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Account Created</p>
+                  <p className="font-medium text-foreground">
+                    {viewMember.profile?.created_at ? new Date(viewMember.profile.created_at).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

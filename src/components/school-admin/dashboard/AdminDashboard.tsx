@@ -96,7 +96,7 @@ const AdminDashboard: React.FC = () => {
                 <GraduationCap className="w-6 h-6 text-accent" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{memberCounts.teachers}/{institution?.total_teacher_slots || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{memberCounts.teachers}</p>
                 <p className="text-sm text-muted-foreground">Teachers</p>
               </div>
             </div>
@@ -110,7 +110,7 @@ const AdminDashboard: React.FC = () => {
                 <BookOpen className="w-6 h-6 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{memberCounts.students}/{institution?.total_student_slots || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{memberCounts.students}</p>
                 <p className="text-sm text-muted-foreground">Students</p>
               </div>
             </div>
