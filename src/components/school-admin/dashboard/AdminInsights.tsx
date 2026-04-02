@@ -150,42 +150,8 @@ const AdminInsights: React.FC = () => {
         </div>
       </div>
 
-      {/* 1. School Academic Health Overview */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">1️⃣ School Academic Health Overview</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/50">
-            <span className="text-3xl">{performanceEmoji}</span>
-            <div>
-              <p className="text-sm text-muted-foreground">📊 Overall School Performance</p>
-              <p className="text-xl font-bold text-foreground">{performanceLabel}</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-3 rounded-xl bg-muted/50 text-center">
-              <p className="text-2xl font-bold text-foreground">{schoolAvgScore}%</p>
-              <p className="text-xs text-muted-foreground">School Average Score</p>
-            </div>
-            <div className="p-3 rounded-xl bg-muted/50 text-center">
-              <p className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
-                {performanceTrend === 'improving' ? '⬆' : '⬇'} {performanceTrend === 'improving' ? 'Improving' : 'Declining'}
-              </p>
-              <p className="text-xs text-muted-foreground">Performance Trend</p>
-            </div>
-            <div className="p-3 rounded-xl bg-muted/50 text-center">
-              <p className="text-2xl font-bold text-foreground">{activeStudents.length} / {institution?.total_student_slots || 0}</p>
-              <p className="text-xs text-muted-foreground">Active Learners</p>
-            </div>
-            <div className="p-3 rounded-xl bg-muted/50 text-center">
-              <p className="text-2xl font-bold text-foreground">{activeTeachers.length} / {institution?.total_teacher_slots || 0}</p>
-              <p className="text-xs text-muted-foreground">Active Teachers</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* 2. Subject & Class Performance Map */}
       <Card>
