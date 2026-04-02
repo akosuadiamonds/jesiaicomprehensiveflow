@@ -35,10 +35,10 @@ const SectionFilters: React.FC<{
     <Select value={weekFilter} onValueChange={onWeekChange}>
       <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue placeholder="Week" /></SelectTrigger>
       <SelectContent>
-        <SelectItem value="week">This Week</SelectItem>
-        <SelectItem value="last_week">Last Week</SelectItem>
-        <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
-        <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
+        <SelectItem value="all">All Weeks</SelectItem>
+        {Array.from({ length: 14 }, (_, i) => (
+          <SelectItem key={i + 1} value={`week_${i + 1}`}>Week {i + 1}</SelectItem>
+        ))}
       </SelectContent>
     </Select>
     <Select value={termFilter} onValueChange={onTermChange}>
