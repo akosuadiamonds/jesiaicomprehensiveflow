@@ -462,27 +462,22 @@ const AdminInsights: React.FC = () => {
           <DialogHeader>
             <DialogTitle>At-Risk Students</DialogTitle>
           </DialogHeader>
+          <p className="text-xs text-muted-foreground mb-3">Learners scoring below 40% average</p>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {memberProfiles
-              .filter(p => activeStudents.some(s => s.user_id === p.user_id))
-              .slice(0, atRiskCount)
-              .map((s, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
-                      {s.first_name?.[0]}{s.last_name?.[0]}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{s.first_name} {s.last_name}</p>
-                      <p className="text-xs text-muted-foreground">{s.class_grade || 'No class'} • Low engagement</p>
-                    </div>
+            {atRiskStudentsMock.map((s, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
+                    {s.name.split(' ').map(n => n[0]).join('')}
                   </div>
-                  <Badge variant="destructive" className="text-xs">At Risk</Badge>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">{s.class} • {s.subject} • Avg: {s.avgScore}%</p>
+                  </div>
                 </div>
-              ))}
-            {atRiskCount === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No at-risk students identified</p>
-            )}
+                <Badge variant="destructive" className="text-xs">At Risk</Badge>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
