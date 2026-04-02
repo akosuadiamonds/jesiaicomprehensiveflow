@@ -39,6 +39,9 @@ const AdminInsights: React.FC = () => {
   const [showTeacherInsights, setShowTeacherInsights] = useState(false);
   const [showCompliance, setShowCompliance] = useState(false);
   const [showClassBreakdown, setShowClassBreakdown] = useState(false);
+  const [perfTimeFilter, setPerfTimeFilter] = useState('week');
+  const [perfTermFilter, setPerfTermFilter] = useState('all');
+  const [perfYearFilter, setPerfYearFilter] = useState('all');
 
   useEffect(() => {
     if (!institution) return;
@@ -110,11 +113,19 @@ const AdminInsights: React.FC = () => {
     ? teacherProfiles.slice(-1).map(p => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: 'Low platform usage', subjects: p.subjects || [], classGrade: p.class_grade }))
     : [{ name: 'Yaa Boateng', note: 'Low platform usage', subjects: ['Science'], classGrade: 'JHS 3' }];
 
-  // Student engagement mock
-  const activeThisWeek = Math.round(activeStudents.length * 0.78);
-  const lowActivityStudents = Math.round(activeStudents.length * 0.17);
-  const inactiveStudents = activeStudents.length - activeThisWeek - lowActivityStudents;
-  const atRiskCount = Math.round(activeStudents.length * 0.12);
+  // Student engagement
+  const totalStudents = activeStudents.length || 50;
+  const atRiskCount = Math.round(totalStudents * 0.12);
+  const activeLearnersCount = Math.round(totalStudents * 0.68);
+  const inactiveLearners = totalStudents - activeLearnersCount - atRiskCount;
+
+  const atRiskStudentsMock = [
+    { name: 'Ama Darko', class: 'JHS 2', avgScore: 32, subject: 'Mathematics' },
+    { name: 'Kwame Mensah', class: 'Basic 6', avgScore: 28, subject: 'English' },
+    { name: 'Abena Owusu', class: 'JHS 1', avgScore: 35, subject: 'Science' },
+    { name: 'Yaw Asante', class: 'JHS 3', avgScore: 38, subject: 'Mathematics' },
+    { name: 'Efua Boateng', class: 'Basic 5', avgScore: 25, subject: 'French' },
+  ];
 
   // Curriculum mock
   const curriculumCoverage = [
@@ -294,23 +305,58 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">Subject & Class Performance Map</CardTitle>
               <CardDescription>Performance breakdown by subject and class</CardDescription>
             </div>
-            <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
-                <SelectValue placeholder="Select Class" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                <SelectItem value="basic1">Basic 1</SelectItem>
-                <SelectItem value="basic2">Basic 2</SelectItem>
-                <SelectItem value="basic3">Basic 3</SelectItem>
-                <SelectItem value="basic4">Basic 4</SelectItem>
-                <SelectItem value="basic5">Basic 5</SelectItem>
-                <SelectItem value="basic6">Basic 6</SelectItem>
-                <SelectItem value="jhs1">JHS 1</SelectItem>
-                <SelectItem value="jhs2">JHS 2</SelectItem>
-                <SelectItem value="jhs3">JHS 3</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={classFilter} onValueChange={setClassFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Select Class" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Classes</SelectItem>
+                  <SelectItem value="basic1">Basic 1</SelectItem>
+                  <SelectItem value="basic2">Basic 2</SelectItem>
+                  <SelectItem value="basic3">Basic 3</SelectItem>
+                  <SelectItem value="basic4">Basic 4</SelectItem>
+                  <SelectItem value="basic5">Basic 5</SelectItem>
+                  <SelectItem value="basic6">Basic 6</SelectItem>
+                  <SelectItem value="jhs1">JHS 1</SelectItem>
+                  <SelectItem value="jhs2">JHS 2</SelectItem>
+                  <SelectItem value="jhs3">JHS 3</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={perfTimeFilter} onValueChange={setPerfTimeFilter}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue placeholder="Week" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="last_week">Last Week</SelectItem>
+                  <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
+                  <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={perfTermFilter} onValueChange={setPerfTermFilter}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <SelectValue placeholder="Term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Terms</SelectItem>
+                  <SelectItem value="term1">Term 1</SelectItem>
+                  <SelectItem value="term2">Term 2</SelectItem>
+                  <SelectItem value="term3">Term 3</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={perfYearFilter} onValueChange={setPerfYearFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Academic Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Years</SelectItem>
+                  <SelectItem value="2025-2026">2025/2026</SelectItem>
+                  <SelectItem value="2024-2025">2024/2025</SelectItem>
+                  <SelectItem value="2023-2024">2023/2024</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -336,9 +382,7 @@ const AdminInsights: React.FC = () => {
                 <Badge key={i} variant="secondary" className="text-xs">{c.class} {c.subject}</Badge>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="mt-3 gap-1" onClick={() => setShowClassBreakdown(true)}>
-              <Eye className="w-3.5 h-3.5" /> View Class Breakdown
-            </Button>
+            
           </div>
         </CardContent>
       </Card>
@@ -349,7 +393,7 @@ const AdminInsights: React.FC = () => {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <CardTitle className="text-lg">Student Engagement & Risk Alerts</CardTitle>
-              <CardDescription>Learner participation and risk identification</CardDescription>
+              <CardDescription>Self learning and risk identification</CardDescription>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Select value={classFilter} onValueChange={setClassFilter}>
@@ -375,19 +419,19 @@ const AdminInsights: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-foreground mb-3">👥 Learner Participation</p>
+            <p className="text-sm font-medium text-foreground mb-3">👥 Self Learning</p>
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{activeThisWeek}</p>
-                <p className="text-xs text-muted-foreground">Active This Week</p>
-              </div>
-              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{lowActivityStudents}</p>
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Low Activity <span className="text-amber-500">⚠</span></p>
+                <p className="text-2xl font-bold text-foreground">{activeLearnersCount}<span className="text-sm font-normal text-muted-foreground">/{totalStudents}</span></p>
+                <p className="text-xs text-muted-foreground">Active Learners</p>
               </div>
               <div className="p-3 rounded-xl bg-destructive/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{inactiveStudents}</p>
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Inactive <span className="text-destructive">🚨</span></p>
+                <p className="text-2xl font-bold text-foreground">{atRiskCount}<span className="text-sm font-normal text-muted-foreground">/{totalStudents}</span></p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">At Risk Learners <span className="text-destructive">⚠</span></p>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{inactiveLearners}<span className="text-sm font-normal text-muted-foreground">/{totalStudents}</span></p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Inactive Learners <span className="text-amber-500">🚨</span></p>
               </div>
             </div>
           </div>
@@ -415,27 +459,22 @@ const AdminInsights: React.FC = () => {
           <DialogHeader>
             <DialogTitle>At-Risk Students</DialogTitle>
           </DialogHeader>
+          <p className="text-xs text-muted-foreground mb-3">Learners scoring below 40% average</p>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
-            {memberProfiles
-              .filter(p => activeStudents.some(s => s.user_id === p.user_id))
-              .slice(0, atRiskCount)
-              .map((s, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
-                      {s.first_name?.[0]}{s.last_name?.[0]}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{s.first_name} {s.last_name}</p>
-                      <p className="text-xs text-muted-foreground">{s.class_grade || 'No class'} • Low engagement</p>
-                    </div>
+            {atRiskStudentsMock.map((s, i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center text-xs font-bold text-destructive">
+                    {s.name.split(' ').map(n => n[0]).join('')}
                   </div>
-                  <Badge variant="destructive" className="text-xs">At Risk</Badge>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">{s.class} • {s.subject} • Avg: {s.avgScore}%</p>
+                  </div>
                 </div>
-              ))}
-            {atRiskCount === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-6">No at-risk students identified</p>
-            )}
+                <Badge variant="destructive" className="text-xs">At Risk</Badge>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
