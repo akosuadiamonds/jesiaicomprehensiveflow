@@ -113,10 +113,7 @@ const AdminInsights: React.FC = () => {
     ? teacherProfiles.slice(-1).map(p => ({ name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown', note: 'Low platform usage', subjects: p.subjects || [], classGrade: p.class_grade }))
     : [{ name: 'Yaa Boateng', note: 'Low platform usage', subjects: ['Science'], classGrade: 'JHS 3' }];
 
-  // Student engagement mock
-  const activeThisWeek = Math.round(activeStudents.length * 0.78);
-  const lowActivityStudents = Math.round(activeStudents.length * 0.17);
-  const inactiveStudents = activeStudents.length - activeThisWeek - lowActivityStudents;
+  // Student engagement
   const totalStudents = activeStudents.length || 50;
   const atRiskCount = Math.round(totalStudents * 0.12);
   const activeLearnersCount = Math.round(totalStudents * 0.68);
