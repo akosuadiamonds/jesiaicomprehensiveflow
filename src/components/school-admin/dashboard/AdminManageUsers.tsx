@@ -354,33 +354,32 @@ const AdminManageUsers: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {getRoleBadge(member.member_role)}
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="z-[100] bg-popover border shadow-md">
-                      <DropdownMenuItem onClick={() => setViewMember(member)}>
-                        <Eye className="w-4 h-4 mr-2" /> View
-                      </DropdownMenuItem>
-                      {member.user_id !== user?.id && (
-                        <>
-                          <DropdownMenuItem onClick={() => openEditDialog(member)}>
-                            <Pencil className="w-4 h-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setSuspendTarget({ id: member.id, name: memberName })}>
-                            <Ban className="w-4 h-4 mr-2" /> Suspend
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget({ id: member.id, name: memberName, type: 'member' })}>
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setViewMember(member)}>
+                    <Eye className="w-3.5 h-3.5" />
+                    View
+                  </Button>
+                  {member.user_id !== user?.id && (
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="z-[100] bg-popover border shadow-md">
+                        <DropdownMenuItem onClick={() => openEditDialog(member)}>
+                          <Pencil className="w-4 h-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSuspendTarget({ id: member.id, name: memberName })}>
+                          <Ban className="w-4 h-4 mr-2" /> Suspend
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget({ id: member.id, name: memberName, type: 'member' })}>
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               </div>
             );
