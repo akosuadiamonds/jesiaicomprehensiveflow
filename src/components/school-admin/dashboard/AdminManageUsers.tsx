@@ -364,6 +364,9 @@ const AdminManageUsers: React.FC = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="z-[100] bg-popover border shadow-md">
+                        <DropdownMenuItem onClick={() => setViewMember(member)}>
+                          <Eye className="w-4 h-4 mr-2" /> View
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openEditDialog(member)}>
                           <Pencil className="w-4 h-4 mr-2" /> Edit
                         </DropdownMenuItem>
