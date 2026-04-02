@@ -238,7 +238,7 @@ const AdminInsights: React.FC = () => {
 
 
       {/* Teacher Effectiveness & Activity */}
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
@@ -248,61 +248,96 @@ const AdminInsights: React.FC = () => {
             <SectionFilters classFilter={tchClass} onClassChange={setTchClass} weekFilter={tchWeek} onWeekChange={setTchWeek} termFilter={tchTerm} onTermChange={setTchTerm} yearFilter={tchYear} onYearChange={setTchYear} />
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* Teacher Engagement Summary */}
           <div>
-            <p className="text-sm font-medium text-foreground mb-3">👩🏽‍🏫 Teacher Engagement</p>
+            <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-primary" /> Teacher Engagement
+            </p>
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/15 text-center space-y-1">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-1">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                </div>
                 <p className="text-2xl font-bold text-foreground">{highlyActive}<span className="text-sm font-normal text-muted-foreground">/{activeTeachers.length}</span></p>
-                <p className="text-xs text-muted-foreground">Highly Active</p>
+                <p className="text-xs font-medium text-emerald-700">Highly Active</p>
               </div>
-              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/15 text-center space-y-1">
+                <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-1">
+                  <Activity className="w-4 h-4 text-amber-600" />
+                </div>
                 <p className="text-2xl font-bold text-foreground">{moderatelyActive}<span className="text-sm font-normal text-muted-foreground">/{activeTeachers.length}</span></p>
-                <p className="text-xs text-muted-foreground">Moderately Active</p>
+                <p className="text-xs font-medium text-amber-700">Moderately Active</p>
               </div>
-              <div className="p-3 rounded-xl bg-destructive/10 text-center">
+              <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/15 text-center space-y-1">
+                <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center mx-auto mb-1">
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                </div>
                 <p className="text-2xl font-bold text-foreground">{lowActivity}<span className="text-sm font-normal text-muted-foreground">/{activeTeachers.length}</span></p>
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Low Activity <span className="text-amber-500">⚠</span></p>
+                <p className="text-xs font-medium text-destructive">Low Activity</p>
               </div>
             </div>
           </div>
 
-          {topTeachers.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-foreground mb-2">⭐ Top 5 Performing Teachers</p>
-              <div className="space-y-2">
+          {/* Top & Support Teachers Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Top 5 Performing */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs">⭐</span>
+                Top 5 Performing Teachers
+              </p>
+              <div className="space-y-1.5">
                 {topTeachers.map((t, i) => (
-                  <div key={i} className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">{t.name}</span>
-                      <Badge variant="secondary" className="text-[10px] bg-emerald-500/10 text-emerald-700">{t.note}</Badge>
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hover:bg-emerald-500/10 transition-colors">
+                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 text-sm font-bold text-emerald-700">
+                      {t.name.split(' ').map(n => n[0]).join('')}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">💡 {t.insight}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">{t.name}</p>
+                        <Badge variant="secondary" className="text-[10px] bg-emerald-500/15 text-emerald-700 shrink-0">{t.note}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t.subjects?.join(', ') || 'N/A'} · {t.classGrade || 'N/A'}</p>
+                      <p className="text-xs text-emerald-600/80 mt-1 flex items-start gap-1">
+                        <span className="shrink-0">💡</span> {t.insight}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
 
-          {needSupportTeachers.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-foreground mb-2">⚠ 5 Teachers Needing Support</p>
-              <div className="space-y-2">
+            {/* 5 Teachers Needing Support */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-destructive/20 flex items-center justify-center text-xs">⚠️</span>
+                5 Teachers Needing Support
+              </p>
+              <div className="space-y-1.5">
                 {needSupportTeachers.map((t, i) => (
-                  <div key={i} className="p-2.5 rounded-lg bg-destructive/5 border border-destructive/10">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">{t.name}</span>
-                      <Badge variant="destructive" className="text-[10px]">{t.note}</Badge>
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-destructive/5 border border-destructive/10 hover:bg-destructive/10 transition-colors">
+                    <div className="w-9 h-9 rounded-full bg-destructive/20 flex items-center justify-center shrink-0 text-sm font-bold text-destructive">
+                      {t.name.split(' ').map(n => n[0]).join('')}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">💡 {t.insight}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">{t.name}</p>
+                        <Badge variant="destructive" className="text-[10px] shrink-0">{t.note}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t.subjects?.join(', ') || 'N/A'} · {t.classGrade || 'N/A'}</p>
+                      <p className="text-xs text-destructive/70 mt-1 flex items-start gap-1">
+                        <span className="shrink-0">💡</span> {t.insight}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          </div>
 
-          <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowTeacherInsights(true)}>
-            <Eye className="w-3.5 h-3.5" /> View Teacher Insights
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowTeacherInsights(true)}>
+            <Eye className="w-3.5 h-3.5" /> View Full Teacher Insights
           </Button>
         </CardContent>
       </Card>
