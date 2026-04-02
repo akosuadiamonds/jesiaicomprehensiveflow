@@ -422,19 +422,19 @@ const AdminInsights: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-foreground mb-3">👥 Learner Participation</p>
+            <p className="text-sm font-medium text-foreground mb-3">👥 Self Learning</p>
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{activeThisWeek}</p>
-                <p className="text-xs text-muted-foreground">Active This Week</p>
-              </div>
-              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{lowActivityStudents}</p>
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Low Activity <span className="text-amber-500">⚠</span></p>
+                <p className="text-2xl font-bold text-foreground">{activeLearnersCount}<span className="text-sm font-normal text-muted-foreground">/{totalStudents}</span></p>
+                <p className="text-xs text-muted-foreground">Active Learners</p>
               </div>
               <div className="p-3 rounded-xl bg-destructive/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{inactiveStudents}</p>
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Inactive <span className="text-destructive">🚨</span></p>
+                <p className="text-2xl font-bold text-foreground">{atRiskCount}<span className="text-sm font-normal text-muted-foreground">/{totalStudents}</span></p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">At Risk Learners <span className="text-destructive">⚠</span></p>
+              </div>
+              <div className="p-3 rounded-xl bg-amber-500/10 text-center">
+                <p className="text-2xl font-bold text-foreground">{inactiveLearners}<span className="text-sm font-normal text-muted-foreground">/{totalStudents}</span></p>
+                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Inactive Learners <span className="text-amber-500">🚨</span></p>
               </div>
             </div>
           </div>
