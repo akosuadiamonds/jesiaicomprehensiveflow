@@ -396,7 +396,7 @@ const AdminInsights: React.FC = () => {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
               <CardTitle className="text-lg">Student Engagement & Risk Alerts</CardTitle>
-              <CardDescription>Learner participation and risk identification</CardDescription>
+              <CardDescription>Self learning and risk identification</CardDescription>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Select value={classFilter} onValueChange={setClassFilter}>
