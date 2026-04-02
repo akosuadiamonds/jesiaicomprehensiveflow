@@ -14,16 +14,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import AdminBulkUploadModal from './AdminBulkUploadModal';
 
+interface MemberProfile {
+  first_name: string | null;
+  last_name: string | null;
+  phone_number: string | null;
+  gender: string | null;
+  school_name: string | null;
+  class_grade: string | null;
+  subjects: string[] | null;
+  created_at: string;
+}
+
 interface Member {
   id: string;
   user_id: string;
   member_role: string;
   is_active: boolean;
   joined_at: string;
-  profile?: {
-    first_name: string | null;
-    last_name: string | null;
-  };
+  profile?: MemberProfile;
 }
 
 interface PendingInvite {
