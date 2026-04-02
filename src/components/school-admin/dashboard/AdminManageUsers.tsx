@@ -400,8 +400,12 @@ const AdminManageUsers: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Pending</Badge>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setViewInvite(invite)}>
+                  <Eye className="w-3.5 h-3.5" />
+                  View
+                </Button>
                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: invite.id, name: `${invite.first_name} ${invite.last_name}`, type: 'invite' })}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
