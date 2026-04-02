@@ -283,7 +283,6 @@ const AdminInsights: React.FC = () => {
               <CardDescription>Coverage and assessment activity tracking</CardDescription>
             </div>
               <SectionFilters classFilter={curClass} onClassChange={setCurClass} weekFilter={curWeek} onWeekChange={setCurWeek} termFilter={curTerm} onTermChange={setCurTerm} yearFilter={curYear} onYearChange={setCurYear} />
-            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
