@@ -72,7 +72,7 @@ const AdminInsights: React.FC = () => {
   // Filters
   
   const [classFilter, setClassFilter] = useState('all');
-  const [tchWeek, setTchWeek] = useState('week');
+  const [tchWeek, setTchWeek] = useState('all');
   const [tchTerm, setTchTerm] = useState('all');
   const [tchYear, setTchYear] = useState('all');
   const [tchClass, setTchClass] = useState('all');
