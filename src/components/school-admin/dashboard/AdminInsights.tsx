@@ -117,7 +117,18 @@ const AdminInsights: React.FC = () => {
   const activeThisWeek = Math.round(activeStudents.length * 0.78);
   const lowActivityStudents = Math.round(activeStudents.length * 0.17);
   const inactiveStudents = activeStudents.length - activeThisWeek - lowActivityStudents;
-  const atRiskCount = Math.round(activeStudents.length * 0.12);
+  const totalStudents = activeStudents.length || 50;
+  const atRiskCount = Math.round(totalStudents * 0.12);
+  const activeLearnersCount = Math.round(totalStudents * 0.68);
+  const inactiveLearners = totalStudents - activeLearnersCount - atRiskCount;
+
+  const atRiskStudentsMock = [
+    { name: 'Ama Darko', class: 'JHS 2', avgScore: 32, subject: 'Mathematics' },
+    { name: 'Kwame Mensah', class: 'Basic 6', avgScore: 28, subject: 'English' },
+    { name: 'Abena Owusu', class: 'JHS 1', avgScore: 35, subject: 'Science' },
+    { name: 'Yaw Asante', class: 'JHS 3', avgScore: 38, subject: 'Mathematics' },
+    { name: 'Efua Boateng', class: 'Basic 5', avgScore: 25, subject: 'French' },
+  ];
 
   // Curriculum mock
   const curriculumCoverage = [
