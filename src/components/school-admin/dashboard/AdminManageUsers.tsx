@@ -607,6 +607,69 @@ const AdminManageUsers: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View User Details Modal */}
+      <Dialog open={!!viewMember} onOpenChange={(open) => !open && setViewMember(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {viewMember && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-lg font-bold text-primary">
+                    {viewMember.profile?.first_name?.[0]}{viewMember.profile?.last_name?.[0]}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-foreground">
+                    {viewMember.profile?.first_name || 'Unknown'} {viewMember.profile?.last_name || ''}
+                  </p>
+                  {getRoleBadge(viewMember.member_role)}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Gender</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.gender || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Phone</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.phone_number || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">School</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.school_name || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Class / Grade</p>
+                  <p className="font-medium text-foreground">{viewMember.profile?.class_grade || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 col-span-2">
+                  <p className="text-muted-foreground mb-0.5">Subjects</p>
+                  <p className="font-medium text-foreground">
+                    {viewMember.profile?.subjects && viewMember.profile.subjects.length > 0
+                      ? viewMember.profile.subjects.join(', ')
+                      : '—'}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Joined Institution</p>
+                  <p className="font-medium text-foreground">{new Date(viewMember.joined_at).toLocaleDateString()}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Account Created</p>
+                  <p className="font-medium text-foreground">
+                    {viewMember.profile?.created_at ? new Date(viewMember.profile.created_at).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
