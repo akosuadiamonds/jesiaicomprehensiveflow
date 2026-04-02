@@ -218,7 +218,7 @@ const AdminInsights: React.FC = () => {
               <CardTitle className="text-lg">Teacher Effectiveness & Activity</CardTitle>
               <CardDescription>Engagement and performance of teaching staff</CardDescription>
             </div>
-            <FilterChips value={teacherFilter} onChange={setTeacherFilter} />
+            <SectionFilters classFilter={tchClass} onClassChange={setTchClass} weekFilter={tchWeek} onWeekChange={setTchWeek} termFilter={tchTerm} onTermChange={setTchTerm} yearFilter={tchYear} onYearChange={setTchYear} />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
