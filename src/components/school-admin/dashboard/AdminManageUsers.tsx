@@ -70,6 +70,7 @@ const AdminManageUsers: React.FC = () => {
   const [suspendTarget, setSuspendTarget] = useState<{ id: string; name: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMember, setViewMember] = useState<Member | null>(null);
+  const [viewInvite, setViewInvite] = useState<PendingInvite | null>(null);
 
   const fetchMembers = async () => {
     if (!institution) return;
