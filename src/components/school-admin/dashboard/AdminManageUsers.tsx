@@ -68,6 +68,8 @@ const AdminManageUsers: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: 'member' | 'invite' } | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<{ id: string; name: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMember, setViewMember] = useState<Member | null>(null);
 
   const fetchMembers = async () => {
     if (!institution) return;
