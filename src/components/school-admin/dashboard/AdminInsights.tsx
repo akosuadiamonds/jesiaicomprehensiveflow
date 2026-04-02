@@ -415,7 +415,39 @@ const AdminInsights: React.FC = () => {
                   <SelectItem value="jhs3">JHS 3</SelectItem>
                 </SelectContent>
               </Select>
-              <FilterChips value={studentFilter} onChange={setStudentFilter} />
+              <Select value={engWeekFilter} onValueChange={setEngWeekFilter}>
+                <SelectTrigger className="w-[120px] h-8 text-xs">
+                  <SelectValue placeholder="Week" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="last_week">Last Week</SelectItem>
+                  <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
+                  <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={engTermFilter} onValueChange={setEngTermFilter}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
+                  <SelectValue placeholder="Term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Terms</SelectItem>
+                  <SelectItem value="term1">Term 1</SelectItem>
+                  <SelectItem value="term2">Term 2</SelectItem>
+                  <SelectItem value="term3">Term 3</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={engYearFilter} onValueChange={setEngYearFilter}>
+                <SelectTrigger className="w-[130px] h-8 text-xs">
+                  <SelectValue placeholder="Academic Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Years</SelectItem>
+                  <SelectItem value="2025-2026">2025/2026</SelectItem>
+                  <SelectItem value="2024-2025">2024/2025</SelectItem>
+                  <SelectItem value="2023-2024">2023/2024</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
