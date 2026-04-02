@@ -35,10 +35,10 @@ const SectionFilters: React.FC<{
     <Select value={weekFilter} onValueChange={onWeekChange}>
       <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue placeholder="Week" /></SelectTrigger>
       <SelectContent>
-        <SelectItem value="week">This Week</SelectItem>
-        <SelectItem value="last_week">Last Week</SelectItem>
-        <SelectItem value="2_weeks">Last 2 Weeks</SelectItem>
-        <SelectItem value="4_weeks">Last 4 Weeks</SelectItem>
+        <SelectItem value="all">All Weeks</SelectItem>
+        {Array.from({ length: 14 }, (_, i) => (
+          <SelectItem key={i + 1} value={`week_${i + 1}`}>Week {i + 1}</SelectItem>
+        ))}
       </SelectContent>
     </Select>
     <Select value={termFilter} onValueChange={onTermChange}>
@@ -72,22 +72,22 @@ const AdminInsights: React.FC = () => {
   // Filters
   
   const [classFilter, setClassFilter] = useState('all');
-  const [tchWeek, setTchWeek] = useState('week');
+  const [tchWeek, setTchWeek] = useState('all');
   const [tchTerm, setTchTerm] = useState('all');
   const [tchYear, setTchYear] = useState('all');
   const [tchClass, setTchClass] = useState('all');
-  const [curWeek, setCurWeek] = useState('week');
+  const [curWeek, setCurWeek] = useState('all');
   const [curTerm, setCurTerm] = useState('all');
   const [curYear, setCurYear] = useState('all');
   const [curClass, setCurClass] = useState('all');
-  const [engWeekFilter, setEngWeekFilter] = useState('week');
+  const [engWeekFilter, setEngWeekFilter] = useState('all');
   const [engTermFilter, setEngTermFilter] = useState('all');
   const [engYearFilter, setEngYearFilter] = useState('all');
   const [showAtRisk, setShowAtRisk] = useState(false);
   const [showTeacherInsights, setShowTeacherInsights] = useState(false);
   const [showCompliance, setShowCompliance] = useState(false);
   const [showClassBreakdown, setShowClassBreakdown] = useState(false);
-  const [perfTimeFilter, setPerfTimeFilter] = useState('week');
+  const [perfTimeFilter, setPerfTimeFilter] = useState('all');
   const [perfTermFilter, setPerfTermFilter] = useState('all');
   const [perfYearFilter, setPerfYearFilter] = useState('all');
 
