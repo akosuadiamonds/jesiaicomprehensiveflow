@@ -80,7 +80,7 @@ const AdminInsights: React.FC = () => {
   const [curTerm, setCurTerm] = useState('all');
   const [curYear, setCurYear] = useState('all');
   const [curClass, setCurClass] = useState('all');
-  const [engWeekFilter, setEngWeekFilter] = useState('week');
+  const [engWeekFilter, setEngWeekFilter] = useState('all');
   const [engTermFilter, setEngTermFilter] = useState('all');
   const [engYearFilter, setEngYearFilter] = useState('all');
   const [showAtRisk, setShowAtRisk] = useState(false);
