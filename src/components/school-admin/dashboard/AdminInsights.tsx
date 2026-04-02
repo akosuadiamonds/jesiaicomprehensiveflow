@@ -253,15 +253,15 @@ const AdminInsights: React.FC = () => {
             <p className="text-sm font-medium text-foreground mb-3">👩🏽‍🏫 Teacher Engagement</p>
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 rounded-xl bg-emerald-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{highlyActive}</p>
+                <p className="text-2xl font-bold text-foreground">{highlyActive}<span className="text-sm font-normal text-muted-foreground">/{activeTeachers.length}</span></p>
                 <p className="text-xs text-muted-foreground">Highly Active</p>
               </div>
               <div className="p-3 rounded-xl bg-amber-500/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{moderatelyActive}</p>
+                <p className="text-2xl font-bold text-foreground">{moderatelyActive}<span className="text-sm font-normal text-muted-foreground">/{activeTeachers.length}</span></p>
                 <p className="text-xs text-muted-foreground">Moderately Active</p>
               </div>
               <div className="p-3 rounded-xl bg-destructive/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{lowActivity}</p>
+                <p className="text-2xl font-bold text-foreground">{lowActivity}<span className="text-sm font-normal text-muted-foreground">/{activeTeachers.length}</span></p>
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">Low Activity <span className="text-amber-500">⚠</span></p>
               </div>
             </div>
