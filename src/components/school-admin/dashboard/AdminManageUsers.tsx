@@ -676,6 +676,58 @@ const AdminManageUsers: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!viewInvite} onOpenChange={(open) => !open && setViewInvite(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pending User Details</DialogTitle>
+          </DialogHeader>
+          {viewInvite && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-lg font-bold text-muted-foreground">
+                    {viewInvite.first_name?.[0]}{viewInvite.last_name?.[0]}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-foreground">
+                    {viewInvite.first_name} {viewInvite.last_name}
+                  </p>
+                  <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Pending</Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="p-3 rounded-lg bg-muted/50 col-span-2">
+                  <p className="text-muted-foreground mb-0.5">Email</p>
+                  <p className="font-medium text-foreground">{viewInvite.email}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Role</p>
+                  <p className="font-medium text-foreground capitalize">{viewInvite.invited_role}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Status</p>
+                  <p className="font-medium text-foreground capitalize">{viewInvite.status}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Class / Grade</p>
+                  <p className="font-medium text-foreground">{viewInvite.level_grade || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50">
+                  <p className="text-muted-foreground mb-0.5">Subject</p>
+                  <p className="font-medium text-foreground">{viewInvite.subject || '—'}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted/50 col-span-2">
+                  <p className="text-muted-foreground mb-0.5">Date Added</p>
+                  <p className="font-medium text-foreground">{new Date(viewInvite.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
