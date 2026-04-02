@@ -89,7 +89,7 @@ const AdminManageUsers: React.FC = () => {
       if (userIds.length > 0) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('user_id, first_name, last_name')
+          .select('user_id, first_name, last_name, phone_number, gender, school_name, class_grade, subjects, created_at')
           .in('user_id', userIds);
         profiles = (profileData as any[]) || [];
       }
