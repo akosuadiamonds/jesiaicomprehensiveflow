@@ -76,7 +76,7 @@ const AdminInsights: React.FC = () => {
   const [tchTerm, setTchTerm] = useState('all');
   const [tchYear, setTchYear] = useState('all');
   const [tchClass, setTchClass] = useState('all');
-  const [curWeek, setCurWeek] = useState('week');
+  const [curWeek, setCurWeek] = useState('all');
   const [curTerm, setCurTerm] = useState('all');
   const [curYear, setCurYear] = useState('all');
   const [curClass, setCurClass] = useState('all');
