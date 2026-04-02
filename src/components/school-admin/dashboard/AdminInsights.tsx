@@ -87,7 +87,7 @@ const AdminInsights: React.FC = () => {
   const [showTeacherInsights, setShowTeacherInsights] = useState(false);
   const [showCompliance, setShowCompliance] = useState(false);
   const [showClassBreakdown, setShowClassBreakdown] = useState(false);
-  const [perfTimeFilter, setPerfTimeFilter] = useState('week');
+  const [perfTimeFilter, setPerfTimeFilter] = useState('all');
   const [perfTermFilter, setPerfTermFilter] = useState('all');
   const [perfYearFilter, setPerfYearFilter] = useState('all');
 
