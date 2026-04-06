@@ -523,7 +523,7 @@ const AdminInsights: React.FC = () => {
                 <p className="text-xs text-muted-foreground">Active Learners</p>
               </div>
               <div className="p-3 rounded-xl bg-destructive/10 text-center">
-                <p className="text-2xl font-bold text-foreground">{atRiskCount}<span className="text-sm font-normal text-muted-foreground">/{totalStudents}</span></p>
+                <p className="text-2xl font-bold text-foreground">{atRiskCount}<span className="text-sm font-normal text-muted-foreground">/{activeLearnersCount}</span></p>
                 <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">At Risk Learners <span className="text-destructive">⚠</span></p>
               </div>
               <div className="p-3 rounded-xl bg-amber-500/10 text-center">
