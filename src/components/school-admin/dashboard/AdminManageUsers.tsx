@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, GraduationCap, Users, Shield, Trash2, Loader2, Upload, Clock, MoreVertical, Pencil, Ban, Search, Eye } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
@@ -58,6 +59,11 @@ const AdminManageUsers: React.FC = () => {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [addSubject, setAddSubject] = useState('');
+  const [addClass, setAddClass] = useState('');
+  const [addGender, setAddGender] = useState('');
+  const [addDateOfBirth, setAddDateOfBirth] = useState('');
+  const [addParentContact, setAddParentContact] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [bulkUploadType, setBulkUploadType] = useState<'teacher' | 'student'>('teacher');
@@ -166,6 +172,9 @@ const AdminManageUsers: React.FC = () => {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           invited_role: addRole,
+          subject: addRole === 'teacher' ? addSubject || null : null,
+          level_grade: addClass || null,
+          date_of_birth: addRole === 'student' ? addDateOfBirth || null : null,
           invited_by: user.id,
         });
         if (inviteError) {
@@ -181,6 +190,11 @@ const AdminManageUsers: React.FC = () => {
       setEmail('');
       setFirstName('');
       setLastName('');
+      setAddSubject('');
+      setAddClass('');
+      setAddGender('');
+      setAddDateOfBirth('');
+      setAddParentContact('');
       fetchMembers();
     } catch (error) {
       console.error('Error adding user:', error);
@@ -484,6 +498,74 @@ const AdminManageUsers: React.FC = () => {
               <Label>Email</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@school.edu.gh" />
             </div>
+
+            {/* Class field for both teachers and students */}
+            {(addRole === 'teacher' || addRole === 'student') && (
+              <div className="space-y-2">
+                <Label>Class / Grade</Label>
+                <Select value={addClass} onValueChange={setAddClass}>
+                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Basic 1">Basic 1</SelectItem>
+                    <SelectItem value="Basic 2">Basic 2</SelectItem>
+                    <SelectItem value="Basic 3">Basic 3</SelectItem>
+                    <SelectItem value="Basic 4">Basic 4</SelectItem>
+                    <SelectItem value="Basic 5">Basic 5</SelectItem>
+                    <SelectItem value="Basic 6">Basic 6</SelectItem>
+                    <SelectItem value="JHS 1">JHS 1</SelectItem>
+                    <SelectItem value="JHS 2">JHS 2</SelectItem>
+                    <SelectItem value="JHS 3">JHS 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Subject field for teachers */}
+            {addRole === 'teacher' && (
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Select value={addSubject} onValueChange={setAddSubject}>
+                  <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mathematics">Mathematics</SelectItem>
+                    <SelectItem value="English">English</SelectItem>
+                    <SelectItem value="Science">Science</SelectItem>
+                    <SelectItem value="Social Studies">Social Studies</SelectItem>
+                    <SelectItem value="ICT">ICT</SelectItem>
+                    <SelectItem value="French">French</SelectItem>
+                    <SelectItem value="Creative Arts">Creative Arts</SelectItem>
+                    <SelectItem value="RME">RME</SelectItem>
+                    <SelectItem value="Ghanaian Language">Ghanaian Language</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Extra student fields */}
+            {addRole === 'student' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Date of Birth</Label>
+                    <Input type="date" value={addDateOfBirth} onChange={(e) => setAddDateOfBirth(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Select value={addGender} onValueChange={setAddGender}>
+                      <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Parent/Guardian Contact</Label>
+                  <Input value={addParentContact} onChange={(e) => setAddParentContact(e.target.value)} placeholder="0XX XXX XXXX" />
+                </div>
+              </>
+            )}
 
             <Button
               onClick={handleAddUser}
