@@ -255,12 +255,12 @@ const AdminInsights: React.FC = () => {
               <Activity className="w-4 h-4 text-primary" /> Teacher Engagement
             </p>
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/15 text-center space-y-1">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-1">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <div className="p-4 rounded-xl bg-accent/10 border border-accent/15 text-center space-y-1">
+                <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-1">
+                  <CheckCircle2 className="w-4 h-4 text-accent-foreground" />
                 </div>
                 <p className="text-2xl font-bold text-foreground">{highlyActive}<span className="text-sm font-normal text-muted-foreground">/{activeTeachers.length}</span></p>
-                <p className="text-xs font-medium text-emerald-700">Highly Active</p>
+                <p className="text-xs font-medium text-accent-foreground">Highly Active</p>
               </div>
               <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/15 text-center space-y-1">
                 <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-1">
