@@ -284,22 +284,22 @@ const AdminInsights: React.FC = () => {
             {/* Top 5 Performing */}
             <div className="space-y-2">
               <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs">⭐</span>
+                <span className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs">⭐</span>
                 Top 5 Performing Teachers
               </p>
               <div className="space-y-1.5">
                 {topTeachers.map((t, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10 hover:bg-emerald-500/10 transition-colors">
-                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 text-sm font-bold text-emerald-700">
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors">
+                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0 text-sm font-bold text-primary">
                       {t.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-sm font-medium text-foreground truncate">{t.name}</p>
-                        <Badge variant="secondary" className="text-[10px] bg-emerald-500/15 text-emerald-700 shrink-0">{t.note}</Badge>
+                        <Badge variant="secondary" className="text-[10px] bg-primary/15 text-primary shrink-0">{t.note}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{t.subjects?.join(', ') || 'N/A'} · {t.classGrade || 'N/A'}</p>
-                      <p className="text-xs text-emerald-600/80 mt-1 flex items-start gap-1">
+                      <p className="text-xs text-primary/70 mt-1 flex items-start gap-1">
                         <span className="shrink-0">💡</span> {t.insight}
                       </p>
                     </div>

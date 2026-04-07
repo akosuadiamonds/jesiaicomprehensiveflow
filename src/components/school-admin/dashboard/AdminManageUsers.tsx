@@ -58,6 +58,11 @@ const AdminManageUsers: React.FC = () => {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [addSubject, setAddSubject] = useState('');
+  const [addClass, setAddClass] = useState('');
+  const [addGender, setAddGender] = useState('');
+  const [addDateOfBirth, setAddDateOfBirth] = useState('');
+  const [addParentContact, setAddParentContact] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [bulkUploadType, setBulkUploadType] = useState<'teacher' | 'student'>('teacher');
