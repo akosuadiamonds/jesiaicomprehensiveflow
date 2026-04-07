@@ -189,6 +189,11 @@ const AdminManageUsers: React.FC = () => {
       setEmail('');
       setFirstName('');
       setLastName('');
+      setAddSubject('');
+      setAddClass('');
+      setAddGender('');
+      setAddDateOfBirth('');
+      setAddParentContact('');
       fetchMembers();
     } catch (error) {
       console.error('Error adding user:', error);
