@@ -498,6 +498,74 @@ const AdminManageUsers: React.FC = () => {
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@school.edu.gh" />
             </div>
 
+            {/* Class field for both teachers and students */}
+            {(addRole === 'teacher' || addRole === 'student') && (
+              <div className="space-y-2">
+                <Label>Class / Grade</Label>
+                <Select value={addClass} onValueChange={setAddClass}>
+                  <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Basic 1">Basic 1</SelectItem>
+                    <SelectItem value="Basic 2">Basic 2</SelectItem>
+                    <SelectItem value="Basic 3">Basic 3</SelectItem>
+                    <SelectItem value="Basic 4">Basic 4</SelectItem>
+                    <SelectItem value="Basic 5">Basic 5</SelectItem>
+                    <SelectItem value="Basic 6">Basic 6</SelectItem>
+                    <SelectItem value="JHS 1">JHS 1</SelectItem>
+                    <SelectItem value="JHS 2">JHS 2</SelectItem>
+                    <SelectItem value="JHS 3">JHS 3</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Subject field for teachers */}
+            {addRole === 'teacher' && (
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Select value={addSubject} onValueChange={setAddSubject}>
+                  <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mathematics">Mathematics</SelectItem>
+                    <SelectItem value="English">English</SelectItem>
+                    <SelectItem value="Science">Science</SelectItem>
+                    <SelectItem value="Social Studies">Social Studies</SelectItem>
+                    <SelectItem value="ICT">ICT</SelectItem>
+                    <SelectItem value="French">French</SelectItem>
+                    <SelectItem value="Creative Arts">Creative Arts</SelectItem>
+                    <SelectItem value="RME">RME</SelectItem>
+                    <SelectItem value="Ghanaian Language">Ghanaian Language</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Extra student fields */}
+            {addRole === 'student' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Date of Birth</Label>
+                    <Input type="date" value={addDateOfBirth} onChange={(e) => setAddDateOfBirth(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Select value={addGender} onValueChange={setAddGender}>
+                      <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Parent/Guardian Contact</Label>
+                  <Input value={addParentContact} onChange={(e) => setAddParentContact(e.target.value)} placeholder="0XX XXX XXXX" />
+                </div>
+              </>
+            )}
+
             <Button
               onClick={handleAddUser}
               disabled={isAdding || !email.trim() || !firstName.trim() || !lastName.trim()}
