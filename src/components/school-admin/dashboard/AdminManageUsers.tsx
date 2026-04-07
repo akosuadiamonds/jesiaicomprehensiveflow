@@ -560,10 +560,6 @@ const AdminManageUsers: React.FC = () => {
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Parent/Guardian Contact</Label>
-                  <Input value={addParentContact} onChange={(e) => setAddParentContact(e.target.value)} placeholder="0XX XXX XXXX" />
-                </div>
               </>
             )}
 
