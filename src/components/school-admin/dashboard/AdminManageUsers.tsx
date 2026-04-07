@@ -171,6 +171,9 @@ const AdminManageUsers: React.FC = () => {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           invited_role: addRole,
+          subject: addRole === 'teacher' ? addSubject || null : null,
+          level_grade: addClass || null,
+          date_of_birth: addRole === 'student' ? addDateOfBirth || null : null,
           invited_by: user.id,
         });
         if (inviteError) {
