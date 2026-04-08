@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   ChevronRight,
   Users,
@@ -89,6 +90,9 @@ const PrivateClassOverview: React.FC<PrivateClassOverviewProps> = ({
 }) => {
   const { user } = useAuth();
   const [teacherName, setTeacherName] = useState('Teacher');
+  const [teacherAbout, setTeacherAbout] = useState<string | null>(null);
+  const [teacherSchool, setTeacherSchool] = useState<string | null>(null);
+  const [teacherSubjects, setTeacherSubjects] = useState<string[]>([]);
   const [studentCount, setStudentCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -101,15 +105,17 @@ const PrivateClassOverview: React.FC<PrivateClassOverviewProps> = ({
   const fetchDetails = async () => {
     setLoading(true);
     try {
-      // Fetch teacher name
+      // Fetch teacher profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, school_name, subjects')
         .eq('user_id', classroom.teacher_id)
         .maybeSingle();
 
       if (profile) {
         setTeacherName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Teacher');
+        setTeacherSchool(profile.school_name || null);
+        setTeacherSubjects(profile.subjects || []);
       }
 
       // Fetch student count
@@ -249,6 +255,39 @@ const PrivateClassOverview: React.FC<PrivateClassOverviewProps> = ({
           </div>
 
           <Separator />
+
+          {/* Teacher Profile */}
+          <div className="p-4 rounded-xl bg-muted/50 space-y-3">
+            <h3 className="font-semibold text-sm">About the Teacher</h3>
+            <div className="flex items-center gap-3">
+              <Avatar className="w-12 h-12">
+                <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                  {teacherName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold">{teacherName}</p>
+                {teacherSchool && (
+                  <p className="text-xs text-muted-foreground">{teacherSchool}</p>
+                )}
+              </div>
+            </div>
+            {teacherSubjects.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1.5">Teaches</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {teacherSubjects.map((s) => (
+                    <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {classroom.description && (
+              <p className="text-sm text-muted-foreground leading-relaxed italic">
+                "{classroom.description}"
+              </p>
+            )}
+          </div>
 
           {/* Description */}
           {classroom.description && (
