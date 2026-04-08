@@ -13,8 +13,8 @@ const ROLE_COPY: Record<string, { heading: string; subheading: string }> = {
     subheading: 'Use AI to deliver engaging lessons and help every student improve.',
   },
   learner: {
-    heading: 'Welcome back, Learner!',
-    subheading: 'Sign in to continue your learning journey',
+    heading: 'Your personal AI learning coach.',
+    subheading: 'Begin your personalized learning journey with Jesi AI',
   },
   school_admin: {
     heading: 'Manage Your School with Confidence',
