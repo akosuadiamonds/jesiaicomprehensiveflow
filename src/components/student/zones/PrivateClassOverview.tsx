@@ -104,15 +104,17 @@ const PrivateClassOverview: React.FC<PrivateClassOverviewProps> = ({
   const fetchDetails = async () => {
     setLoading(true);
     try {
-      // Fetch teacher name
+      // Fetch teacher profile
       const { data: profile } = await supabase
         .from('profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, school_name, subjects')
         .eq('user_id', classroom.teacher_id)
         .maybeSingle();
 
       if (profile) {
         setTeacherName(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Teacher');
+        setTeacherSchool(profile.school_name || null);
+        setTeacherSubjects(profile.subjects || []);
       }
 
       // Fetch student count
