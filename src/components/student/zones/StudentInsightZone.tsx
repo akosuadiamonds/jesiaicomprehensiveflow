@@ -465,12 +465,12 @@ const StudentInsightZone: React.FC = () => {
       <div className="bg-gradient-to-r from-secondary/50 to-secondary/30 rounded-[14px] border border-border p-4">
         <p className="font-bold text-sm mb-2">👨‍👩‍👧 What My Parents Can See</p>
         <div className="space-y-1 text-sm text-muted-foreground">
-          <p>✅ Subjects I'm improving in</p>
-          <p>✅ Topics I need help with</p>
-          <p>✅ My weekly study effort</p>
+          <p className="flex items-center gap-1.5">✅ Subjects I'm improving in</p>
+          <p className="flex items-center gap-1.5">✅ Topics I need help with</p>
+          <p className="flex items-center gap-1.5">✅ My weekly study effort</p>
         </div>
-        <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => setShowShareModal(true)}>
-          📤 Share Progress with Parent
+        <Button variant="outline" size="sm" className="mt-3 text-xs gap-1.5" onClick={() => setShowShareModal(true)}>
+          <Send className="w-3.5 h-3.5" /> Share Progress with Parent
         </Button>
       </div>
 
