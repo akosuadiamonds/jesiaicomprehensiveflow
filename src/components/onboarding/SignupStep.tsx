@@ -14,8 +14,8 @@ import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 const ROLE_COPY: Record<string, { heading: string; subheading: string }> = {
   teacher: {
-    heading: 'Create your Teacher account',
-    subheading: 'Start creating AI-powered lessons and quizzes today',
+    heading: 'Spend Less Time Preparing. More Time Teaching.',
+    subheading: 'Use AI to deliver engaging lessons and help every student improve.',
   },
   learner: {
     heading: 'Create your Learner account',

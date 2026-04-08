@@ -9,8 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 
 const ROLE_COPY: Record<string, { heading: string; subheading: string }> = {
   teacher: {
-    heading: 'Welcome back, Teacher!',
-    subheading: 'Sign in to continue creating amazing lessons',
+    heading: 'Spend Less Time Preparing. More Time Teaching.',
+    subheading: 'Use AI to deliver engaging lessons and help every student improve.',
   },
   learner: {
     heading: 'Welcome back, Learner!',
