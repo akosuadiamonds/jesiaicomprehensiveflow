@@ -223,15 +223,15 @@ const StudentInsightZone: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in pb-4">
+    <div className="space-y-4 animate-fade-in pb-4 max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-extrabold tracking-tight text-foreground">Progress</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{studentName} · {classGrade}</p>
         </div>
-        <Button variant="outline" size="sm" className="text-xs" onClick={() => setShowShareModal(true)}>
-          📤 Share
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => setShowShareModal(true)}>
+          <Send className="w-3.5 h-3.5" /> Share
         </Button>
       </div>
 
@@ -239,18 +239,34 @@ const StudentInsightZone: React.FC = () => {
       <PeriodSelector options={['This Week', 'This Month', 'This Term', 'All Time']} value={period} onChange={setPeriod} />
 
       {/* LPS Hero Card */}
-      <div className="relative bg-foreground rounded-[20px] p-6 overflow-hidden shadow-lg">
+      <div className="relative bg-foreground rounded-[20px] p-5 sm:p-6 overflow-hidden shadow-lg" role="region" aria-label="Learning Progress Score">
         {/* Glow effects */}
         <div className="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-primary/25 blur-2xl pointer-events-none" />
         <div className="absolute -left-5 -bottom-8 w-40 h-40 rounded-full bg-purple-500/20 blur-2xl pointer-events-none" />
 
         <p className="text-[11px] font-semibold uppercase tracking-wider text-background/50 mb-1.5 relative z-10">Learning Progress Score</p>
         <div className="flex items-end gap-3 mb-2 relative z-10">
-          <span className="text-6xl font-extrabold text-background tracking-tighter leading-none">72</span>
+          <span className="text-5xl sm:text-6xl font-extrabold text-background tracking-tighter leading-none">72</span>
           <ProgressRing percent={72} size={72} strokeWidth={6} color="hsl(var(--primary))" />
         </div>
         <div className="inline-flex items-center gap-1 bg-emerald-400/15 text-emerald-300 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold mb-3 relative z-10">
           ↑ +8 points this month
+        </div>
+
+        {/* LPS Breakdown Factors */}
+        <div className="grid grid-cols-5 gap-2 border-t border-background/10 pt-3 relative z-10">
+          {[
+            { val: '78%', label: 'Quiz' },
+            { val: '74%', label: 'HW' },
+            { val: '68%', label: 'Learn' },
+            { val: '71%', label: 'Practice' },
+            { val: '75%', label: 'Understand' },
+          ].map(f => (
+            <div key={f.label} className="text-center">
+              <p className="font-bold text-sm text-background">{f.val}</p>
+              <p className="text-[9.5px] text-background/45 mt-0.5 leading-tight">{f.label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
