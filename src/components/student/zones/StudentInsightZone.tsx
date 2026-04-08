@@ -99,39 +99,32 @@ const MetricRow: React.FC<{
 
 // ─── Trend Bars ─────────────────────────────────
 const TrendBars: React.FC<{ data: number[]; color: string; startLabel: string; endLabel: string; title: string }> = ({ data, color, startLabel, endLabel, title }) => {
-  const max = Math.max(...data);
+  const maxHeight = 66;
   return (
     <div className="bg-card rounded-[14px] border border-border p-4 shadow-sm">
       <p className="font-bold text-[13px] mb-3.5">{title}</p>
       <div className="flex items-end gap-1.5 h-[72px]">
         {data.map((v, i) => {
-          const h = Math.max(8, Math.round((v / max) * 66));
           const isLast = i === data.length - 1;
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full rounded-t-[5px]" style={{
-                height: `${h}px`,
-                backgroundColor: isLast ? color : 'hsl(var(--muted) / 0.15)'
-              }} />
-            </div>
-          );
-        })}
-      </div>
-      {/* Progress bars + percentage labels */}
-      <div className="flex gap-1.5 mt-2">
-        {data.map((v, i) => {
-          const isLast = i === data.length - 1;
-          return (
-            <div key={i} className="flex-1">
-              <div className="h-[4px] rounded-full bg-muted/20">
-                <div className="h-[4px] rounded-full transition-all" style={{ width: `${v}%`, backgroundColor: isLast ? color : 'hsl(var(--muted-foreground) / 0.3)' }} />
+            <div key={i} className="flex-1 flex flex-col items-center">
+              <div className="w-full rounded-t-[5px] relative" style={{ height: `${maxHeight}px`, backgroundColor: 'hsl(var(--muted) / 0.15)' }}>
+                <div className="absolute bottom-0 left-0 w-full rounded-t-[5px] transition-all" style={{
+                  height: `${Math.max(4, Math.round((v / 100) * maxHeight))}px`,
+                  backgroundColor: isLast ? color : 'hsl(var(--primary) / 0.5)'
+                }} />
               </div>
-              <p className="text-[9.5px] text-muted-foreground text-center mt-1">{v}%</p>
             </div>
           );
         })}
       </div>
-      <div className="flex justify-between mt-1.5">
+      {/* Percentage labels */}
+      <div className="flex gap-1.5 mt-1.5">
+        {data.map((v, i) => (
+          <p key={i} className="flex-1 text-[9.5px] text-muted-foreground text-center">{v}%</p>
+        ))}
+      </div>
+      <div className="flex justify-between mt-1">
         <span className="text-[10px] text-muted-foreground">{startLabel}</span>
         <span className="text-[10px] font-semibold" style={{ color }}>{endLabel}</span>
       </div>
