@@ -7,8 +7,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const ROLE_COPY: Record<string, { heading: string; subheading: string }> = {
+  teacher: {
+    heading: 'Welcome back, Teacher!',
+    subheading: 'Sign in to continue creating amazing lessons',
+  },
+  learner: {
+    heading: 'Welcome back, Learner!',
+    subheading: 'Sign in to continue your learning journey',
+  },
+  school_admin: {
+    heading: 'Welcome back, Admin!',
+    subheading: 'Sign in to manage your institution',
+  },
+  super_admin: {
+    heading: 'Welcome back, Super Admin!',
+    subheading: 'Sign in to access platform oversight',
+  },
+};
+
 const SignInStep: React.FC = () => {
-  const { setCurrentStep } = useOnboarding();
+  const { setCurrentStep, userRole } = useOnboarding();
   const { signIn } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
@@ -16,6 +35,8 @@ const SignInStep: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const copy = ROLE_COPY[userRole || 'teacher'] || ROLE_COPY.teacher;
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -60,10 +81,10 @@ const SignInStep: React.FC = () => {
 
       <div className="space-y-2">
         <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
-          Welcome back
+          {copy.heading}
         </h2>
         <p className="text-muted-foreground">
-          Sign in to your Jesi AI account
+          {copy.subheading}
         </p>
       </div>
 

@@ -15,7 +15,7 @@ export interface TeacherProfileData {
   subjects: string[];
 }
 
-export type UserRole = 'teacher' | 'learner' | 'school_admin' | null;
+export type UserRole = 'teacher' | 'learner' | 'school_admin' | 'super_admin' | null;
 
 export type PlanType = 'free' | 'pro' | 'premium';
 
@@ -32,11 +32,11 @@ export interface Plan {
 }
 
 export type OnboardingStep = 
+  | 'role'
   | 'signup'
   | 'password'
   | 'verify'
   | 'signin'
-  | 'role'
   | 'subjects'
   | 'profile'
   | 'profile-success'

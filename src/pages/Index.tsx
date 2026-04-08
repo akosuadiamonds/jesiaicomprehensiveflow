@@ -3,11 +3,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { OnboardingProvider, useOnboarding } from '@/contexts/OnboardingContext';
 import OnboardingLayout from '@/components/onboarding/OnboardingLayout';
+import RoleStep from '@/components/onboarding/RoleStep';
 import SignupStep from '@/components/onboarding/SignupStep';
 import PasswordStep from '@/components/onboarding/PasswordStep';
 import VerifyStep from '@/components/onboarding/VerifyStep';
 import SignInStep from '@/components/onboarding/SignInStep';
-import RoleStep from '@/components/onboarding/RoleStep';
 import SubjectsStep from '@/components/onboarding/SubjectsStep';
 import ProfileStep from '@/components/onboarding/ProfileStep';
 import ProfileSuccessStep from '@/components/onboarding/ProfileSuccessStep';
@@ -25,32 +25,35 @@ import AdminSelectPackageStep from '@/components/school-admin/onboarding/AdminSe
 import AdminPaymentStep from '@/components/school-admin/onboarding/AdminPaymentStep';
 import { Loader2 } from 'lucide-react';
 
-// Pre-auth steps (before user is authenticated)
-const preAuthSteps = ['signup', 'password', 'verify', 'signin'];
+// Pre-auth steps: role → signup → password → verify → signin
+const preAuthSteps = ['role', 'signup', 'password', 'verify', 'signin'];
 
-const preAuthStepConfig: Record<string, { step: number; totalSteps: number }> = {
-  signup: { step: 1, totalSteps: 3 },
-  password: { step: 2, totalSteps: 3 },
-  verify: { step: 3, totalSteps: 3 },
-  signin: { step: 1, totalSteps: 1 },
+const preAuthStepConfig: Record<string, { step: number; totalSteps: number; showProgress: boolean }> = {
+  role: { step: 1, totalSteps: 4, showProgress: false },
+  signup: { step: 2, totalSteps: 4, showProgress: true },
+  password: { step: 3, totalSteps: 4, showProgress: true },
+  verify: { step: 4, totalSteps: 4, showProgress: true },
+  signin: { step: 1, totalSteps: 1, showProgress: false },
 };
 
-// Post-auth steps (after user is authenticated)
+// Post-auth steps config
 const postAuthStepConfig: Record<string, { step: number; showProgress: boolean; totalSteps?: number }> = {
-  role: { step: 1, showProgress: true },
-  profile: { step: 2, showProgress: true },
-  subjects: { step: 3, showProgress: true },
-  'profile-success': { step: 3, showProgress: true },
-  plans: { step: 4, showProgress: true },
-  payment: { step: 4, showProgress: true },
-  dashboard: { step: 4, showProgress: false },
-  'student-profile': { step: 2, showProgress: true, totalSteps: 5 },
-  'student-join-class': { step: 3, showProgress: true, totalSteps: 5 },
-  'student-plans': { step: 4, showProgress: true, totalSteps: 5 },
-  'student-payment': { step: 5, showProgress: true, totalSteps: 5 },
-  'admin-school-details': { step: 2, showProgress: true, totalSteps: 4 },
-  'admin-select-package': { step: 3, showProgress: true, totalSteps: 4 },
-  'admin-payment': { step: 4, showProgress: true, totalSteps: 4 },
+  // Teacher flow
+  profile: { step: 1, showProgress: true, totalSteps: 3 },
+  subjects: { step: 2, showProgress: true, totalSteps: 3 },
+  'profile-success': { step: 2, showProgress: true, totalSteps: 3 },
+  plans: { step: 3, showProgress: true, totalSteps: 3 },
+  payment: { step: 3, showProgress: true, totalSteps: 3 },
+  dashboard: { step: 3, showProgress: false },
+  // Student flow
+  'student-profile': { step: 1, showProgress: true, totalSteps: 3 },
+  'student-join-class': { step: 2, showProgress: true, totalSteps: 3 },
+  'student-plans': { step: 3, showProgress: true, totalSteps: 3 },
+  'student-payment': { step: 3, showProgress: true, totalSteps: 3 },
+  // Admin flow
+  'admin-school-details': { step: 1, showProgress: true, totalSteps: 3 },
+  'admin-select-package': { step: 2, showProgress: true, totalSteps: 3 },
+  'admin-payment': { step: 3, showProgress: true, totalSteps: 3 },
 };
 
 // Component that syncs onboarding state with profile from database
@@ -62,14 +65,13 @@ const OnboardingStepSync: React.FC<{ onSynced?: () => void }> = ({ onSynced }) =
   useEffect(() => {
     if (!profile || hasSynced.current) return;
     if (currentStep === 'payment' || currentStep === 'student-payment' || currentStep === 'admin-payment') return;
-    // Don't override navigation if already on a forward admin/student step
     if (currentStep === 'admin-select-package' || currentStep === 'admin-school-details') return;
     if (currentStep === 'student-join-class' || currentStep === 'student-plans') return;
     hasSynced.current = true;
 
     // Sync role from profile
     if (profile.user_role) {
-      setUserRole(profile.user_role as 'teacher' | 'learner');
+      setUserRole(profile.user_role as 'teacher' | 'learner' | 'school_admin' | 'super_admin');
     } else {
       setUserRole(null);
     }
@@ -85,12 +87,15 @@ const OnboardingStepSync: React.FC<{ onSynced?: () => void }> = ({ onSynced }) =
     const hasRole = !!profile.user_role;
     const hasProfileDetails = profile.phone_number && profile.school_name;
     const hasSubjects = profile.subjects && profile.subjects.length > 0;
-    const hasSelectedPlan = profile.selected_plan !== null;
+    const hasSelectedPlan = profile.selected_plan !== null && profile.selected_plan !== undefined;
 
     if (!hasRole) {
-      setCurrentStep('role');
+      // Role should already be set from pre-auth, but if not, go to profile
+      setCurrentStep('profile');
+    } else if (profile.user_role === 'super_admin') {
+      // Super admins skip to dashboard
+      setCurrentStep('dashboard');
     } else if (profile.user_role === 'school_admin') {
-      // School admin flow
       if (!hasSelectedPlan) {
         setCurrentStep('admin-school-details');
       }
@@ -118,15 +123,16 @@ const OnboardingStepSync: React.FC<{ onSynced?: () => void }> = ({ onSynced }) =
   return null;
 };
 
-// Pre-auth onboarding (signup/password/verify/signin)
+// Pre-auth onboarding (role → signup → password → verify → signin)
 const PreAuthContent: React.FC = () => {
   const { currentStep } = useOnboarding();
 
-  const config = preAuthStepConfig[currentStep] || { step: 1, totalSteps: 3 };
-  const showProgress = currentStep !== 'signin';
+  const config = preAuthStepConfig[currentStep] || { step: 1, totalSteps: 4, showProgress: false };
 
   const renderStep = () => {
     switch (currentStep) {
+      case 'role':
+        return <RoleStep />;
       case 'signup':
         return <SignupStep />;
       case 'password':
@@ -136,13 +142,13 @@ const PreAuthContent: React.FC = () => {
       case 'signin':
         return <SignInStep />;
       default:
-        return <SignupStep />;
+        return <RoleStep />;
     }
   };
 
   return (
     <OnboardingLayout
-      showProgress={showProgress}
+      showProgress={config.showProgress}
       currentStep={config.step}
       totalSteps={config.totalSteps}
     >
@@ -151,7 +157,7 @@ const PreAuthContent: React.FC = () => {
   );
 };
 
-// Post-auth onboarding (role/profile/subjects/plans etc.)
+// Post-auth onboarding (profile/subjects/plans etc.)
 const PostAuthContent: React.FC = () => {
   const { currentStep } = useOnboarding();
   const [synced, setSynced] = useState(false);
@@ -159,7 +165,6 @@ const PostAuthContent: React.FC = () => {
   const handleSynced = () => setSynced(true);
 
   // Clear stale localStorage onboarding state on first mount
-  // so old step values don't flash before sync corrects them
   useEffect(() => {
     try {
       localStorage.removeItem('jesi_onboarding_state');
@@ -215,7 +220,7 @@ const PostAuthContent: React.FC = () => {
   // Payment steps
   if (currentStep === 'payment' || currentStep === 'student-payment') {
     return (
-      <OnboardingLayout showProgress={true} currentStep={4} totalSteps={4}>
+      <OnboardingLayout showProgress={true} currentStep={config.step} totalSteps={config.totalSteps || 3}>
         <PaymentStep />
       </OnboardingLayout>
     );
@@ -223,7 +228,7 @@ const PostAuthContent: React.FC = () => {
 
   if (currentStep === 'admin-payment') {
     return (
-      <OnboardingLayout showProgress={true} currentStep={4} totalSteps={4}>
+      <OnboardingLayout showProgress={true} currentStep={config.step} totalSteps={config.totalSteps || 3}>
         <AdminPaymentStep />
       </OnboardingLayout>
     );
@@ -231,8 +236,6 @@ const PostAuthContent: React.FC = () => {
 
   const renderStep = () => {
     switch (currentStep) {
-      case 'role':
-        return <RoleStep />;
       case 'subjects':
         return <SubjectsStep />;
       case 'profile':
@@ -246,24 +249,20 @@ const PostAuthContent: React.FC = () => {
       case 'admin-school-details':
         return <SchoolDetailsStep />;
       default:
-        return <RoleStep />;
+        return <ProfileStep />;
     }
   };
 
-  // Student onboarding uses 5 steps, teacher uses 4
-  const totalSteps = currentStep.startsWith('student') ? 5 : currentStep.startsWith('admin') ? 4 : 4;
+  const totalSteps = config.totalSteps || 3;
 
   return (
-    <>
-      
-      <OnboardingLayout
-        showProgress={config.showProgress}
-        currentStep={config.step}
-        totalSteps={totalSteps}
-      >
-        {renderStep()}
-      </OnboardingLayout>
-    </>
+    <OnboardingLayout
+      showProgress={config.showProgress}
+      currentStep={config.step}
+      totalSteps={totalSteps}
+    >
+      {renderStep()}
+    </OnboardingLayout>
   );
 };
 
@@ -295,7 +294,7 @@ const AuthenticatedApp: React.FC = () => {
     );
   }
 
-  // Not authenticated - show pre-auth onboarding (signup/password/verify)
+  // Not authenticated - show pre-auth onboarding (role → signup → password → verify)
   if (!user) {
     return (
       <OnboardingProvider>
@@ -309,6 +308,11 @@ const AuthenticatedApp: React.FC = () => {
     return <SuperAdminApp />;
   }
 
+  // Check if profile indicates super_admin (newly selected during onboarding)
+  if (profile?.user_role === 'super_admin') {
+    return <SuperAdminApp />;
+  }
+
   // Authenticated but profile setup not complete
   const hasRole = !!profile?.user_role;
   const hasSubjects = profile?.subjects && profile.subjects.length > 0;
@@ -316,7 +320,6 @@ const AuthenticatedApp: React.FC = () => {
   const isSchoolAdminRole = profile?.user_role === 'school_admin';
 
   // Show post-auth onboarding if user hasn't completed all required steps
-  // Must have a role selected first, then role-specific checks
   const needsOnboarding = !hasRole || (isSchoolAdminRole
     ? !hasSelectedPlan
     : (!hasSubjects || !hasSelectedPlan));

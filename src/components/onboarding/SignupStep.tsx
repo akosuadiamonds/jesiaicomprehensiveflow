@@ -10,11 +10,32 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
+
+const ROLE_COPY: Record<string, { heading: string; subheading: string }> = {
+  teacher: {
+    heading: 'Create your Teacher account',
+    subheading: 'Start creating AI-powered lessons and quizzes today',
+  },
+  learner: {
+    heading: 'Create your Learner account',
+    subheading: 'Begin your personalized learning journey with Jesi AI',
+  },
+  school_admin: {
+    heading: 'Create your Admin account',
+    subheading: 'Set up your institution and manage your team',
+  },
+  super_admin: {
+    heading: 'Create your Super Admin account',
+    subheading: 'Get platform-wide access and oversight',
+  },
+};
 
 const SignupStep: React.FC = () => {
-  const { signupData, setSignupData, setCurrentStep } = useOnboarding();
+  const { signupData, setSignupData, setCurrentStep, userRole } = useOnboarding();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const copy = ROLE_COPY[userRole || 'teacher'] || ROLE_COPY.teacher;
 
   const handleChange = (field: string, value: string) => {
     setSignupData({ ...signupData, [field]: value });
@@ -53,12 +74,20 @@ const SignupStep: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <button
+        onClick={() => setCurrentStep('role')}
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span className="text-sm">Back</span>
+      </button>
+
       <div className="space-y-2">
         <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
-          Create your account
+          {copy.heading}
         </h2>
         <p className="text-muted-foreground">
-          Start your journey with Jesi AI today
+          {copy.subheading}
         </p>
       </div>
 
