@@ -33,7 +33,7 @@ const menuItems = [
   { id: 'practice' as const, label: 'Practice Zone', icon: Dumbbell, emoji: '💪' },
   { id: 'class' as const, label: 'Class Zone', icon: Users, emoji: '🏫' },
   { id: 'streak' as const, label: 'Streak Zone', icon: Flame, emoji: '🔥' },
-  { id: 'insights' as const, label: 'Insight Zone', icon: BarChart3, emoji: '📊' },
+  { id: 'insights' as const, label: 'Progress', icon: BarChart3, emoji: '📊' },
 ];
 
 const StudentSidebar: React.FC = () => {
