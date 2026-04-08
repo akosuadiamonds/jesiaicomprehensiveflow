@@ -43,53 +43,42 @@ const RoleStep: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
+    <div className="space-y-4">
+      <div className="text-center space-y-1">
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground">
           How will you use Jesi AI?
         </h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Select your role to personalize your experience
         </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-2.5">
         {ROLES.map((role) => (
           <button
             key={role.id}
             onClick={() => handleRoleSelect(role.id)}
-            className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 text-left hover:shadow-medium ${
+            className={`group relative px-4 py-3 rounded-xl border-2 transition-all duration-300 text-left hover:shadow-medium ${
               userRole === role.id
                 ? 'border-primary bg-primary/5 shadow-soft'
                 : 'border-border hover:border-primary/50'
             }`}
           >
-            <div className="flex items-start gap-4">
-              <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center transition-colors ${
                 userRole === role.id ? 'gradient-hero' : 'bg-muted group-hover:gradient-hero'
               }`}>
-                <role.icon className={`w-7 h-7 ${
+                <role.icon className={`w-5 h-5 ${
                   userRole === role.id ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-primary-foreground'
                 }`} />
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-foreground mb-1">{role.label}</h3>
-                <p className="text-sm text-muted-foreground">{role.description}</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-semibold text-foreground">{role.label}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-1">{role.description}</p>
               </div>
-              <ArrowRight className={`w-5 h-5 mt-2 transition-transform ${
+              <ArrowRight className={`w-4 h-4 flex-shrink-0 transition-transform ${
                 userRole === role.id ? 'text-primary translate-x-1' : 'text-muted-foreground group-hover:translate-x-1'
               }`} />
-            </div>
-            
-            <div className="flex flex-wrap gap-2 mt-4 ml-[4.5rem]">
-              {role.features.map((feature) => (
-                <span
-                  key={feature}
-                  className="text-xs px-2.5 py-1 rounded-full bg-primary/10 text-primary font-medium"
-                >
-                  {feature}
-                </span>
-              ))}
             </div>
           </button>
         ))}
