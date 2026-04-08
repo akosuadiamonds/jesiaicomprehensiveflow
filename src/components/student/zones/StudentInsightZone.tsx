@@ -256,15 +256,18 @@ const StudentInsightZone: React.FC = () => {
         {/* LPS Breakdown Factors */}
         <div className="grid grid-cols-5 gap-2 border-t border-primary-foreground/15 pt-3 relative z-10">
           {[
-            { val: '78%', label: 'Quiz' },
-            { val: '74%', label: 'HW' },
-            { val: '68%', label: 'Learn' },
-            { val: '71%', label: 'Practice' },
-            { val: '75%', label: 'Understand' },
+            { val: 78, label: 'Quiz' },
+            { val: 74, label: 'HW' },
+            { val: 68, label: 'Learn' },
+            { val: 71, label: 'Practice' },
+            { val: 75, label: 'Understand' },
           ].map(f => (
             <div key={f.label} className="text-center">
-              <p className="font-bold text-sm text-primary-foreground">{f.val}</p>
-              <p className="text-[9.5px] text-primary-foreground/50 mt-0.5 leading-tight">{f.label}</p>
+              <p className="font-bold text-sm text-primary-foreground">{f.val}%</p>
+              <div className="h-[4px] rounded-full bg-primary-foreground/15 mt-1.5 mx-auto">
+                <div className="h-[4px] rounded-full bg-primary-foreground/80 transition-all" style={{ width: `${f.val}%` }} />
+              </div>
+              <p className="text-[9.5px] text-primary-foreground/50 mt-1 leading-tight">{f.label}</p>
             </div>
           ))}
         </div>
