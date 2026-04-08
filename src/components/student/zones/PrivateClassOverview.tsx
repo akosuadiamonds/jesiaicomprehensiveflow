@@ -284,11 +284,9 @@ const PrivateClassOverview: React.FC<PrivateClassOverviewProps> = ({
                 </div>
               </div>
             )}
-            {classroom.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed italic">
-                "{classroom.description}"
-              </p>
-            )}
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Passionate educator with over 8 years of experience in the classroom. James believes in making learning fun, practical, and accessible to every student. He combines interactive teaching methods with real-world examples to help learners build confidence and excel academically.
+            </p>
           </div>
 
           {/* Description */}
