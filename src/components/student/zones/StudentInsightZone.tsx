@@ -17,8 +17,8 @@ const PeriodSelector: React.FC<{ options: string[]; value: string; onChange: (v:
         onClick={() => onChange(opt)}
         className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-all flex-shrink-0 ${
           value === opt
-            ? 'bg-foreground text-background border-foreground'
-            : 'bg-card text-muted-foreground border-border hover:border-foreground/20'
+            ? 'bg-primary text-primary-foreground border-primary'
+            : 'bg-card text-muted-foreground border-border hover:border-primary/30'
         }`}
       >
         {opt}
@@ -155,13 +155,13 @@ const StreakDots: React.FC = () => {
     <div className="flex gap-1.5 flex-wrap">
       {data.map((v, i) => (
         <div key={i} className={`w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold relative ${
-          v === 1 ? 'bg-foreground text-background' :
-          v === -1 ? 'bg-primary text-primary-foreground' :
+          v === 1 ? 'bg-primary text-primary-foreground' :
+          v === -1 ? 'bg-accent text-accent-foreground' :
           v === 2 ? 'bg-border/50 text-muted-foreground opacity-50' :
           'bg-muted text-muted-foreground'
         }`}>
           {days[i % 7]}
-          {v === -1 && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />}
+          {v === -1 && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />}
         </div>
       ))}
     </div>
@@ -239,22 +239,22 @@ const StudentInsightZone: React.FC = () => {
       <PeriodSelector options={['This Week', 'This Month', 'This Term', 'All Time']} value={period} onChange={setPeriod} />
 
       {/* LPS Hero Card */}
-      <div className="relative bg-foreground rounded-[20px] p-5 sm:p-6 overflow-hidden shadow-lg" role="region" aria-label="Learning Progress Score">
+      <div className="relative gradient-hero rounded-[20px] p-5 sm:p-6 overflow-hidden shadow-lg" role="region" aria-label="Learning Progress Score">
         {/* Glow effects */}
-        <div className="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-primary/25 blur-2xl pointer-events-none" />
-        <div className="absolute -left-5 -bottom-8 w-40 h-40 rounded-full bg-purple-500/20 blur-2xl pointer-events-none" />
+        <div className="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-accent/30 blur-2xl pointer-events-none" />
+        <div className="absolute -left-5 -bottom-8 w-40 h-40 rounded-full bg-primary/30 blur-2xl pointer-events-none" />
 
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-background/50 mb-1.5 relative z-10">Learning Progress Score</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-foreground/60 mb-1.5 relative z-10">Learning Progress Score</p>
         <div className="flex items-end gap-3 mb-2 relative z-10">
-          <span className="text-5xl sm:text-6xl font-extrabold text-background tracking-tighter leading-none">72</span>
-          <ProgressRing percent={72} size={72} strokeWidth={6} color="hsl(var(--primary))" />
+          <span className="text-5xl sm:text-6xl font-extrabold text-primary-foreground tracking-tighter leading-none">72</span>
+          <ProgressRing percent={72} size={72} strokeWidth={6} color="hsl(0 0% 100% / 0.9)" />
         </div>
-        <div className="inline-flex items-center gap-1 bg-emerald-400/15 text-emerald-300 px-2.5 py-0.5 rounded-full text-[11.5px] font-bold mb-3 relative z-10">
+        <div className="inline-flex items-center gap-1 bg-primary-foreground/15 text-primary-foreground px-2.5 py-0.5 rounded-full text-[11.5px] font-bold mb-3 relative z-10">
           ↑ +8 points this month
         </div>
 
         {/* LPS Breakdown Factors */}
-        <div className="grid grid-cols-5 gap-2 border-t border-background/10 pt-3 relative z-10">
+        <div className="grid grid-cols-5 gap-2 border-t border-primary-foreground/15 pt-3 relative z-10">
           {[
             { val: '78%', label: 'Quiz' },
             { val: '74%', label: 'HW' },
@@ -263,8 +263,8 @@ const StudentInsightZone: React.FC = () => {
             { val: '75%', label: 'Understand' },
           ].map(f => (
             <div key={f.label} className="text-center">
-              <p className="font-bold text-sm text-background">{f.val}</p>
-              <p className="text-[9.5px] text-background/45 mt-0.5 leading-tight">{f.label}</p>
+              <p className="font-bold text-sm text-primary-foreground">{f.val}</p>
+              <p className="text-[9.5px] text-primary-foreground/50 mt-0.5 leading-tight">{f.label}</p>
             </div>
           ))}
         </div>
@@ -407,26 +407,26 @@ const StudentInsightZone: React.FC = () => {
               <button key={cls} onClick={() => setPrivateClass(cls)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-[10px] text-[12px] font-semibold whitespace-nowrap border shadow-sm flex-shrink-0 transition-all ${
                   privateClass === cls
-                    ? 'bg-foreground text-background border-foreground'
+                    ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-card text-foreground border-border'
                 }`}>
-                <span className={`w-2 h-2 rounded-full ${cls === 'BECE Exam Prep' ? 'bg-yellow-400' : 'bg-emerald-500'}`} />
+                <span className={`w-2 h-2 rounded-full ${cls === 'BECE Exam Prep' ? 'bg-accent' : 'bg-primary'}`} />
                 {cls}
               </button>
             ))}
           </div>
 
           {/* Private Class Hero */}
-          <div className="relative bg-gradient-to-br from-[#0C1A5E] to-[#1A2E8A] rounded-[20px] p-5 text-white overflow-hidden shadow-lg">
-            <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-white/5 pointer-events-none" />
-            <p className="text-[12px] text-white/55 mb-1">BECE Exam Prep Masterclass · Mr. Kofi Owusu</p>
-            <p className="font-extrabold text-base mb-3.5">Private Class Progress Score</p>
+          <div className="relative gradient-premium rounded-[20px] p-5 overflow-hidden shadow-lg">
+            <div className="absolute -right-8 -bottom-8 w-36 h-36 rounded-full bg-primary-foreground/10 pointer-events-none" />
+            <p className="text-[12px] text-foreground/60 mb-1">BECE Exam Prep Masterclass · Mr. Kofi Owusu</p>
+            <p className="font-extrabold text-base text-foreground mb-3.5">Private Class Progress Score</p>
             <div className="flex items-center gap-4 mb-3.5">
-              <span className="text-5xl font-extrabold tracking-tighter leading-none">78</span>
-              <ProgressRing percent={78} size={72} strokeWidth={6} color="#F5C518" />
+              <span className="text-5xl font-extrabold tracking-tighter leading-none text-foreground">78</span>
+              <ProgressRing percent={78} size={72} strokeWidth={6} color="hsl(var(--foreground))" />
             </div>
-            <p className="text-[12px] text-white/50 mb-3.5">"You're getting good value from this class."</p>
-            <div className="grid grid-cols-4 gap-2 border-t border-white/10 pt-3">
+            <p className="text-[12px] text-foreground/50 mb-3.5">"You're getting good value from this class."</p>
+            <div className="grid grid-cols-4 gap-2 border-t border-foreground/10 pt-3">
               {[
                 { val: '89%', label: 'Attendance Rate' },
                 { val: '92%', label: 'Assignment Completion' },
@@ -434,8 +434,8 @@ const StudentInsightZone: React.FC = () => {
                 { val: '75%', label: 'Understanding' },
               ].map(item => (
                 <div key={item.label} className="text-center">
-                  <p className="font-extrabold text-[15px]">{item.val}</p>
-                  <p className="text-[9.5px] text-white/45 mt-0.5 leading-tight">{item.label}</p>
+                  <p className="font-extrabold text-[15px] text-foreground">{item.val}</p>
+                  <p className="text-[9.5px] text-foreground/45 mt-0.5 leading-tight">{item.label}</p>
                 </div>
               ))}
             </div>
@@ -457,12 +457,12 @@ const StudentInsightZone: React.FC = () => {
           </div>
 
           {/* Assignment Score Trend */}
-          <TrendBars data={[55, 58, 60, 62, 58, 65, 68, 71]} color="#6936B8" startLabel="Session 1" endLabel="Latest: 71%" title="Assignment Score Trend" />
+          <TrendBars data={[55, 58, 60, 62, 58, 65, 68, 71]} color="hsl(var(--primary))" startLabel="Session 1" endLabel="Latest: 71%" title="Assignment Score Trend" />
         </div>
       )}
 
       {/* Parent Share Card */}
-      <div className="bg-gradient-to-r from-secondary/50 to-secondary/30 rounded-[14px] border border-border p-4">
+      <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-[14px] border border-primary/10 p-4">
         <p className="font-bold text-sm mb-2">👨‍👩‍👧 What My Parents Can See</p>
         <div className="space-y-1 text-sm text-muted-foreground">
           <p className="flex items-center gap-1.5">✅ Subjects I'm improving in</p>
