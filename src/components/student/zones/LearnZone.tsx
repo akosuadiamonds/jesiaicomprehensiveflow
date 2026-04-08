@@ -148,19 +148,31 @@ const LearnZone: React.FC = () => {
       {/* Welcome Message */}
       <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
         <CardContent className="p-6">
-          <div className="flex items-start gap-3">
-            <Sparkles className="w-7 h-7 text-primary mt-0.5" />
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">
-                Welcome, {firstName}! 👋
-              </h2>
-              <p className="text-foreground/80 mt-1">
-                You are in class <strong>{classGrade}</strong> • <strong>{termLabel}</strong>
-              </p>
-              <p className="text-muted-foreground mt-1 text-sm">
-                Keep learning and growing! These are your subjects for this term 📚
-              </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-7 h-7 text-primary mt-0.5" />
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">
+                  Welcome, {firstName}! 👋
+                </h2>
+                <p className="text-foreground/80 mt-1">
+                  You are in class <strong>{classGrade}</strong> • <strong>{termLabel}</strong>
+                </p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Keep learning and growing! These are your subjects for this term 📚
+                </p>
+              </div>
             </div>
+            <Button
+              size="sm"
+              className="shrink-0 mt-1"
+              onClick={() => {
+                if (subjects.length > 0) setSelectedSubject(subjects[0]);
+              }}
+            >
+              <BookOpen className="w-4 h-4 mr-1" />
+              Start Learning
+            </Button>
           </div>
         </CardContent>
       </Card>

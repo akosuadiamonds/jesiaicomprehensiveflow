@@ -322,36 +322,6 @@ const StudentInsightZone: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* 📝 Exam Readiness */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <CardTitle>📝 Exam Readiness</CardTitle>
-            <FilterChips options={['This Week', 'This Month']} value={examFilter} onChange={setExamFilter} />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">Mock exam scores per subject:</p>
-          <div className="space-y-3">
-            {currentExamScores.map((exam) => (
-              <div key={exam.subject} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">{exam.subject}</span>
-                  <span className="font-bold">{exam.score}%</span>
-                </div>
-                <Progress value={exam.score} className="h-2" />
-              </div>
-            ))}
-          </div>
-          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-            <p className="text-sm font-medium">🟡 Readiness Level: <span className="text-amber-600">Almost Ready</span></p>
-            <p className="text-xs text-muted-foreground mt-1">Jesi AI recommends you revise: <strong>Ratio</strong>, <strong>Word problems</strong></p>
-          </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => navigateToPractice('Mathematics', 'Word problems')}>
-            Revise for Test
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* 👨‍👩‍👧 Parent View */}
       <Card className="bg-gradient-to-r from-secondary/50 to-secondary/30">
