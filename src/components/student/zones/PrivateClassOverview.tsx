@@ -28,6 +28,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import teacherPhoto from '@/assets/teacher-james-kumah.jpg';
 
 interface ClassroomData {
   id: string;
