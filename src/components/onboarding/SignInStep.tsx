@@ -79,13 +79,10 @@ const SignInStep: React.FC = () => {
         <span className="text-sm">Back</span>
       </button>
 
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-primary">Sign in to your account</p>
-        <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
+      <div className="space-y-1">
+        <h2 className="text-2xl lg:text-3xl font-bold text-foreground">Sign in</h2>
+        <p className="text-sm text-muted-foreground">
           {copy.heading}
-        </h2>
-        <p className="text-muted-foreground">
-          {copy.subheading}
         </p>
       </div>
 
