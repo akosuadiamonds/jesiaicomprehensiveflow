@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   ChevronRight,
   Users,
@@ -262,6 +262,7 @@ const PrivateClassOverview: React.FC<PrivateClassOverviewProps> = ({
             <h3 className="font-semibold text-sm">About the Teacher</h3>
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12">
+                <AvatarImage src={teacherPhoto} alt={teacherName} />
                 <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
                   {teacherName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </AvatarFallback>
