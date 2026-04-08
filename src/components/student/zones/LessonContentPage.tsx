@@ -8,6 +8,7 @@ import {
   ArrowLeft, BookOpen, Play, Video, ExternalLink, MessageCircle, Dumbbell,
   Loader2, CheckCircle2, Send, Sparkles, ChevronDown, ChevronUp
 } from 'lucide-react';
+import FloatingChatbot from '@/components/student/chat/FloatingChatbot';
 import { SubStrandData } from '@/data/gesCurriculum';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
