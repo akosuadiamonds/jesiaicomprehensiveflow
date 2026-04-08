@@ -17,8 +17,8 @@ const ROLE_COPY: Record<string, { heading: string; subheading: string }> = {
     subheading: 'Sign in to continue your learning journey',
   },
   school_admin: {
-    heading: 'Welcome back, Admin!',
-    subheading: 'Sign in to manage your institution',
+    heading: 'Manage Your School with Confidence',
+    subheading: 'Track teaching, monitor learning, and improve performance across your entire school.',
   },
   super_admin: {
     heading: 'Welcome back, Super Admin!',
