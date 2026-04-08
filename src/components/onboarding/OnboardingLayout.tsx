@@ -13,7 +13,7 @@ interface OnboardingLayoutProps {
 const ROLE_BRANDING: Record<string, { tagline: string; heading: string; description: string }> = {
   teacher: {
     tagline: 'AI-Powered Teaching Assistant',
-    heading: 'Transform Your\nTeaching Experience',
+    heading: 'Teach smarter.\nTrack progress.\nImprove outcomes.',
     description: 'Join thousands of educators using AI to create engaging lessons, generate quizzes, and track student progress effortlessly.',
   },
   learner: {
