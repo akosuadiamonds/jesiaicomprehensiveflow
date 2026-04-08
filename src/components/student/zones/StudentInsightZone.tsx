@@ -207,7 +207,7 @@ const StudentInsightZone: React.FC = () => {
   const [parentEmail, setParentEmail] = useState('');
 
   const studentName = profile?.first_name || 'Student';
-  const classGrade = profile?.class_grade || 'JHS 2';
+  const classGrade = 'JHS 2';
 
   const handleSendToParent = () => {
     if (!parentEmail.trim()) { toast.error('Please enter a parent email address.'); return; }
