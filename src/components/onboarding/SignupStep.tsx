@@ -83,13 +83,13 @@ const SignupStep: React.FC = () => {
       </button>
 
       <div className="space-y-2">
+        <p className="text-sm font-medium text-primary">Create your account</p>
         <h2 className="text-2xl lg:text-3xl font-bold text-foreground">
           {copy.heading}
         </h2>
         <p className="text-muted-foreground">
           {copy.subheading}
         </p>
-        <p className="text-sm font-medium text-primary pt-1">Create your account</p>
       </div>
 
       <div className="space-y-4">
