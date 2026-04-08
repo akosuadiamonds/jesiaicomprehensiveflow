@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { GraduationCap, BookOpen, Building2, ArrowRight, Loader2 } from 'lucide-react';
+import { GraduationCap, BookOpen, Building2, Shield, ArrowRight } from 'lucide-react';
 import { UserRole } from '@/types/onboarding';
 
 const ROLES = [
@@ -26,28 +25,21 @@ const ROLES = [
     icon: Building2,
     features: ['User Management', 'Institutional Plans', 'Usage Analytics'],
   },
+  {
+    id: 'super_admin' as const,
+    label: "I'm a Super Admin",
+    description: 'Oversee the entire platform, manage schools, monitor financials, and access strategic insights.',
+    icon: Shield,
+    features: ['Platform Oversight', 'School Management', 'Financial Analytics'],
+  },
 ];
 
 const RoleStep: React.FC = () => {
   const { userRole, setUserRole, setCurrentStep } = useOnboarding();
-  const { updateProfile } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRoleSelect = async (role: UserRole) => {
-    setIsSubmitting(true);
+  const handleRoleSelect = (role: UserRole) => {
     setUserRole(role);
-    
-    const { error } = await updateProfile({ user_role: role });
-    if (error) console.error('Failed to save role:', error);
-    
-    if (role === 'teacher') {
-      setCurrentStep('profile');
-    } else if (role === 'learner') {
-      setCurrentStep('student-profile');
-    } else if (role === 'school_admin') {
-      setCurrentStep('admin-school-details');
-    }
-    setIsSubmitting(false);
+    setCurrentStep('signup');
   };
 
   return (

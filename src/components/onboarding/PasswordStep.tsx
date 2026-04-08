@@ -9,7 +9,7 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff, Check, X, Loader2 } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 
 const PasswordStep: React.FC = () => {
-  const { signupData, setSignupData, setCurrentStep } = useOnboarding();
+  const { signupData, setSignupData, setCurrentStep, userRole } = useOnboarding();
   const { signUp } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -68,7 +68,8 @@ const PasswordStep: React.FC = () => {
       signupData.password!,
       signupData.firstName!,
       signupData.lastName!,
-      signupData.gender!
+      signupData.gender!,
+      userRole || undefined
     );
 
     if (error) {
