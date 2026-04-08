@@ -568,6 +568,12 @@ const LessonContentPage: React.FC<LessonContentPageProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <FloatingChatbot
+        subject={subject}
+        strand={strand}
+        subStrand={subStrand.name}
+        classGrade={classGrade}
+      />
     </div>
   );
 };
