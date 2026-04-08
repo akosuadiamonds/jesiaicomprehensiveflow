@@ -113,7 +113,20 @@ const TrendBars: React.FC<{ data: number[]; color: string; startLabel: string; e
                 height: `${h}px`,
                 backgroundColor: isLast ? color : 'hsl(var(--muted) / 0.15)'
               }} />
-              <span className="text-[9.5px] text-muted-foreground">{v}%</span>
+            </div>
+          );
+        })}
+      </div>
+      {/* Progress bars + percentage labels */}
+      <div className="flex gap-1.5 mt-2">
+        {data.map((v, i) => {
+          const isLast = i === data.length - 1;
+          return (
+            <div key={i} className="flex-1">
+              <div className="h-[4px] rounded-full bg-muted/20">
+                <div className="h-[4px] rounded-full transition-all" style={{ width: `${v}%`, backgroundColor: isLast ? color : 'hsl(var(--muted-foreground) / 0.3)' }} />
+              </div>
+              <p className="text-[9.5px] text-muted-foreground text-center mt-1">{v}%</p>
             </div>
           );
         })}
