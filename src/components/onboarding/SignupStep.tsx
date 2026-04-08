@@ -89,6 +89,7 @@ const SignupStep: React.FC = () => {
         <p className="text-muted-foreground">
           {copy.subheading}
         </p>
+        <p className="text-sm font-medium text-primary pt-1">Create your account</p>
       </div>
 
       <div className="space-y-4">
