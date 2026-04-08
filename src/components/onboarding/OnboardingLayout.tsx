@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Check } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 
@@ -10,7 +10,7 @@ interface OnboardingLayoutProps {
   totalSteps?: number;
 }
 
-const ROLE_BRANDING: Record<string, { tagline: string; heading: string; description: string }> = {
+const ROLE_BRANDING: Record<string, { tagline: string; heading: string; description: string; bullets?: string[]; footer?: string }> = {
   teacher: {
     tagline: 'AI-Powered Teaching Assistant',
     heading: 'Teach smarter.\nTrack progress.\nImprove outcomes.',
@@ -23,8 +23,16 @@ const ROLE_BRANDING: Record<string, { tagline: string; heading: string; descript
   },
   school_admin: {
     tagline: 'AI-Powered School Management',
-    heading: 'Empower Your\nInstitution',
-    description: 'Manage teachers, students, and institutional plans with intelligent tools designed for modern education leaders.',
+    heading: 'Run a Smarter School',
+    description: 'Track teaching, monitor learning, and improve performance across your entire school.',
+    bullets: [
+      'Track teacher activity and effectiveness',
+      'Monitor curriculum coverage in real time',
+      'Identify struggling classes and students early',
+      'Improve school-wide academic performance',
+      'Make data-driven academic decisions',
+    ],
+    footer: 'Built for modern schools focused on performance and accountability',
   },
   super_admin: {
     tagline: 'AI-Powered Platform Oversight',
@@ -64,7 +72,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             <img src={logo} alt="Jesi AI" className="h-10 object-contain brightness-0 invert" />
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div className="flex items-center gap-2 text-primary-foreground/80">
               <Sparkles className="w-5 h-5" />
               <span className="text-sm font-medium">{branding.tagline}</span>
@@ -75,22 +83,36 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             <p className="text-lg text-primary-foreground/80 max-w-md">
               {branding.description}
             </p>
+            {branding.bullets && (
+              <ul className="space-y-2">
+                {branding.bullets.map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-primary-foreground/90">
+                    <Check className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-primary-foreground">10K+</p>
-              <p className="text-sm text-primary-foreground/70">Users</p>
+          {branding.footer ? (
+            <p className="text-sm text-primary-foreground/60 italic">{branding.footer}</p>
+          ) : (
+            <div className="flex items-center gap-8">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-primary-foreground">10K+</p>
+                <p className="text-sm text-primary-foreground/70">Users</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-primary-foreground">50K+</p>
+                <p className="text-sm text-primary-foreground/70">Lessons Created</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-primary-foreground">95%</p>
+                <p className="text-sm text-primary-foreground/70">Satisfaction</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-primary-foreground">50K+</p>
-              <p className="text-sm text-primary-foreground/70">Lessons Created</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-primary-foreground">95%</p>
-              <p className="text-sm text-primary-foreground/70">Satisfaction</p>
-            </div>
-          </div>
+          )}
         </div>
       </div>
       
