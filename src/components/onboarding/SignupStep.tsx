@@ -22,8 +22,8 @@ const ROLE_COPY: Record<string, { heading: string; subheading: string }> = {
     subheading: 'Begin your personalized learning journey with Jesi AI',
   },
   school_admin: {
-    heading: 'Create your Admin account',
-    subheading: 'Set up your institution and manage your team',
+    heading: 'Manage Your School with Confidence',
+    subheading: 'Track teaching, monitor learning, and improve performance across your entire school.',
   },
   super_admin: {
     heading: 'Create your Super Admin account',
